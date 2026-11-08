@@ -65,6 +65,9 @@ npm run typecheck    # tsc --noEmit
   hashtag counter for the first comment and “use asset alt text”.
 - **Create posts**: media (single or carousel with order), caption with a 2,200-character counter,
   first comment, song + artist, location, alt text, date (**quick presets**), format, status.
+- **Drafts first**: a draft needs neither media nor a date and is never published — “Save as draft” writes it as a
+  draft even if the post was scheduled before, and a date on a draft is just a note until you switch the status
+  to *Scheduled* yourself.
 - **Snippets**: saved hashtag sets, captions and hooks drop into caption or first comment with one click.
 - **Performance per post**: publish to Instagram, sync insights or type the numbers in by hand.
 - **Duplicate** a post as a new draft, **reorder the feed by drag & drop**, sort by date, `⌘S` saves.

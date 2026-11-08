@@ -10,6 +10,7 @@ import {
   IconLayers,
   IconMapPin,
   IconMusic,
+  IconNote,
   IconTrash,
   IconX,
   IconZap,
@@ -84,64 +85,82 @@ export default function PostEditor({
     .map((id) => media.find((item) => item.id === id))
     .filter(Boolean) as MediaItem[];
 
-  const save = useCallback(async () => {
-    if (!mediaIds.length && status !== 'draft') {
-      toast('A scheduled or published post needs at least one media item', 'error');
-      setTab('content');
-      return;
-    }
-    if (caption.length > 2200) {
-      toast('Caption is longer than 2,200 characters', 'error');
-      return;
-    }
+  const save = useCallback(
+    async (overrides?: { status?: PostStatus; scheduledAt?: string }) => {
+      const nextStatus = overrides?.status ?? status;
+      const nextScheduledAt = overrides?.scheduledAt ?? scheduledAt;
 
-    setSaving(true);
-    const payload: Record<string, any> = {
-      type,
-      status,
-      caption,
-      firstComment,
-      altText,
-      location,
-      songTitle,
-      songArtist,
-      scheduledAt: fromDateInput(scheduledAt),
-      mediaIds,
-    };
-    if (status === 'published' && !post?.publishedAt) payload.publishedAt = new Date().toISOString();
-    if (status !== 'published') payload.publishedAt = null;
+      if (!mediaIds.length && nextStatus !== 'draft') {
+        toast('A scheduled or published post needs at least one media item', 'error');
+        setTab('content');
+        return;
+      }
+      if (caption.length > 2200) {
+        toast('Caption is longer than 2,200 characters', 'error');
+        return;
+      }
 
-    try {
-      const response = await fetch(creating ? '/api/posts' : `/api/posts/${post?.id}`, {
-        method: creating ? 'POST' : 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? 'Failed to save');
-      onSaved(data.post);
-      toast(creating ? 'Post created' : 'Post saved');
-    } catch (error: any) {
-      toast(error.message ?? 'Failed to save', 'error');
-    } finally {
-      setSaving(false);
-    }
+      setSaving(true);
+      const payload: Record<string, any> = {
+        type,
+        status: nextStatus,
+        caption,
+        firstComment,
+        altText,
+        location,
+        songTitle,
+        songArtist,
+        scheduledAt: fromDateInput(nextScheduledAt),
+        mediaIds,
+      };
+      if (nextStatus === 'published' && !post?.publishedAt) payload.publishedAt = new Date().toISOString();
+      if (nextStatus !== 'published') payload.publishedAt = null;
+
+      try {
+        const response = await fetch(creating ? '/api/posts' : `/api/posts/${post?.id}`, {
+          method: creating ? 'POST' : 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? 'Failed to save');
+        if (nextStatus !== status) setStatus(nextStatus);
+        onSaved(data.post);
+        toast(
+          nextStatus === 'draft'
+            ? creating
+              ? 'Draft created – not scheduled'
+              : 'Saved as draft – not scheduled'
+            : creating
+              ? 'Post created'
+              : 'Post saved'
+        );
+      } catch (error: any) {
+        toast(error.message ?? 'Failed to save', 'error');
+      } finally {
+        setSaving(false);
+      }
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    altText,
-    caption,
-    creating,
-    firstComment,
-    location,
-    mediaIds,
-    post?.id,
-    post?.publishedAt,
-    songArtist,
-    songTitle,
-    status,
-    type,
-    scheduledAt,
-  ]);
+    [
+      altText,
+      caption,
+      creating,
+      firstComment,
+      location,
+      mediaIds,
+      post?.id,
+      post?.publishedAt,
+      songArtist,
+      songTitle,
+      status,
+      type,
+      scheduledAt,
+    ]
+  );
+
+  /** Always writes `status: 'draft'` – the date (if any) is only a note. */
+  const saveDraft = useCallback(() => save({ status: 'draft' }), [save]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -232,7 +251,7 @@ export default function PostEditor({
       label: 'Date',
       ok: Boolean(scheduledAt) || status === 'draft',
       required: true,
-      hint: 'Scheduled posts need a date',
+      hint: status === 'draft' ? 'Not needed while it is a draft' : 'Scheduled posts need a date',
     },
   ];
 
@@ -490,19 +509,35 @@ export default function PostEditor({
               </div>
               <Segmented<PostStatus>
                 value={status}
-                onChange={(value) => setStatus(value)}
+                onChange={(value) => {
+                  if (value === 'scheduled' && !scheduledAt) setScheduledAt(presetDate(1));
+                  setStatus(value);
+                }}
                 options={[
                   { value: 'draft', label: 'Draft' },
                   { value: 'scheduled', label: 'Scheduled' },
                   { value: 'published', label: 'Published' },
                 ]}
               />
+              <p className="small muted" style={{ marginTop: 8 }}>
+                {status === 'draft'
+                  ? 'A draft just sits here. Nothing is planned, nothing goes out – and it needs no date.'
+                  : status === 'scheduled'
+                    ? 'Goes out on its own when the date has come (scheduler or an open tab).'
+                    : 'Marked as already online – only for your own archive.'}
+              </p>
             </div>
 
             <div className="editor-block">
               <div className="editor-block-head">
                 <span className="label">Scheduled for</span>
-                <span className="count">{scheduledAt ? relativeDay(fromDateInput(scheduledAt)) : 'open'}</span>
+                <span className="count">
+                  {scheduledAt
+                    ? status === 'draft'
+                      ? `note · ${relativeDay(fromDateInput(scheduledAt))}`
+                      : relativeDay(fromDateInput(scheduledAt))
+                    : 'open'}
+                </span>
               </div>
               <div className="input-icon">
                 <IconClock size={14} />
@@ -510,10 +545,7 @@ export default function PostEditor({
                   type="datetime-local"
                   className="input"
                   value={scheduledAt}
-                  onChange={(event) => {
-                    setScheduledAt(event.target.value);
-                    if (event.target.value && status === 'draft') setStatus('scheduled');
-                  }}
+                  onChange={(event) => setScheduledAt(event.target.value)}
                 />
               </div>
               <div className="row wrap" style={{ gap: 6 }}>
@@ -536,6 +568,18 @@ export default function PostEditor({
                   </button>
                 ) : null}
               </div>
+              {status === 'draft' && scheduledAt ? (
+                <p className="small muted" style={{ marginTop: 8 }}>
+                  Draft – this date is only a note.{' '}
+                  <button
+                    type="button"
+                    className="link-button"
+                    onClick={() => setStatus('scheduled')}
+                  >
+                    Schedule it for then
+                  </button>
+                </p>
+              ) : null}
             </div>
 
             <div className="editor-block">
@@ -631,9 +675,29 @@ export default function PostEditor({
             Cancel
           </button>
         )}
-        <button type="button" className="btn btn-primary" onClick={save} disabled={saving}>
+        {status !== 'draft' ? (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={saveDraft}
+            disabled={saving}
+            title="Keep it as a draft – nothing is scheduled"
+          >
+            <IconNote size={15} />
+            Save as draft
+          </button>
+        ) : null}
+        <button type="button" className="btn btn-primary" onClick={() => save()} disabled={saving}>
           {saving ? <span className="spinner" style={{ width: 14, height: 14 }} /> : <IconCheck size={15} />}
-          {creating ? 'Create post' : 'Save'}
+          {status === 'draft'
+            ? creating
+              ? 'Create draft'
+              : 'Save draft'
+            : status === 'scheduled'
+              ? creating
+                ? 'Create & schedule'
+                : 'Save & schedule'
+              : 'Save'}
         </button>
       </div>
 

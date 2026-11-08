@@ -209,6 +209,22 @@
   flex: none;
 }
 
+/* Inline text button inside a hint (e.g. "Schedule it for then") */
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--text);
+}
+
 .count.over,
 .mono.over {
   color: var(--danger) !important;
