@@ -393,27 +393,27 @@ small things that otherwise get lost.
   the cinematic rules. The shell split runs through route groups: `app/layout.tsx` = document only,
   `app/(hq)/layout.tsx` = sidebar + palette + toasts + scheduler heartbeat, `app/site/` = public layout.
 
-### 7.7 Public website – fourth pass: "plain black, one accent, photos taped to the wall"
+### 7.7 Public website – fourth pass: "warm black, one accent, photos taped to the wall"
 
-The third pass (torn paper, stamp, margin print) was rejected as *"looks like a pirate map"* – the artefact
-became decoration and the page drifted away from the band. The fourth pass removes every prop:
+Two rejections shaped this page: the torn-paper version *"looks like a pirate map"* (too many props) and the
+version after it *"still reads a bit future, not emotional post-hardcore"* – the culprit was the 90°-rotated
+sleeve spine, the monospaced uppercase labels, the neon accent outline and the scanlines. All four are gone.
 
-- **Two materials only**: pure black (`#050407`) and the band's photo paper. Bone for text, one accent
-  (`--site-accent`, its own setting) for the very few highlights: the label lines, the letter's `*emphasis*`,
-  the echo stroke of the name, link hover. No second hue anywhere.
-- **No props**: no paper sheet, no torn edges, no stamp, no dashed frame, no margin print, no cursor light,
-  no crew list, no names. The hero photo is a rumour at 22 % instead of an effect.
-- **The note is the page**: `Playfair` body on black, `letter-spacing` untouched, `1.66` leading, 56 ch
-  measure, italic signature – no card, no box. It reads like a message, not like a document embedded in a
-  layout.
-- **Photos next to the text**: the media corner is not a section of its own any more. The band's photos sit
-  beside the letter as **taped prints** (paper frame, strip of tape, per-print angle, grayscale that develops
-  into colour on hover) – the same visual language the feed wall already used, which is what the band liked
-  about it in the first place.
-- **The wall stays**: the feed is still a wall of taped flyers, now the only "loud" element besides the name.
-- **Backend follows the page**: the crew editor is gone (the site renders no bandmate list), the signature
-  became its own field, the media toggle now controls the photos beside the letter, and the block hints
-  describe what actually happens.
+- **Warm black, not UI black.** `#080607`, bone text at 86 %, grain and a vignette. No scanlines, no progress
+  bar, no hairline at the top of the page.
+- **Serif is the voice.** Playfair italic carries the tagline, the section labels ("a note from us", "say hi"),
+  the captions and the signature; Anton is reserved for the name, the link list and the footer field.
+  **No monospaced labels anywhere** – that alone removed the terminal/technical read.
+- **One accent** (`--site-accent`): the `*marked*` words in the letter and the quiet label lines. Nothing
+  glows, nothing is outlined in colour.
+- **A face in the hero**: one photo as a taped print next to the name instead of decorative effects. The
+  hero background photo stays at 12 % as depth only.
+- **No props**: no spine, no stamp, no margin print, no paper sheet, no cursor light, no crew list, no names.
+- **The letter is the page** – 54 ch of `Playfair` on black, then the band's photos as the same taped prints
+  the feed wall uses (paper, tape, own angle, developing into colour on hover).
+- **Say hi** is a large italic press line next to plain display-face links – the numbered receipt is gone.
+- **Backend follows the page**: no crew editor, the signature has its own field, `showMedia` gates the prints
+  beside the letter, block hints describe what actually happens.
 
 ---
 

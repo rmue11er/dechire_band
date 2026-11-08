@@ -12,7 +12,7 @@ function Letters({ text }: { text: string }) {
   return (
     <>
       {text.split('').map((char, index) => (
-        <span key={`${char}-${index}`} style={{ animationDelay: `${0.15 + index * 0.06}s` }}>
+        <span key={`${char}-${index}`} style={{ animationDelay: `${0.2 + index * 0.07}s` }}>
           {char === ' ' ? '\u00A0' : char}
         </span>
       ))}
@@ -81,20 +81,14 @@ export default function SitePage() {
           ) : null}
           <div className="gate-veil" />
           <div className="gate-inner">
-            <span className="site-mono">not yet /// nothing to show</span>
-            <h1 className="gate-title">
-              {bandName}
-              <span className="gate-echo" aria-hidden="true">
-                {bandName}
-              </span>
-            </h1>
-            <p className="gate-line">{settings.tagline || 'Something is being built here. Loudly, slowly.'}</p>
+            <h1 className="gate-title">{bandName}</h1>
+            <p className="gate-line">{settings.tagline || 'Something is being built here. Slowly.'}</p>
+            <p className="gate-note">nothing to see yet.</p>
             {instagram ? (
               <a className="sf-link" href={instagram.url} target="_blank" rel="noreferrer">
                 instagram ↗
               </a>
             ) : null}
-            <span className="gate-stamp">closed</span>
           </div>
         </section>
       </div>
@@ -115,48 +109,46 @@ export default function SitePage() {
           ) : null}
           <div className="sf-hero-veil" />
 
-          <div className="sf-spine" aria-hidden="true">
-            <span>side a</span>
-            <i />
-            <span>{settings.tagline || 'post-hardcore'}</span>
-            <i />
-            <span>33 ⅓</span>
-          </div>
-
           <div className="sf-hero-top">
             <a
-              className="site-mono sf-hero-handle"
+              className="sf-handle"
               href={instagram?.url ?? '#'}
               target={instagram ? '_blank' : undefined}
               rel="noreferrer"
             >
               @{handle}
             </a>
-            <span className="site-mono sf-hero-note">official site</span>
           </div>
 
           <div className="sf-hero-core">
-            <span className="sf-kicker">
-              <i />
-              post-hardcore /// the long way down
-            </span>
+            <div className="sf-hero-lead">
+              <h1 className="sf-title">
+                <span className="sf-title-main">
+                  <Letters text={bandName.toUpperCase()} />
+                </span>
+                <span className="sf-title-ghost" aria-hidden="true">
+                  {bandName.toUpperCase()}
+                </span>
+              </h1>
 
-            <h1 className="sf-title">
-              <span className="sf-title-main">
-                <Letters text={bandName.toUpperCase()} />
-              </span>
-              <span className="sf-title-echo" aria-hidden="true">
-                {bandName.toUpperCase()}
-              </span>
-            </h1>
+              {settings.tagline ? <p className="sf-tagline">{settings.tagline}</p> : null}
+            </div>
 
-            {settings.tagline ? <p className="sf-tagline">{settings.tagline}</p> : null}
+            {settings.heroVideo || settings.heroUrl ? (
+              <Reveal className="sf-print sf-hero-print" style={{ '--tape': '-2.2deg' } as CSSProperties}>
+                <span className="sf-tape" aria-hidden="true" />
+                {settings.heroVideo ? (
+                  <video src={settings.heroVideo} autoPlay muted loop playsInline />
+                ) : (
+                  <img src={settings.heroUrl ?? ''} alt="" />
+                )}
+              </Reveal>
+            ) : null}
           </div>
 
           <div className="sf-hero-foot">
             <a className="sf-scroll" href="#note">
-              <span>read the note</span>
-              <i aria-hidden="true" />
+              read the note <span aria-hidden="true">↓</span>
             </a>
           </div>
         </header>
@@ -207,7 +199,7 @@ export default function SitePage() {
         <section className="sf-block">
           <div className="site-wrap">
             <Reveal className="sf-teaser">
-              <span className="site-mono">{teaser.kind === 'video' ? 'clip /// play loud' : 'watch /// outside'}</span>
+              <span className="sf-label">{teaser.kind === 'video' ? 'a clip' : 'somewhere else'}</span>
               <div className="sf-teaser-frame">
                 {teaser.kind === 'video' ? (
                   <video src={teaser.src} controls playsInline />
@@ -232,7 +224,7 @@ export default function SitePage() {
           <div className="site-wrap">
             <Reveal className="sf-label sf-label-wide">
               {settings.feedTitle || 'from the feed'}
-              <span className="site-mono">last things we put outside</span>
+              <span className="sf-label-aside">the last things we put outside</span>
             </Reveal>
 
             <div className="sf-wall">
@@ -268,8 +260,8 @@ export default function SitePage() {
               {settings.pressSource ? <cite>{settings.pressSource}</cite> : null}
             </Reveal>
 
-            <Reveal className="sf-receipt" delay={70}>
-              <span className="site-mono sf-receipt-head">where to find us</span>
+            <Reveal className="sf-links" delay={70}>
+              <span className="sf-links-head">where to find us</span>
               <ul>
                 {settings.links.map((link, index) => (
                   <li key={`${link.label}-${index}`}>
@@ -278,15 +270,13 @@ export default function SitePage() {
                       target={link.url.startsWith('mailto:') ? undefined : '_blank'}
                       rel="noreferrer"
                     >
-                      <i>{String(index + 1).padStart(2, '0')}</i>
-                      <strong>{link.label}</strong>
-                      <em aria-hidden="true" />
-                      <span>↗</span>
+                      <span>{link.label}</span>
+                      <i aria-hidden="true">↗</i>
                     </a>
                   </li>
                 ))}
               </ul>
-              <span className="site-mono sf-receipt-foot">{settings.footerNote || `post-hardcore /// ${year}`}</span>
+              <span className="sf-links-foot">{settings.footerNote || `post-hardcore /// ${year}`}</span>
             </Reveal>
           </div>
         </section>
@@ -299,13 +289,13 @@ export default function SitePage() {
             {bandName}
           </div>
           <div className="sf-foot-row">
-            <span className="site-mono">{settings.footerNote || `© ${year} ${bandName}`}</span>
+            <span>{settings.footerNote || `© ${year} ${bandName}`}</span>
             {instagram ? (
-              <a className="site-mono" href={instagram.url} target="_blank" rel="noreferrer">
+              <a href={instagram.url} target="_blank" rel="noreferrer">
                 @{handle} ↗
               </a>
             ) : (
-              <span className="site-mono">@{handle}</span>
+              <span>@{handle}</span>
             )}
           </div>
         </footer>
