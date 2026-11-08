@@ -183,7 +183,9 @@ Key numbers, upcoming releases with a countdown, feed excerpt, latest assets, no
 ### Settings (`/settings`)
 Band profile (name, handle, bio, website, followers, highlights, avatar from the library) –
 feeding straight into the Instagram preview. Plus the **interface accent colour**, the
-**Instagram connection**, **backup & restore**, the **bin**, the **CI palette editor** and “reset everything”.
+**Instagram connection**, **backup & restore**, the **bin**, the **CI palette editor** and two ways to start over:
+**remove all demo data** (empties posts, media files, notes, milestones, documents, snippets, numbers and the
+bin, leaves designs/website/palette/fonts alone and does not come back) or **reset** (wipe + demo data again).
 
 ### Backup, bin & search
 - **Backup** downloads a ZIP with a consistent database copy, every upload and a manifest; **restore** imports
@@ -390,6 +392,9 @@ Things that actually matter:
   the studio works offline.
 - “Settings → Reset” deletes posts, media, notes, designs, milestones and documents, reseeds the demo
   data and restores the default accent + palette.
+- “Settings → Remove all demo data” does the same wipe **without** restoring anything, so the app stays empty
+  for real content. The band profile is kept (emptied) – otherwise the app would reseed itself on the next
+  start, because it seeds whenever the profile is missing.
 - The demo images are generated SVG artwork in the band look; just upload real photos/logos.
 - The public page lives at `/site` and is meant to be put behind a real domain later; the workspace keeps
   `/`. Saved posts can still be published by the scheduler — the ZIP export stays the manual fallback.

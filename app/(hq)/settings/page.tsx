@@ -39,6 +39,7 @@ export default function SettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [removingDemo, setRemovingDemo] = useState(false);
   const [palette, setPalette] = useState<PaletteColor[]>([]);
   const [paletteSaving, setPaletteSaving] = useState(false);
   const [accent, setAccent] = useState(DEFAULT_ACCENT);
@@ -420,6 +421,35 @@ export default function SettingsPage() {
     }
   };
 
+  const removeDemo = async () => {
+    if (
+      !window.confirm(
+        'Remove every piece of demo content? Posts, media files, notes, milestones, documents, snippets, performance numbers and the bin. Nothing is restored afterwards.'
+      )
+    ) {
+      return;
+    }
+    if (!window.confirm('Last chance: this cannot be undone. Continue?')) return;
+    setRemovingDemo(true);
+    try {
+      const response = await fetch('/api/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'demo' }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Could not remove the demo data');
+      const removed = data.removed ?? {};
+      toast(
+        `Demo data gone – ${removed.posts ?? 0} posts, ${removed.media ?? 0} assets, ${removed.notes ?? 0} notes`
+      );
+      window.location.reload();
+    } catch (error: any) {
+      toast(error.message, 'error');
+      setRemovingDemo(false);
+    }
+  };
+
   if (!profile) return <Spinner label="Loading profile" />;
 
   return (
@@ -564,13 +594,38 @@ export default function SettingsPage() {
 
             <div className="danger-zone">
               <div>
+                <strong>Remove all demo data</strong>
+                <p className="small muted">
+                  Deletes posts, media files, notes, milestones, documents, snippets, performance numbers
+                  and the bin – and empties the band profile. Nothing comes back, so you can start with your
+                  own stuff. Designs, website settings, CI palette and fonts stay.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-danger btn-sm"
+                onClick={removeDemo}
+                disabled={removingDemo || resetting}
+              >
+                <IconTrash size={14} />
+                {removingDemo ? 'Removing …' : 'Remove demo data'}
+              </button>
+            </div>
+
+            <div className="danger-zone">
+              <div>
                 <strong>Reset everything</strong>
                 <p className="small muted">
                   Deletes posts, media, notes, designs and uploads, resets the CI palette and restores the demo
                   data.
                 </p>
               </div>
-              <button type="button" className="btn btn-danger btn-sm" onClick={reset} disabled={resetting}>
+              <button
+                type="button"
+                className="btn btn-danger btn-sm"
+                onClick={reset}
+                disabled={resetting || removingDemo}
+              >
                 <IconTrash size={14} />
                 {resetting ? 'Resetting …' : 'Reset'}
               </button>
