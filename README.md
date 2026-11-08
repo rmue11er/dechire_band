@@ -34,9 +34,9 @@ npm start            # serve the build (PORT is respected)
 npm run typecheck    # tsc --noEmit
 ```
 
-> **There is no login.** The workspace contains the Instagram token and everything else in `data/`. Keep it
-> behind HTTP Basic Auth, a VPN or at least a non-guessable host when you put it on a server, and expose
-> only `/site` to the outside world.
+> **There is no login of its own.** The workspace contains the Instagram token and everything else in `data/`.
+> For a server, set `HQ_PASSWORD` (see [deployment](docs/DEPLOY.md)) — that switches on the Basic Auth gate in
+> `proxy.ts` and leaves only `/site` public. Locally it stays off, because the variable is empty.
 
 ---
 
@@ -262,12 +262,14 @@ app/
   (hq)/media/page.tsx      Media library
   (hq)/notes/page.tsx      Notes
   (hq)/docs/page.tsx       Documents (rider, contracts, orga)
-  (hq)/website/page.tsx    Public site: content, releases, live preview
+  (hq)/website/page.tsx    Public site: blocks, letter, crew, media corner, live preview
   (hq)/brand/page.tsx      Brand sheet (CI guide, export)
   (hq)/settings/page.tsx   Profile, accent, Instagram, backup, bin, palette
   site/                    Public one-pager with its own layout (no sidebar)
   api/                     REST endpoints (posts, media, media-groups, notes, designs, palette,
                            milestones, documents, profile, stats, site, files, export/*, reset)
+proxy.ts                   Optional HTTP Basic Auth gate (active when HQ_PASSWORD is set)
+server.js                  Startable Node server for Passenger / systemd
 components/                InstagramMock, PostEditor, PostPerformance, SnippetMenu, MediaPicker,
                            NoteEditor, DocEditor, CommandPalette, UI primitives, icons
 components/site/           Reveal, SiteAtmosphere (film layer of the public page)
@@ -288,8 +290,9 @@ lib/
   zip.ts, api.ts, format.ts, toast.ts, types.ts
 styles/                    base, dashboard, planner, media, notes, settings, studio, calendar, docs,
                            brand, command, website, site
-                                          data/                      band.db + uploads (git-ignored)
+data/                      band.db + uploads (git-ignored, created on first start)
 docs/KONZEPT.md            Product and architecture plan
+docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + nginx, cron, backups
 ```
 
 ### API quick reference
@@ -328,13 +331,16 @@ docs/KONZEPT.md            Product and architecture plan
 
 ## Running it on a server
 
+**Full walkthrough for IONOS/Plesk — both the Plesk Node.js extension and a systemd + nginx setup, including
+permissions, Basic Auth, cron and troubleshooting: [`docs/DEPLOY.md`](docs/DEPLOY.md).**
+
 It is a normal Node.js app with a file database — no Docker, no external services:
 
 ```bash
 git clone https://github.com/rmue11er/dechire_band.git bandhq && cd bandhq
 npm ci
 npm run build
-PORT=3000 npm start
+PORT=3000 npm start          # or: node server.js
 ```
 
 Then put a reverse proxy in front of it and point the domain at the proxy:
@@ -355,8 +361,8 @@ Things that actually matter:
 - **`data/` must persist and be writable** by the app user — database, uploads, WAL files. Exclude it from
   deploys; that is the whole backup.
 - **Node 24+** (or 22 with `NODE_OPTIONS=--experimental-sqlite`); build and runtime should use the same major.
-- **Protect the workspace**: `/site` is public, everything else is not. Add Basic Auth (or a VPN) around all
-  paths except `/site`, `/api/files` and `/_next`.
+- **Protect the workspace**: `/site` is public, everything else is not. Set `HQ_USER` + `HQ_PASSWORD` and the
+  gate in `proxy.ts` locks every path except `/site`, `/_next`, `/api/files` and the icon.
 - **Scheduler without an open tab**: cron every 5 minutes →
   `curl -fsS -X POST https://your.domain/api/scheduler`
 - **Instagram publishing on the server**: set the public base URL in Settings to the real domain, because
