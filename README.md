@@ -34,9 +34,9 @@ npm start            # serve the build (PORT is respected)
 npm run typecheck    # tsc --noEmit
 ```
 
-> **There is no login of its own.** The workspace contains the Instagram token and everything else in `data/`.
-> For a server, set `HQ_PASSWORD` (see [deployment](docs/DEPLOY.md)) — that switches on the Basic Auth gate in
-> `proxy.ts` and leaves only `/site` public. Locally it stays off, because the variable is empty.
+> **The workspace has a login mask at `/login`.** It contains the Instagram token and everything else in
+> `data/`. On a server, set `HQ_PASSWORD` (see [deployment](docs/DEPLOY.md)) — then every internal page
+> redirects to the mask and only `/site` stays public. Locally it is off, because the variable is empty.
 
 ---
 
@@ -336,7 +336,7 @@ app/
   site/                    Public one-pager with its own layout (no sidebar)
   api/                     REST endpoints (posts, media, media-groups, notes, designs, palette,
                            milestones, documents, profile, stats, site, files, export/*, reset)
-proxy.ts                   Optional HTTP Basic Auth gate (active when HQ_PASSWORD is set)
+proxy.ts                   Login gate: /login + signed session cookie (active when HQ_PASSWORD is set)
 server.js                  Startable Node server for Passenger / systemd
 components/                InstagramMock, PostEditor, PostPerformance, SnippetMenu, MediaPicker,
                            NoteEditor, DocEditor, EmojiPicker, CommandPalette, UI primitives, icons
@@ -404,7 +404,7 @@ docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + ngin
 ## Running it on a server
 
 **Full walkthrough for IONOS/Plesk — both the Plesk Node.js extension and a systemd + nginx setup, including
-permissions, Basic Auth, cron and troubleshooting: [`docs/DEPLOY.md`](docs/DEPLOY.md).**
+permissions, the login mask, cron and troubleshooting: [`docs/DEPLOY.md`](docs/DEPLOY.md).**
 
 It is a normal Node.js app with a file database — no Docker, no external services:
 

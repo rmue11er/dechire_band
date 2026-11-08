@@ -1,68 +1,50 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { SESSION_COOKIE, authEnabled, verifySession } from './lib/auth';
 
 /**
- * HTTP Basic Auth for the internal workspace.
+ * Login gate for the workspace.
  *
- * The app has no login of its own – and it holds the Instagram token, the
- * backups and every draft. As soon as `HQ_PASSWORD` is set, everything is
- * protected except the public one-pager and the files it needs.
+ * A real login mask instead of HTTP Basic Auth: `/login` posts the password to
+ * `/api/auth/login`, which sets a signed, httpOnly session cookie. The gate only
+ * exists when `HQ_PASSWORD` is set, so local development stays open.
  *
- *   HQ_USER=dechire
- *   HQ_PASSWORD=<something long>
- *
- * Without `HQ_PASSWORD` nothing happens, so local development stays open.
+ * Public without a session: the one-pager (`/site`), the login itself, uploaded
+ * files (Instagram has to fetch them), and the assets those pages need.
  */
-const REALM = 'DECHIRE Band HQ';
+const PUBLIC_PATHS: RegExp[] = [
+  /^\/site(\/|$)/,
+  /^\/login(\/|$)/,
+  /^\/api\/auth\//,
+  /^\/api\/files\//,
+  /^\/_next\//,
+  /^\/icon\.svg$/,
+  /^\/favicon\.ico$/,
+];
 
-function unauthorized() {
-  return new NextResponse('Authentication required', {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': `Basic realm="${REALM}", charset="UTF-8"`,
-      'Cache-Control': 'no-store',
-    },
-  });
-}
+export async function proxy(request: NextRequest) {
+  if (!authEnabled()) return NextResponse.next();
 
-/** Length-safe comparison so timing does not leak credentials. */
-function sameSecret(given: string, expected: string) {
-  if (given.length !== expected.length) return false;
-  let diff = 0;
-  for (let index = 0; index < expected.length; index += 1) {
-    diff |= given.charCodeAt(index) ^ expected.charCodeAt(index);
-  }
-  return diff === 0;
-}
+  const { pathname, search } = request.nextUrl;
+  if (PUBLIC_PATHS.some((pattern) => pattern.test(pathname))) return NextResponse.next();
 
-export function proxy(request: NextRequest) {
-  const password = process.env.HQ_PASSWORD ?? '';
-  if (!password) return NextResponse.next();
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  if (await verifySession(token)) return NextResponse.next();
 
-  const header = request.headers.get('authorization') ?? '';
-  if (header.startsWith('Basic ')) {
-    let decoded = '';
-    try {
-      decoded = atob(header.slice(6));
-    } catch {
-      return unauthorized();
-    }
-    const separator = decoded.indexOf(':');
-    if (separator > 0) {
-      const user = decoded.slice(0, separator);
-      const pass = decoded.slice(separator + 1);
-      if (sameSecret(user, process.env.HQ_USER || 'dechire') && sameSecret(pass, password)) {
-        return NextResponse.next();
-      }
-    }
+  /* API calls get JSON, browsers get the mask – with the way back. */
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
   }
 
-  return unauthorized();
+  const url = request.nextUrl.clone();
+  url.pathname = '/login';
+  url.search = `?next=${encodeURIComponent(pathname + search)}`;
+  return NextResponse.redirect(url);
 }
 
 export const config = {
   /**
-   * Public: /site (the one-pager), its assets, the uploaded files Instagram has
-   * to reach, and the icon. Everything else – planner, settings, API – is locked.
+   * Everything except the public one-pager and Next's own assets. The list above
+   * additionally opens the login route and the uploaded files.
    */
-  matcher: ['/((?!site|_next|api/files|icon.svg).*)'],
+  matcher: ['/((?!site|_next/static|_next/image|api/files|icon\\.svg|favicon\\.ico).*)'],
 };

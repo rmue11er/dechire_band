@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import {
   IconCalendar,
   IconDocument,
@@ -34,7 +35,21 @@ const SETUP = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [locked, setLocked] = useState(false);
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
+
+  /* only show the lock when the workspace actually asks for a password */
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then((response) => response.json())
+      .then((data) => setLocked(Boolean(data.required)))
+      .catch(() => setLocked(false));
+  }, []);
+
+  const signOut = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+    window.location.assign('/login');
+  };
 
   return (
     <aside className="sidebar">
@@ -75,6 +90,11 @@ export default function Sidebar() {
         <a className="mono" href="/site" target="_blank" rel="noreferrer">
           Public site ↗
         </a>
+        {locked ? (
+          <button type="button" className="sidebar-lock mono" onClick={signOut}>
+            Lock workspace
+          </button>
+        ) : null}
       </div>
     </aside>
   );

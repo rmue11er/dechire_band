@@ -226,18 +226,27 @@ Plesk's Let's Encrypt certificate keeps working, because TLS ends at nginx.
 
 ## 5. Protecting the workspace
 
-**The app has no login of its own.** Anyone who reaches `/settings` can read the Instagram token, download
-backups and delete posts. Never expose it unprotected.
+**The app has no login of its own by default.** Anyone who reaches `/settings` can read the Instagram token,
+download backups and delete posts. Never expose it unprotected.
 
-The repo ships a small HTTP Basic Auth gate in `proxy.ts`. It switches on as soon as `HQ_PASSWORD` is set:
+The repo ships a **login mask** (`/login`) with a signed session cookie. The gate switches on as soon as
+`HQ_PASSWORD` is set:
 
 ```bash
-HQ_USER=dechire
 HQ_PASSWORD=<long random string>
+HQ_USER=dechire            # only cosmetic, shown nowhere secret
+HQ_SESSION_SECRET=<optional>
 ```
 
-What stays public: `/site`, `/_next` (JS/CSS), `/api/files/*` (the images Instagram has to fetch) and
-`/icon.svg`. Everything else asks for user + password.
+- `/` and every internal page redirect to `/login?next=…` and come back after signing in.
+- `/api/*` answers `401` JSON instead of a redirect, so a stale tab does not render HTML in a fetch.
+- Public without signing in: `/site` (the one-pager), `/api/files/*` (images Instagram has to fetch),
+  `/_next/*`, `/icon.svg`.
+- The cookie is `httpOnly`, `SameSite=Lax`, `Secure` in production and valid for 30 days. It is signed with
+  `HQ_SESSION_SECRET` (falls back to a hash of `HQ_PASSWORD`) – **change that value to invalidate all
+  sessions**, e.g. after a password reset.
+- Wrong passwords are throttled: 8 tries per address per 5 minutes (`app/api/auth/login`).
+- “Lock workspace” in the sidebar footer signs out (`POST /api/auth/logout`).
 
 Two ways to provide the values — pick one:
 
@@ -247,27 +256,31 @@ Two ways to provide the values — pick one:
 
    ```bash
    cd /var/www/vhosts/example.com/bandhq
-   printf 'HQ_USER=dechire\nHQ_PASSWORD=%s\n' "$(openssl rand -base64 24)" > .env
+   printf 'HQ_PASSWORD=%s\n' "$(openssl rand -base64 24)" > .env
    chmod 600 .env
    ```
 
-Verify it — the app prints the state on start, and the root URL answers `401`:
+Verify it:
 
 ```bash
-curl -sI https://example.com/ | head -1          # HTTP/2 401
-curl -sI https://example.com/site | head -1      # HTTP/2 200
+curl -sI https://example.com/ | head -3            # HTTP/2 307 + location: /login?next=%2F
+curl -s -o /dev/null -w '%{http_code}\n' https://example.com/site          # 200
+curl -s -o /dev/null -w '%{http_code}\n' https://example.com/api/posts     # 401
 # in the Plesk app log / journalctl:
 # DECHIRE Band HQ ready on … (production, auth on)
 ```
 
-If the root URL still returns `200` and the log says `auth off`, the variable did not reach the process —
-set it again, restart, and check the log line.
+If the root URL still answers `200` and the log says `auth off`, the variable did not reach the process — set
+it again, restart, and check the log line.
+
+> Plesk's own **“Password protect directories”** feature is *not* needed and fights with this: it produces a
+> separate Basic-Auth prompt (and a 401/403 in front of the app). Leave it off; the login mask is the door.
 
 Want more? Add an IP allow-list for the workspace in the same nginx block:
 
 ```nginx
 # allow your home/office, block the rest of the world for the internal pages
-location ~ ^/(?!site) {
+location ~ ^/(?!site|login|api/auth) {
     allow 203.0.113.7;
     deny all;
     proxy_pass http://127.0.0.1:3000;
@@ -347,11 +360,11 @@ Schema changes run themselves on start (`ensureColumn` in `lib/db.ts`); `data/` 
 | `EACCES: permission denied, open '.../.next/trace'` + `Build directory is not writeable` | `.next` was created by another user (usually `root` from an earlier SSH build) → delete it and rebuild as the subscription user, see §2.1 |
 | `npm ci` → `EACCES … mkdir '…/node_modules'` | the document root itself is owned by `root:psaserv` → `chown -R <sub-user>:psacln` on the app directory (see §2.1) |
 | `EACCES` on `package-lock.json` after switching Plesk users | same cause → `chown -R <sub-user>:psacln` on the app directory |
-| Basic Auth prompt on `/site` | the matcher in `proxy.ts` must keep excluding `site`, `_next`, `api/files` |
+| login prompt on `/site` (the public page) | the public list in `proxy.ts` must keep `site`, `_next`, `api/files`, `/login` |
 | **no** password prompt at all | `HQ_PASSWORD` is not set (or not passed by Plesk) → the gate is opt-in; log line must say `auth on` |
 | Pages look unstyled after an update | stale build → `npm run build` again and restart |
 | Build dies with `Killed` | RAM → add swap: `fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile` |
-| Instagram upload: “media could not be fetched” | `publicBase` wrong, or `/api/files` is blocked by Basic Auth/firewall |
+| Instagram upload: “media could not be fetched” | `publicBase` wrong, or `/api/files` is blocked by a firewall / auth proxy |
 | Reload loop while developing on the server | `npm run dev` only — Turbopack watches the WAL files in `data/`. Use the built app in production |
 
 ### 9.1 403 Forbidden
