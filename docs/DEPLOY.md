@@ -169,6 +169,30 @@ HQ_PASSWORD=<long random string>
 What stays public: `/site`, `/_next` (JS/CSS), `/api/files/*` (the images Instagram has to fetch) and
 `/icon.svg`. Everything else asks for user + password.
 
+Two ways to provide the values — pick one:
+
+1. **Plesk Node.js panel → Custom environment variables** (or the systemd unit). Needs **Restart App**
+   afterwards, no rebuild.
+2. **A `.env` file** next to `package.json` (Next loads it on start, `.env` is git-ignored):
+
+   ```bash
+   cd /var/www/vhosts/example.com/bandhq
+   printf 'HQ_USER=dechire\nHQ_PASSWORD=%s\n' "$(openssl rand -base64 24)" > .env
+   chmod 600 .env
+   ```
+
+Verify it — the app prints the state on start, and the root URL answers `401`:
+
+```bash
+curl -sI https://example.com/ | head -1          # HTTP/2 401
+curl -sI https://example.com/site | head -1      # HTTP/2 200
+# in the Plesk app log / journalctl:
+# DECHIRE Band HQ ready on … (production, auth on)
+```
+
+If the root URL still returns `200` and the log says `auth off`, the variable did not reach the process —
+set it again, restart, and check the log line.
+
 Want more? Add an IP allow-list for the workspace in the same nginx block:
 
 ```nginx
@@ -247,6 +271,7 @@ Schema changes run themselves on start (`ensureColumn` in `lib/db.ts`); `data/` 
 | 502 / “Web application could not be started” (Passenger) | no `.next` (build missing), wrong Application Root, or startup file ≠ `server.js`; check the app log |
 | `SQLITE_CANTOPEN` or `EACCES: permission denied, open '.../data/band.db'` | `data/` not writable by the service user → `chown -R` |
 | Basic Auth prompt on `/site` | the matcher in `proxy.ts` must keep excluding `site`, `_next`, `api/files` |
+| **no** password prompt at all | `HQ_PASSWORD` is not set (or not passed by Plesk) → the gate is opt-in; log line must say `auth on` |
 | Pages look unstyled after an update | stale build → `npm run build` again and restart |
 | Build dies with `Killed` | RAM → add swap: `fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile` |
 | Instagram upload: “media could not be fetched” | `publicBase` wrong, or `/api/files` is blocked by Basic Auth/firewall |
