@@ -142,9 +142,17 @@ Plesk → **Websites & Domains → your domain → Node.js**:
 
 `server.js` is in the repo for exactly this case: Passenger needs a startable module, not a CLI.
 
-If your Plesk only accepts a Document Root inside `httpdocs`, put the project there
-(`httpdocs/bandhq`) and use `httpdocs/bandhq` for both fields — Next serves every request itself, so no file is
-ever read from the document root.
+**Paths are relative to the subscription root** – no `/var/www/vhosts`, no trailing slash:
+
+| Folder on disk | Value in Plesk |
+| --- | --- |
+| `/var/www/vhosts/example.com/dechire.example.com/www` | `/dechire.example.com/www` |
+| `/var/www/vhosts/example.com/httpdocs/bandhq` | `/httpdocs/bandhq` |
+
+Both fields may point at the **same folder** (that is what `/bandhq` does above). If your Plesk refuses that and
+insists on a subfolder of the application root, create an empty `public/` inside the project and use
+`/dechire.example.com/www/public` as Document Root – Next answers every request itself, so nothing is ever read
+from there. There is no `public/` in the repo on purpose.
 
 Then, in the same panel:
 
