@@ -36,15 +36,19 @@ export const dynamic = 'force-dynamic';
  * frame without sidebars and toolbar noise.
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const accentHex = getProfile().accentHex;
+  const profile = getProfile();
 
   return (
     <html lang="en">
       <head>
-        <style dangerouslySetInnerHTML={{ __html: accentCss(accentHex) }} />
+        <style
+          dangerouslySetInnerHTML={{ __html: accentCss(profile.accentHex, profile.accent2Hex) }}
+        />
       </head>
       <body>
-        <PaletteProvider accentHex={accentHex}>{children}</PaletteProvider>
+        <PaletteProvider accentHex={profile.accentHex} accent2Hex={profile.accent2Hex}>
+          {children}
+        </PaletteProvider>
       </body>
     </html>
   );

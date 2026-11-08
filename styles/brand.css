@@ -16,7 +16,7 @@
   flex-direction: column;
   gap: 42px;
   background:
-    radial-gradient(900px 600px at 12% -6%, rgba(185, 165, 232, 0.16), transparent 62%),
+    radial-gradient(900px 600px at 12% -6%, rgb(var(--accent-rgb) / 0.16), transparent 62%),
     radial-gradient(700px 700px at 96% 104%, rgba(107, 84, 166, 0.24), transparent 60%),
     #08070b;
   color: #efeaf7;
@@ -164,7 +164,7 @@
 }
 
 .bs-logo-tile.light figcaption {
-  color: #6b54a6;
+  color: var(--accent-deep);
 }
 
 .bs-rules-inline {

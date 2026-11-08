@@ -41,7 +41,7 @@ export default function SettingsPage() {
   const [docPickerOpen, setDocPickerOpen] = useState(false);
   const [docMediaId, setDocMediaId] = useState<number | null>(null);
   const [docImageUrl, setDocImageUrl] = useState<string | null>(null);
-  const [docMark, setDocMark] = useState(14);
+  const [docMark, setDocMark] = useState(30);
   const [docSaving, setDocSaving] = useState(false);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -49,6 +49,7 @@ export default function SettingsPage() {
   const [palette, setPalette] = useState<PaletteColor[]>([]);
   const [paletteSaving, setPaletteSaving] = useState(false);
   const [accent, setAccent] = useState(DEFAULT_ACCENT);
+  const [accent2, setAccent2] = useState<string | null>(null);
   const [accentSaving, setAccentSaving] = useState(false);
   const accentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -81,6 +82,7 @@ export default function SettingsPage() {
     const next: Profile = profileData.profile;
     setProfile(next);
     setAccent(next.accentHex ?? DEFAULT_ACCENT);
+    setAccent2(next.accent2Hex ?? null);
     setMedia(mediaData.media ?? []);
     setForm({
       bandName: next.bandName,
@@ -95,7 +97,7 @@ export default function SettingsPage() {
     setAvatarUrl(next.avatarUrl);
     setDocMediaId(next.docMediaId ?? null);
     setDocImageUrl(next.docImageUrl ?? null);
-    setDocMark(next.docMarkStrength ?? 14);
+    setDocMark(next.docMarkStrength ?? 30);
   };
 
   useEffect(() => {
@@ -174,7 +176,7 @@ export default function SettingsPage() {
       setProfile(data.profile);
       setDocMediaId(data.profile.docMediaId ?? null);
       setDocImageUrl(data.profile.docImageUrl ?? null);
-      setDocMark(data.profile.docMarkStrength ?? 14);
+      setDocMark(data.profile.docMarkStrength ?? 30);
       toast('Document sheet updated');
     } catch (error: any) {
       toast(error.message ?? 'Failed to save', 'error');
@@ -240,18 +242,18 @@ export default function SettingsPage() {
     }
   };
 
-  const persistAccent = async (hex: string) => {
+  const persistAccent = async (hex: string, hex2: string | null) => {
     setAccentSaving(true);
     try {
       const response = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accentHex: hex }),
+        body: JSON.stringify({ accentHex: hex, accent2Hex: hex2 }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? 'Failed to save');
       setProfile(data.profile);
-      window.dispatchEvent(new CustomEvent('accent:updated', { detail: hex }));
+      window.dispatchEvent(new CustomEvent('accent:updated', { detail: { accent: hex, accent2: hex2 } }));
       toast('Accent colour saved');
     } catch (error: any) {
       toast(error.message ?? 'Failed to save', 'error');
@@ -260,13 +262,24 @@ export default function SettingsPage() {
     }
   };
 
+  const queueAccentSave = (hex: string, hex2: string | null) => {
+    if (accentTimer.current) clearTimeout(accentTimer.current);
+    accentTimer.current = setTimeout(() => persistAccent(hex, hex2), 450);
+  };
+
   const pickAccent = (hex: string) => {
     if (!isHex(hex)) return;
     const value = hex.toLowerCase();
     setAccent(value);
-    applyAccent(value);
-    if (accentTimer.current) clearTimeout(accentTimer.current);
-    accentTimer.current = setTimeout(() => persistAccent(value), 450);
+    applyAccent(value, accent2);
+    queueAccentSave(value, accent2);
+  };
+
+  const pickAccent2 = (hex: string | null) => {
+    const value = hex && isHex(hex) ? hex.toLowerCase() : null;
+    setAccent2(value);
+    applyAccent(accent, value);
+    queueAccentSave(accent, value);
   };
 
   /* instagram ------------------------------------------------------------ */
@@ -671,46 +684,104 @@ export default function SettingsPage() {
             <IconEye size={16} />
             Interface accent
           </div>
-          <span className="mono small muted">{accentSaving ? 'Saving …' : accent}</span>
+          <span className="mono small muted">
+            {accentSaving ? 'Saving …' : accent2 ? `${accent} + ${accent2}` : accent}
+          </span>
         </div>
         <div className="panel-body">
           <p className="palette-intro">
-            The accent colour drives buttons, active navigation, focus rings and highlights across the whole app.
-            Pick one of your CI colours – it is stored with the profile and applied instantly, no reload needed.
+            The accent colour drives buttons, active navigation, focus rings, highlights – and every document
+            sheet. Pick a second colour if you want two-tone gradients and stamps; leave it on <em>Auto</em> and
+            the second tone is derived from the first one.
           </p>
 
-          <div className="accent-picker">
-            <div className="accent-swatches">
-              {palette.map((color) => (
-                <button
-                  key={`accent-${color.name}-${color.hex}`}
-                  type="button"
-                  className={`accent-swatch ${accent.toLowerCase() === color.hex.toLowerCase() ? 'on' : ''}`}
-                  style={{ background: isHex(color.hex) ? color.hex : '#000000' }}
-                  title={`${color.name} · ${color.hex}`}
-                  aria-label={`${color.name} ${color.hex}`}
-                  onClick={() => pickAccent(color.hex)}
-                />
-              ))}
-              <label className="accent-swatch custom" title="Pick any colour">
-                <input type="color" value={isHex(accent) ? accent : DEFAULT_ACCENT} onChange={(event) => pickAccent(event.target.value)} />
-              </label>
+          <div className="accent-rows">
+            <div className="accent-row">
+              <div className="accent-row-label">
+                <span className="mono small muted">Primary</span>
+                <span className="accent-value" style={{ background: isHex(accent) ? accent : DEFAULT_ACCENT }}>
+                  {accent}
+                </span>
+              </div>
+
+              <div className="accent-picker">
+                <div className="accent-swatches">
+                  {palette.map((color) => (
+                    <button
+                      key={`accent-${color.name}-${color.hex}`}
+                      type="button"
+                      className={`accent-swatch ${accent.toLowerCase() === color.hex.toLowerCase() ? 'on' : ''}`}
+                      style={{ background: isHex(color.hex) ? color.hex : '#000000' }}
+                      title={`${color.name} · ${color.hex}`}
+                      aria-label={`${color.name} ${color.hex}`}
+                      onClick={() => pickAccent(color.hex)}
+                    />
+                  ))}
+                  <label className="accent-swatch custom" title="Pick any colour">
+                    <input
+                      type="color"
+                      value={isHex(accent) ? accent : DEFAULT_ACCENT}
+                      onChange={(event) => pickAccent(event.target.value)}
+                    />
+                  </label>
+                </div>
+
+                <div className="accent-manual">
+                  <input
+                    className="input mono accent-hex"
+                    value={accent}
+                    spellCheck={false}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setAccent(value);
+                      if (isHex(value)) pickAccent(value);
+                    }}
+                  />
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => pickAccent(DEFAULT_ACCENT)}>
+                    CI primary
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="accent-manual">
-              <input
-                className="input mono accent-hex"
-                value={accent}
-                spellCheck={false}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setAccent(value);
-                  if (isHex(value)) pickAccent(value);
-                }}
-              />
-              <button type="button" className="btn btn-sm btn-ghost" onClick={() => pickAccent(DEFAULT_ACCENT)}>
-                CI primary
-              </button>
+            <div className="accent-row">
+              <div className="accent-row-label">
+                <span className="mono small muted">Secondary</span>
+                <span className="accent-value muted">{accent2 ?? 'auto'}</span>
+              </div>
+
+              <div className="accent-picker">
+                <div className="accent-swatches">
+                  <button
+                    type="button"
+                    className={`accent-swatch auto ${accent2 ? '' : 'on'}`}
+                    title="Auto – derived from the primary accent"
+                    onClick={() => pickAccent2(null)}
+                  >
+                    A
+                  </button>
+                  {palette.map((color) => (
+                    <button
+                      key={`accent2-${color.name}-${color.hex}`}
+                      type="button"
+                      className={`accent-swatch ${
+                        accent2 && accent2.toLowerCase() === color.hex.toLowerCase() ? 'on' : ''
+                      }`}
+                      style={{ background: isHex(color.hex) ? color.hex : '#000000' }}
+                      title={`${color.name} · ${color.hex}`}
+                      aria-label={`${color.name} ${color.hex}`}
+                      onClick={() => pickAccent2(color.hex)}
+                    />
+                  ))}
+                  <label className="accent-swatch custom" title="Pick any colour">
+                    <input
+                      type="color"
+                      value={isHex(accent2 ?? '') ? (accent2 as string) : accent}
+                      onChange={(event) => pickAccent2(event.target.value)}
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -720,6 +791,7 @@ export default function SettingsPage() {
             </button>
             <span className="chip accent">Active chip</span>
             <span className="accent-preview-dot" />
+            <span className="accent-preview-two-tone" aria-hidden="true" />
             <span className="mono small muted">preview</span>
           </div>
         </div>
@@ -735,26 +807,25 @@ export default function SettingsPage() {
         </div>
         <div className="panel-body">
           <p className="palette-intro">
-            Documents are laid out on a white band sheet. The image you pick sits behind the title block as a faint
-            watermark – present, but never in the way of lyrics, riders or contracts.
+            Documents are laid out like a flyer on bone paper: dark masthead with the band name, accent stamp
+            and a photo behind it. The photo is optional – without one the masthead stays plain black.
           </p>
 
           <div className="docsheet-grid">
             <div className="docsheet-preview" aria-hidden="true">
-              <span className="docsheet-preview-bar" />
+              {docImageUrl ? <img className="docsheet-preview-photo" src={docImageUrl} alt="" style={{ opacity: (docMark / 100) * 1.4 }} /> : null}
+              <span className="docsheet-preview-veil" />
               <div className="docsheet-preview-head">
                 <strong>DECHIRE</strong>
-                <em>Tech Rider</em>
+                <em>Final</em>
               </div>
+              <span className="docsheet-preview-bar" />
               <div className="docsheet-preview-lines">
                 <span />
                 <span />
                 <span />
                 <span />
               </div>
-              {docImageUrl ? (
-                <img src={docImageUrl} alt="" style={{ opacity: docMark / 100 }} />
-              ) : null}
             </div>
 
             <div className="docsheet-controls">
@@ -785,7 +856,7 @@ export default function SettingsPage() {
                 <input
                   type="range"
                   min={0}
-                  max={26}
+                  max={60}
                   step={1}
                   value={docMark}
                   disabled={!docImageUrl}
@@ -796,7 +867,8 @@ export default function SettingsPage() {
               </label>
 
               <p className="docsheet-hint">
-                Around 10–16% stays readable in print. Use a photo, a logo or a texture from your media library.
+                The photo sits in the dark masthead of the sheet – 20–40% keeps the band name readable.
+                Use a live shot, a poster or a texture from your media library.
               </p>
             </div>
           </div>

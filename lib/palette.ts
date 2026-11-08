@@ -72,17 +72,31 @@ const alpha = (hex: string, value: number) => {
   return `rgba(${r}, ${g}, ${b}, ${value})`;
 };
 
+const rgbTriple = (hex: string) => {
+  const { r, g, b } = toRgb(hex);
+  return `${r} ${g} ${b}`;
+};
+
 export const DEFAULT_ACCENT = '#b9a5e8';
+
+/** Second CI colour. `null` = derived automatically from the primary accent. */
+export type SecondaryAccent = string | null;
 
 /**
  * Everything the design system needs from one accent hex – the whole UI follows
- * the colour picked in Settings.
+ * the colour picked in Settings. A second colour is optional: without it the
+ * secondary accent is simply a darker shade of the first one.
  */
-export function accentTokens(hex: string): Record<string, string> {
+export function accentTokens(hex: string, hex2?: SecondaryAccent): Record<string, string> {
   const base = isHex(hex) ? hex.trim().toLowerCase() : DEFAULT_ACCENT;
+  const second = hex2 && isHex(hex2) ? hex2.trim().toLowerCase() : shade(base, 0.14);
   return {
     '--accent': base,
-    '--accent-2': shade(base, 0.14),
+    '--accent-rgb': rgbTriple(base),
+    '--accent-2': second,
+    '--accent-2-rgb': rgbTriple(second),
+    '--accent-2-deep': shade(second, 0.32),
+    '--accent-2-soft': alpha(second, 0.14),
     '--accent-deep': shade(base, 0.4),
     '--accent-soft': alpha(base, 0.12),
     '--accent-glow': alpha(base, 0.32),
@@ -93,16 +107,16 @@ export function accentTokens(hex: string): Record<string, string> {
 }
 
 /** Renders the accent tokens as a stylesheet for the server-rendered layout. */
-export function accentCss(hex: string) {
-  const entries = Object.entries(accentTokens(hex)).map(([key, value]) => `${key}:${value}`);
+export function accentCss(hex: string, hex2?: SecondaryAccent) {
+  const entries = Object.entries(accentTokens(hex, hex2)).map(([key, value]) => `${key}:${value}`);
   return `:root{${entries.join(';')}}`;
 }
 
 /** Applies the accent live in the browser (no reload needed). */
-export function applyAccent(hex: string) {
+export function applyAccent(hex: string, hex2?: SecondaryAccent) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  for (const [key, value] of Object.entries(accentTokens(hex))) {
+  for (const [key, value] of Object.entries(accentTokens(hex, hex2))) {
     root.style.setProperty(key, value);
   }
 }

@@ -564,7 +564,7 @@
 .media-add:hover {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(185, 165, 232, 0.06);
+  background: rgb(var(--accent-rgb) / 0.06);
 }
 
 .input-icon {
@@ -632,7 +632,7 @@
   background: linear-gradient(160deg, #2b2439, #0b0a10 38%, #1a1526);
   box-shadow:
     0 44px 90px -34px rgba(0, 0, 0, 0.95),
-    0 0 0 1px rgba(185, 165, 232, 0.16),
+    0 0 0 1px rgb(var(--accent-rgb) / 0.16),
     inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
@@ -732,7 +732,7 @@
   height: 78px;
   border-radius: 99px;
   padding: 2.5px;
-  background: linear-gradient(140deg, #b9a5e8, #6b54a6 55%, #241f33);
+  background: linear-gradient(140deg, var(--accent), var(--accent-deep) 55%, #241f33);
   flex-shrink: 0;
 }
 
@@ -833,7 +833,7 @@
 
 .ig-highlight-ring.active {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(185, 165, 232, 0.18);
+  box-shadow: 0 0 0 2px rgb(var(--accent-rgb) / 0.18);
 }
 
 .ig-highlight-ring img {
@@ -1341,11 +1341,11 @@
 }
 
 .queue-item:hover {
-  background: rgba(185, 165, 232, 0.05);
+  background: rgb(var(--accent-rgb) / 0.05);
 }
 
 .queue-item.active {
-  background: rgba(185, 165, 232, 0.11);
+  background: rgb(var(--accent-rgb) / 0.11);
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
@@ -1547,7 +1547,7 @@
 
 .picker-item.selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(185, 165, 232, 0.28);
+  box-shadow: 0 0 0 2px rgb(var(--accent-rgb) / 0.28);
 }
 
 .picker-thumb {

@@ -90,6 +90,8 @@ export interface Profile {
   avatarUrl: string | null;
   highlightNames: string[];
   accentHex: string;
+  /** Optional second CI colour – `null` derives it from the accent. */
+  accent2Hex: string | null;
   /** Watermark used on document sheets – subtle by design. */
   docMediaId: number | null;
   docImageUrl: string | null;

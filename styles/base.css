@@ -15,10 +15,14 @@
   --muted: #9a91b2;
   --muted-2: #6e6684;
   --accent: #b9a5e8;
+  --accent-rgb: 185 165 232;
   --accent-2: #9c84d6;
+  --accent-2-rgb: 156 132 214;
+  --accent-2-deep: #6a5994;
+  --accent-2-soft: rgb(var(--accent-2-rgb) / 0.14);
   --accent-deep: #6b54a6;
-  --accent-soft: rgba(185, 165, 232, 0.12);
-  --accent-glow: rgba(150, 120, 220, 0.32);
+  --accent-soft: rgb(var(--accent-rgb) / 0.12);
+  --accent-glow: rgb(var(--accent-rgb) / 0.32);
   --ok: #7fd3b0;
   --warn: #e8c07d;
   --danger: #e4778b;
@@ -122,14 +126,14 @@ button {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(185, 165, 232, 0.18);
+  background: rgb(var(--accent-rgb) / 0.18);
   border-radius: 99px;
   border: 3px solid transparent;
   background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(185, 165, 232, 0.35);
+  background: rgb(var(--accent-rgb) / 0.35);
   background-clip: content-box;
 }
 
@@ -241,12 +245,12 @@ button {
 }
 
 .nav-item:hover {
-  background: rgba(185, 165, 232, 0.07);
+  background: rgb(var(--accent-rgb) / 0.07);
   color: var(--text);
 }
 
 .nav-item.active {
-  background: linear-gradient(90deg, rgba(185, 165, 232, 0.16), rgba(185, 165, 232, 0.03));
+  background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.16), rgb(var(--accent-rgb) / 0.03));
   color: #fff;
 }
 
@@ -276,7 +280,7 @@ button {
   padding: 14px 12px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(185, 165, 232, 0.04);
+  background: rgb(var(--accent-rgb) / 0.04);
 }
 
 .sidebar-foot .mono {
@@ -353,7 +357,7 @@ button {
 /* ------------------------------------------------------------- Buttons */
 
 .btn {
-  --btn-bg: rgba(185, 165, 232, 0.08);
+  --btn-bg: rgb(var(--accent-rgb) / 0.08);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -372,8 +376,8 @@ button {
 }
 
 .btn:hover {
-  background: rgba(185, 165, 232, 0.16);
-  border-color: rgba(185, 165, 232, 0.4);
+  background: rgb(var(--accent-rgb) / 0.16);
+  border-color: rgb(var(--accent-rgb) / 0.4);
   transform: translateY(-1px);
 }
 
@@ -533,8 +537,8 @@ button {
 .input:focus,
 .textarea:focus,
 .select:focus {
-  border-color: rgba(185, 165, 232, 0.55);
-  box-shadow: 0 0 0 3px rgba(185, 165, 232, 0.12);
+  border-color: rgb(var(--accent-rgb) / 0.55);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.12);
   background: rgba(10, 8, 16, 0.95);
 }
 
@@ -572,7 +576,7 @@ button {
   padding: 4px 9px;
   border-radius: 99px;
   border: 1px solid var(--line);
-  background: rgba(185, 165, 232, 0.06);
+  background: rgb(var(--accent-rgb) / 0.06);
   font-family: var(--font-mono);
   font-size: 9.5px;
   letter-spacing: 0.14em;
@@ -583,8 +587,8 @@ button {
 
 .chip.accent {
   color: var(--accent);
-  border-color: rgba(185, 165, 232, 0.35);
-  background: rgba(185, 165, 232, 0.1);
+  border-color: rgb(var(--accent-rgb) / 0.35);
+  background: rgb(var(--accent-rgb) / 0.1);
 }
 
 .dot {
@@ -616,8 +620,8 @@ button {
 
 .status.scheduled {
   color: var(--accent);
-  background: rgba(185, 165, 232, 0.12);
-  border-color: rgba(185, 165, 232, 0.3);
+  background: rgb(var(--accent-rgb) / 0.12);
+  border-color: rgb(var(--accent-rgb) / 0.3);
 }
 
 .status.published {
@@ -661,9 +665,9 @@ button {
 }
 
 .seg button.on {
-  background: rgba(185, 165, 232, 0.16);
+  background: rgb(var(--accent-rgb) / 0.16);
   color: #fff;
-  box-shadow: inset 0 0 0 1px rgba(185, 165, 232, 0.28);
+  box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / 0.28);
 }
 
 /* -------------------------------------------------------------- Modal */
@@ -803,8 +807,8 @@ button {
   border-radius: 16px;
   display: grid;
   place-items: center;
-  background: rgba(185, 165, 232, 0.08);
-  border: 1px dashed rgba(185, 165, 232, 0.28);
+  background: rgb(var(--accent-rgb) / 0.08);
+  border: 1px dashed rgb(var(--accent-rgb) / 0.28);
   color: var(--accent);
 }
 
@@ -822,7 +826,7 @@ button {
   width: 18px;
   height: 18px;
   border-radius: 99px;
-  border: 2px solid rgba(185, 165, 232, 0.25);
+  border: 2px solid rgb(var(--accent-rgb) / 0.25);
   border-top-color: var(--accent);
   animation: spin 0.7s linear infinite;
 }
@@ -894,7 +898,7 @@ button {
 .prose code {
   font-family: var(--font-mono);
   font-size: 0.88em;
-  background: rgba(185, 165, 232, 0.12);
+  background: rgb(var(--accent-rgb) / 0.12);
   border: 1px solid var(--line);
   padding: 1px 5px;
   border-radius: 5px;
@@ -924,7 +928,7 @@ button {
 
 .prose a {
   text-decoration: underline;
-  text-decoration-color: rgba(185, 165, 232, 0.5);
+  text-decoration-color: rgb(var(--accent-rgb) / 0.5);
   text-underline-offset: 3px;
 }
 

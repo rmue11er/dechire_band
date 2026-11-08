@@ -67,7 +67,7 @@
 
 .folder-tab.on {
   background: var(--accent-soft);
-  border-color: rgba(185, 165, 232, 0.4);
+  border-color: rgb(var(--accent-rgb) / 0.4);
   color: #fff;
 }
 
@@ -94,12 +94,12 @@
 
 .note-item:hover {
   border-color: var(--line-strong);
-  background: rgba(185, 165, 232, 0.05);
+  background: rgb(var(--accent-rgb) / 0.05);
 }
 
 .note-item.active {
-  border-color: rgba(185, 165, 232, 0.5);
-  background: linear-gradient(90deg, rgba(185, 165, 232, 0.14), rgba(185, 165, 232, 0.03));
+  border-color: rgb(var(--accent-rgb) / 0.5);
+  background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.14), rgb(var(--accent-rgb) / 0.03));
 }
 
 .note-item-top {
@@ -207,7 +207,7 @@
 
 .btn-icon.pinned {
   color: var(--accent);
-  border-color: rgba(185, 165, 232, 0.42);
+  border-color: rgb(var(--accent-rgb) / 0.42);
   background: var(--accent-soft);
 }
 
@@ -252,13 +252,13 @@
 }
 
 .tool-btn:hover {
-  background: rgba(185, 165, 232, 0.08);
+  background: rgb(var(--accent-rgb) / 0.08);
   color: var(--text);
 }
 
 .tool-btn.on {
-  background: rgba(185, 165, 232, 0.18);
-  border-color: rgba(185, 165, 232, 0.3);
+  background: rgb(var(--accent-rgb) / 0.18);
+  border-color: rgb(var(--accent-rgb) / 0.3);
   color: #fff;
 }
 

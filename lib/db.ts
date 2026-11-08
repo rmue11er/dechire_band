@@ -344,8 +344,9 @@ function createConnection(): DatabaseSync {
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec(SCHEMA);
   ensureColumn(db, 'profile', 'accent_hex', "TEXT NOT NULL DEFAULT '#b9a5e8'");
+  ensureColumn(db, 'profile', 'accent_2_hex', 'TEXT');
   ensureColumn(db, 'profile', 'doc_media_id', 'INTEGER');
-  ensureColumn(db, 'profile', 'doc_mark_strength', 'INTEGER NOT NULL DEFAULT 14');
+  ensureColumn(db, 'profile', 'doc_mark_strength', 'INTEGER NOT NULL DEFAULT 30');
   ensureColumn(db, 'posts', 'ig_media_id', 'TEXT');
   ensureColumn(db, 'posts', 'ig_permalink', 'TEXT');
   ensureColumn(db, 'posts', 'ig_published_at', 'TEXT');

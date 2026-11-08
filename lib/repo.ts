@@ -538,9 +538,10 @@ export function getProfile(): Profile {
       avatarUrl: null,
       highlightNames: [],
       accentHex: '#b9a5e8',
+      accent2Hex: null,
       docMediaId: null,
       docImageUrl: null,
-      docMarkStrength: 14,
+      docMarkStrength: 30,
       updatedAt: new Date().toISOString(),
     };
   }
@@ -557,9 +558,10 @@ export function getProfile(): Profile {
     avatarUrl: avatar?.url ?? null,
     highlightNames: parseList(row.highlight_names),
     accentHex: row.accent_hex || '#b9a5e8',
+    accent2Hex: row.accent_2_hex || null,
     docMediaId: row.doc_media_id == null ? null : Number(row.doc_media_id),
     docImageUrl: docImage?.url ?? null,
-    docMarkStrength: Number(row.doc_mark_strength ?? 14),
+    docMarkStrength: Number(row.doc_mark_strength ?? 30),
     updatedAt: row.updated_at,
   };
 }
@@ -577,6 +579,7 @@ export function updateProfile(patch: Record<string, any>) {
     avatarMediaId: 'avatar_media_id',
     highlightNames: 'highlight_names',
     accentHex: 'accent_hex',
+    accent2Hex: 'accent_2_hex',
     docMediaId: 'doc_media_id',
     docMarkStrength: 'doc_mark_strength',
   };

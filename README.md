@@ -131,18 +131,20 @@ npm run typecheck    # tsc --noEmit
 - Templates for every document type, drawn up in the band’s own wording (line-up, channel list,
   monitoring, backline, hospitality).
 - Tables are real tables: insert, add/remove rows and columns, delete.
-- **CI layout**: every document is rendered as a branded sheet – logo, band name, document type,
-  date, handle in the header, accent rule in the CI colour, footer with website and “Post-hardcore /// …”.
-  The HTML export and the print/PDF output use the same design.
-- **Sheet design**: accent bar at the top edge, crop marks in the corners, a mono meta strip
-  (`No. / Date / Contact`), a kicker + big title with an accent rule, hairline section headings,
-  striped tables and a closing footer line.
-- **Sheet image** (Settings → Document sheet): pick any photo or logo from the media library – it sits
-  behind the title area as a faint, grayscale, multiplied watermark. Strength is adjustable (0–26 %,
-  default 14 %) and saved with the profile, so screen, print and HTML export stay identical.
+- **CI layout**: every document is rendered as a branded sheet – not a business letter. Dark masthead with
+  logo, wordmark in the display face, tagline, a rotated FINAL/DRAFT **stamp** in the accent colour and a mono
+  meta row (`type · No. · date · handle`); below it bone paper with `///` kicker, uppercase display title,
+  two-tone accent rule, uppercase section headings with accent ticks, tables with night headers, and a footer
+  line. Everything is driven by `--accent` / `--accent-2`, so the sheet follows the accent you pick.
+- **Sheet image** (Settings → Document sheet): pick any photo from the media library – it sits in the dark
+  masthead behind the wordmark. Strength is adjustable (0–60 %, default 30 %) and saved with the profile,
+  so screen, print and HTML export stay identical. Without an image the masthead stays plain black.
+- **Emoji picker** in the toolbar: band, mood, orga, road and faces – plus your last ten picks (stored
+  locally). Inserts at the cursor position.
 - Autosave (900 ms), draft/final status, tags, search and type filter.
 - Export as **print-ready PDF** (print stylesheet, only the sheet on paper) or as a standalone HTML
-  file – images are inlined as data URLs, so the exported file works offline.
+  file with the same layout – logo and sheet image are inlined as data URLs, the accent is copied as
+  a CSS variable, so the exported file works offline and in the band's current colours.
 
 ### 7. Brand sheet (`/brand`)
 - One page CI guide generated from the live profile and palette: logo on night and bone,
@@ -187,14 +189,24 @@ npm run typecheck    # tsc --noEmit
   **published posts**, and the site accent runs through the same token system as the UI.
 
 ### Dashboard (`/`)
-Key numbers, upcoming releases with a countdown, feed excerpt, latest assets, notes.
+Deliberately small – only what moves the band forward:
+
+- **Coming up** – one chronological timeline of scheduled posts *and* dated milestones (with thumbnail,
+  status, relative day and open-checklist count). Answers “what is next”, not “what exists”.
+- **Needs you** – rule-based to-dos from the live data: drafts without a visual or caption, posts that go
+  live within three days without media, milestones with open tasks in the next three weeks. Sorted by urgency.
+- **Performance** – reach total, average reach, best weekday and the last published post (your own numbers).
+- **Shortcuts** – documents, studio, notes, website – plus the band’s base figures in the panel header.
+
+No feed preview, no media/notes counters, no wall of tiles.
 
 ### Settings (`/settings`)
 Band profile (name, handle, bio, website, followers, highlights, avatar from the library) –
-feeding straight into the Instagram preview. Plus the **interface accent colour**, the
-**Instagram connection**, **backup & restore**, the **bin**, the **CI palette editor** and two ways to start over:
-**remove all demo data** (empties posts, media files, notes, milestones, documents, snippets, numbers and the
-bin, leaves designs/website/palette/fonts alone and does not come back) or **reset** (wipe + demo data again).
+feeding straight into the Instagram preview. Plus the **interface accent colour** (primary + optional
+secondary), the **document sheet image**, the **Instagram connection**, **backup & restore**, the **bin**,
+the **CI palette editor** and two ways to start over: **remove all demo data** (empties posts, media files,
+notes, milestones, documents, snippets, numbers and the bin, leaves designs/website/palette/fonts alone and
+does not come back) or **reset** (wipe + demo data again).
 
 ### Backup, bin & search
 - **Backup** downloads a ZIP with a consistent database copy, every upload and a manifest; **restore** imports
@@ -225,10 +237,17 @@ row “Band CI” above the neutral tones – with names as tooltips.
 ### Interface accent colour
 
 The UI accent (buttons, active navigation, focus rings, chips) is stored as `profile.accent_hex`
-and derived into every token the design system needs (`--accent`, `--accent-2`, `--accent-deep`,
-`--accent-soft`, `--accent-glow`, `--line`, `--line-strong`, `--shadow-accent`).
+and derived into every token the design system needs (`--accent`, `--accent-rgb`, `--accent-2`,
+`--accent-2-rgb`, `--accent-2-deep`, `--accent-deep`, `--accent-soft`, `--accent-glow`, `--line`,
+`--line-strong`, `--shadow-accent`).
 The layout renders it server-side so there is no flash, and the settings page applies it instantly
 while picking (`accent:updated` event). Pick a CI colour, any hex, or jump back to the CI primary.
+
+**Second colour (optional):** `profile.accent_2_hex` sets `--accent-2`. Leave it on *Auto* and the second
+tone is derived from the first one; pick a CI colour and gradients, stamps and the second half of two-tone
+elements switch over as well. Nothing in the app hardcodes a lavender value any more – every translucent
+surface uses `rgb(var(--accent-rgb) / x)`, so notes, studio, planner, media, documents, dashboard and
+the brand sheet all follow the accent you pick.
 
 ---
 

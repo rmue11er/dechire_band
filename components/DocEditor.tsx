@@ -37,6 +37,7 @@ import {
   IconUnderline,
   IconUndo,
 } from '@/components/icons';
+import EmojiPicker from '@/components/EmojiPicker';
 import { Segmented } from '@/components/ui';
 import { usePalette } from '@/components/PaletteProvider';
 import { DOC_KINDS, docKindLabel } from '@/lib/kinds';
@@ -217,101 +218,109 @@ export default function DocEditor({
     const kindLabel = DOC_KINDS.find((item) => item.value === kind)?.label ?? 'Document';
     const logo = profile?.avatarUrl ? await toDataUrl(profile.avatarUrl) : '';
     const mark = profile?.docImageUrl ? await toDataUrl(profile.docImageUrl) : '';
-    const strength = ((profile?.docMarkStrength ?? 14) / 100).toFixed(3);
+    const strength = ((profile?.docMarkStrength ?? 30) / 100).toFixed(3);
     const dateLabel = new Date().toLocaleDateString('en-GB', { dateStyle: 'long' });
     const docNo = String(doc.id).padStart(3, '0');
+    const rootStyle = getComputedStyle(document.documentElement);
+    const token = (name: string, fallback: string) =>
+      rootStyle.getPropertyValue(name).trim() || fallback;
+    const accent = token('--accent', ciPrimary);
+    const accent2 = token('--accent-2', ciPrimary);
+    const accentDeep = token('--accent-deep', ciPrimary);
+    const accentRgb = token('--accent-rgb', '185 165 232');
+    const tagline = profile?.bio?.split('\n')[0] || 'Post-hardcore // Ruhr';
+    const mono = 'ui-monospace, "SF Mono", Menlo, monospace';
+    const display = '"Anton", "Impact", sans-serif';
     const html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title>${title || 'Document'} · ${bandName}</title>
 <style>
-  @page { margin: 16mm; }
+  @page { margin: 14mm; }
   * { box-sizing: border-box; }
-  :root { --ci: ${ciPrimary}; --ci-deep: #6b54a6; --mark: ${strength}; }
-  body { margin: 0; padding: 32px 20px 56px; background: #efedf4; color: #1a1722; font: 14.5px/1.7 "Helvetica Neue", Arial, sans-serif; }
-  .sheet { position: relative; overflow: hidden; max-width: 800px; margin: 0 auto; padding: 46px 46px 52px; background: #fdfdfd; box-shadow: 0 18px 44px rgba(20, 16, 30, 0.14); }
-  .top { position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, var(--ci-deep), var(--ci)); }
-  .corner { position: absolute; width: 13px; height: 13px; border: 0 solid #d3cce2; }
-  .corner.tl { top: 16px; left: 16px; border-top-width: 1px; border-left-width: 1px; }
-  .corner.tr { top: 16px; right: 16px; border-top-width: 1px; border-right-width: 1px; }
-  .corner.bl { bottom: 16px; left: 16px; border-bottom-width: 1px; border-left-width: 1px; }
-  .corner.br { bottom: 16px; right: 16px; border-bottom-width: 1px; border-right-width: 1px; }
-  .mark { position: absolute; right: -36px; bottom: -52px; width: 48%; max-width: 340px; opacity: var(--mark); filter: grayscale(1) contrast(1.06); mix-blend-mode: multiply; }
-  .sheet > *:not(.top):not(.corner):not(.mark) { position: relative; z-index: 1; }
-  .brand { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding-bottom: 16px; border-bottom: 1px solid #e6e1f0; }
-  .brand-left { display: flex; align-items: center; gap: 13px; }
-  .brand-left img { width: 44px; height: 44px; object-fit: cover; border-radius: 4px; background: #f4f1fa; box-shadow: 0 0 0 1px #e8e3f2; }
-  .brand-name { display: block; font-size: 19px; line-height: 1; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: #14121a; }
-  .brand-sub { display: block; margin-top: 7px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 8.5px; letter-spacing: .18em; text-transform: uppercase; color: #8f88a3; }
-  .brand-type { display: grid; justify-items: end; gap: 7px; text-align: right; }
-  .badge { padding: 3px 8px 2px; border-radius: 2px; border: 1px solid #e0daea; font-family: ui-monospace, Menlo, monospace; font-size: 8px; letter-spacing: .2em; text-transform: uppercase; color: #8f88a3; }
-  .badge.final { border-color: #d6c9f0; background: rgba(185, 165, 232, .16); color: #4d3d7e; }
-  .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); border-bottom: 1px solid #e6e1f0; margin: 0 0 30px; }
-  .meta > span { padding: 11px 16px; border-left: 1px solid #f1edf8; font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #2b2537; }
-  .meta > span:first-child { padding-left: 0; border-left: 0; }
-  .meta em { display: block; margin-bottom: 5px; font-style: normal; font-size: 8px; letter-spacing: .26em; text-transform: uppercase; color: #a99fbe; }
-  .kicker { font-family: ui-monospace, Menlo, monospace; font-size: 9px; letter-spacing: .26em; text-transform: uppercase; color: var(--ci-deep); }
-  h1.title { margin: 11px 0 0; font-size: 32px; line-height: 1.12; letter-spacing: -.022em; color: #0f0d14; }
-  .rule { display: block; width: 54px; height: 3px; margin: 18px 0 26px; border-radius: 2px; background: linear-gradient(90deg, var(--ci-deep), var(--ci)); }
-  .body h2 { display: flex; align-items: baseline; gap: 11px; margin: 30px 0 10px; font-size: 17px; color: #14121a; }
-  .body h2::before { content: ''; width: 3px; height: 13px; border-radius: 2px; background: linear-gradient(180deg, var(--ci-deep), var(--ci)); transform: translateY(1px); }
-  .body h2::after { content: ''; flex: 1 1 auto; height: 1px; transform: translateY(-3px); background: linear-gradient(90deg, #e3ddf0, rgba(227, 221, 240, 0)); }
-  .body h3 { margin: 20px 0 6px; font-size: 14.5px; color: #24202f; }
+  :root { --accent: ${accent}; --accent-2: ${accent2}; --accent-deep: ${accentDeep}; --accent-rgb: ${accentRgb}; --mark: ${strength}; }
+  body { margin: 0; padding: 26px 16px 48px; background: #14111c; color: #1d1826; font: 14.5px/1.72 "Inter", "Helvetica Neue", Arial, sans-serif; }
+  .sheet { position: relative; overflow: hidden; max-width: 820px; margin: 0 auto; background: #f4f1ea; background-image: radial-gradient(rgb(20 16 26 / .045) .5px, transparent .6px); background-size: 3px 3px; box-shadow: 0 26px 60px -30px rgba(0, 0, 0, .8); }
+  .mast { position: relative; overflow: hidden; padding: 22px 34px 0; background: #0b0a10; color: #f6f2ff; }
+  .photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; opacity: var(--mark); filter: grayscale(1) contrast(1.1) brightness(1.05); }
+  .veil { position: absolute; inset: 0; background: linear-gradient(100deg, rgb(11 10 16 / .95) 0%, rgb(11 10 16 / .82) 42%, rgb(11 10 16 / .52) 100%); }
+  .mast-inner { position: relative; z-index: 2; display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding-bottom: 14px; }
+  .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+  .brand img { width: 40px; height: 40px; object-fit: cover; border-radius: 3px; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); }
+  .wordmark { display: grid; gap: 5px; }
+  .wordmark strong { font-family: ${display}; font-weight: 400; font-size: 27px; line-height: .9; letter-spacing: .015em; text-transform: uppercase; color: #fbf8ff; }
+  .wordmark em { font-style: normal; font-family: ${mono}; font-size: 8px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent); opacity: .85; }
+  .stamp { transform: rotate(-7deg); padding: 5px 10px 4px; border: 2px solid var(--accent); border-radius: 2px; font-family: ${mono}; font-size: 9px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); background: rgb(var(--accent-rgb) / .08); }
+  .stamp.draft { border-color: rgba(255, 255, 255, .28); color: rgba(255, 255, 255, .55); background: none; }
+  .mast-meta { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 0 13px; border-top: 1px solid rgba(255, 255, 255, .12); font-family: ${mono}; font-size: 8.5px; letter-spacing: .18em; text-transform: uppercase; color: rgba(255, 255, 255, .62); }
+  .mast-meta .kind { color: var(--accent); }
+  .mast::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); z-index: 2; }
+  .body { position: relative; padding: 30px 34px 44px; }
+  .kicker { display: inline-flex; align-items: baseline; gap: 8px; font-family: ${mono}; font-size: 9px; letter-spacing: .26em; text-transform: uppercase; color: var(--accent-deep); }
+  .kicker b { font-family: ${display}; font-weight: 400; font-size: 11px; letter-spacing: 0; color: var(--accent-2); }
+  h1 { margin: 9px 0 0; font-family: ${display}; font-weight: 400; font-size: 36px; line-height: 1.02; letter-spacing: .005em; text-transform: uppercase; color: #100d16; }
+  .rule { display: block; width: 64px; height: 4px; margin: 16px 0 24px; background: linear-gradient(90deg, var(--accent-deep), var(--accent-2)); }
+  .body h2 { display: flex; align-items: baseline; gap: 11px; margin: 30px 0 10px; font-size: 11.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #100d16; }
+  .body h2::before { content: ''; width: 3px; height: 13px; border-radius: 1px; background: linear-gradient(180deg, var(--accent-deep), var(--accent-2)); transform: translateY(2px); }
+  .body h2::after { content: ''; flex: 1 1 auto; height: 1px; transform: translateY(-2px); background: linear-gradient(90deg, rgb(16 13 22 / .18), rgb(16 13 22 / 0)); }
+  .body h1 { font-family: ${display}; font-weight: 400; font-size: 22px; letter-spacing: .01em; text-transform: uppercase; }
+  .body h3 { margin: 20px 0 6px; font-size: 14px; color: #14101c; }
   .body p { margin: 0 0 11px; }
-  .body a { color: #5b3fa8; text-decoration: underline; text-underline-offset: 2px; }
+  .body strong { color: #0d0a12; }
+  .body a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 2px; }
   .body ul, .body ol { padding-left: 20px; }
-  .body li::marker { color: #8d7cb8; }
-  .body blockquote { margin: 16px 0; padding: 12px 16px; border-left: 3px solid var(--ci); background: linear-gradient(90deg, rgba(185, 165, 232, .11), rgba(185, 165, 232, 0)); font-style: italic; color: #332c42; }
-  .body mark { background: #efe6ff; color: #2c2340; }
-  .body code { padding: 1px 5px; border-radius: 3px; background: #f1eef7; font-family: ui-monospace, Menlo, monospace; font-size: .86em; }
-  .body pre { padding: 13px 15px; border: 1px solid #e4dff0; border-radius: 6px; background: #f7f5fb; overflow-x: auto; }
-  .body hr { margin: 24px 0; border: 0; border-top: 1px solid #e2dee8; }
-  .body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12.5px; border: 1px solid #e2dcee; }
-  .body th, .body td { border: 1px solid #e9e4f2; padding: 9px 11px; text-align: left; vertical-align: top; }
-  .body th { border-bottom: 2px solid #ddd4ee; background: #f6f3fc; font-family: ui-monospace, Menlo, monospace; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #5c5470; }
-  .body tbody tr:nth-child(even) td { background: #fbfaff; }
+  .body li::marker { color: var(--accent-deep); }
+  .body blockquote { margin: 16px 0; padding: 12px 16px; border-left: 3px solid var(--accent-2); background: rgb(var(--accent-rgb) / .08); font-style: italic; color: #2f283c; }
+  .body mark { background: rgb(var(--accent-rgb) / .38); color: #241d31; }
+  .body code { padding: 1px 5px; border-radius: 3px; background: rgb(16 13 22 / .07); font-family: ${mono}; font-size: .86em; }
+  .body pre { padding: 13px 15px; border: 1px solid rgb(16 13 22 / .16); border-radius: 4px; background: rgb(16 13 22 / .045); overflow-x: auto; }
+  .body hr { margin: 24px 0; border: 0; border-top: 1px solid rgb(16 13 22 / .16); }
+  .body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12.5px; border: 1px solid rgb(16 13 22 / .2); }
+  .body th, .body td { border: 1px solid rgb(16 13 22 / .18); padding: 8px 11px; text-align: left; vertical-align: top; }
+  .body th { background: #100d16; border-color: #100d16; font-family: ${mono}; font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; color: #f4f1ea; }
+  .body th * { color: #f4f1ea; }
+  .body tbody tr:nth-child(even) td { background: rgb(16 13 22 / .035); }
   .body table p { margin: 0; }
   .body ul[data-type="taskList"] { list-style: none; padding-left: 0; }
   .body ul[data-type="taskList"] li { display: flex; gap: 8px; align-items: flex-start; }
-  .body ul[data-type="taskList"] input { accent-color: #6b54a6; }
-  .foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 44px; padding-top: 14px; border-top: 1px solid #e6e1f0; font-family: ui-monospace, Menlo, monospace; font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase; color: #9b94ad; }
-  .foot span:first-child::before { content: ''; display: inline-block; width: 5px; height: 5px; margin-right: 8px; border-radius: 50%; background: var(--ci-deep); vertical-align: 1px; }
-  @media print { body { padding: 0; background: #fff; } .sheet { max-width: none; box-shadow: none; padding: 0; } .corner { display: none; } }
+  .body ul[data-type="taskList"] input { accent-color: var(--accent-deep); }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 40px; padding-top: 12px; border-top: 1px solid rgb(16 13 22 / .18); font-family: ${mono}; font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase; color: rgb(16 13 22 / .5); }
+  .foot span:first-child::before { content: ''; display: inline-block; width: 5px; height: 5px; margin-right: 8px; background: var(--accent-2); vertical-align: 1px; }
+  @media print { body { padding: 0; background: #fff; } .sheet { max-width: none; box-shadow: none; } }
 </style>
 </head>
 <body>
 <div class="sheet">
-  <span class="top"></span>
-  <span class="corner tl"></span>
-  <span class="corner tr"></span>
-  <span class="corner bl"></span>
-  <span class="corner br"></span>
-  ${mark ? `<img class="mark" src="${mark}" alt="">` : ''}
-  <header class="brand">
-    <div class="brand-left">
-      ${logo ? `<img src="${logo}" alt="">` : ''}
-      <div>
-        <span class="brand-name">${bandName}</span>
-        <span class="brand-sub">${profile?.bio?.split('\n')[0] || 'Post-hardcore // Ruhr'}</span>
+  <header class="mast">
+    ${mark ? `<img class="photo" src="${mark}" alt="">` : ''}
+    <span class="veil"></span>
+    <div class="mast-inner">
+      <div class="brand">
+        ${logo ? `<img src="${logo}" alt="">` : ''}
+        <span class="wordmark">
+          <strong>${bandName}</strong>
+          <em>${tagline}</em>
+        </span>
       </div>
+      <span class="stamp ${status === 'final' ? '' : 'draft'}">${status === 'final' ? 'Final' : 'Draft'}</span>
     </div>
-    <div class="brand-type">
-      <span class="badge ${status === 'final' ? 'final' : ''}">${status === 'final' ? 'Final' : 'Draft'}</span>
+    <div class="mast-meta">
+      <span class="kind">${kindLabel}</span>
+      <span>No. ${docNo}</span>
+      <span>${dateLabel}</span>
+      ${profile?.handle ? `<span>@${profile.handle}</span>` : ''}
     </div>
   </header>
-  <div class="meta">
-    <span><em>No.</em>${docNo}</span>
-    <span><em>Date</em>${dateLabel}</span>
-    ${profile?.handle ? `<span><em>Contact</em>@${profile.handle}</span>` : ''}
-  </div>
-  <span class="kicker">${kindLabel} · ${bandName.toUpperCase()}</span>
-  <h1 class="title">${title || 'Document'}</h1>
-  <span class="rule"></span>
-  <div class="body">${body}</div>
-  <div class="foot">
-    <span>Post-hardcore /// ${bandName.toUpperCase()}</span>
-    <span>${profile?.website ?? ''}</span>
+  <div class="body">
+    <span class="kicker"><b>///</b>${kindLabel}</span>
+    <h1>${title || 'Document'}</h1>
+    <span class="rule"></span>
+    ${body}
+    <div class="foot">
+      <span>${bandName} /// Post-hardcore</span>
+      <span>${profile?.website ?? ''}</span>
+    </div>
   </div>
 </div>
 </body>
@@ -489,72 +498,62 @@ export default function DocEditor({
             </button>
           </>
         ) : null}
+        <span className="tool-sep" />
+        <EmojiPicker onPick={(emoji) => editor.chain().focus().insertContent(emoji).run()} />
       </div>
 
       <div
         className="doc-page"
-        style={{ '--doc-mark': (profile?.docMarkStrength ?? 14) / 100 } as CSSProperties}
+        style={{ '--doc-mark': (profile?.docMarkStrength ?? 30) / 100 } as CSSProperties}
       >
-        <span className="doc-sheet-top" aria-hidden="true" />
-        <span className="doc-sheet-corner tl" aria-hidden="true" />
-        <span className="doc-sheet-corner tr" aria-hidden="true" />
-        <span className="doc-sheet-corner bl" aria-hidden="true" />
-        <span className="doc-sheet-corner br" aria-hidden="true" />
-        {profile?.docImageUrl ? (
-          <img className="doc-sheet-mark" src={profile.docImageUrl} alt="" aria-hidden="true" />
-        ) : null}
+        <header className="doc-sheet-mast">
+          {profile?.docImageUrl ? (
+            <img className="doc-sheet-photo" src={profile.docImageUrl} alt="" aria-hidden="true" />
+          ) : null}
+          <span className="doc-sheet-veil" aria-hidden="true" />
 
-        <header className="doc-sheet-brand">
-          <div className="doc-sheet-left">
-            {profile?.avatarUrl ? (
-              <img className="doc-sheet-logo" src={profile.avatarUrl} alt="" />
-            ) : (
-              <div className="doc-sheet-logo placeholder">{(profile?.bandName ?? 'D').slice(0, 1)}</div>
-            )}
-            <div>
-              <strong className="doc-sheet-name">{profile?.bandName ?? 'DECHIRE'}</strong>
-              <span className="doc-sheet-sub">
-                {profile?.bio?.split('\n')[0] || 'Post-hardcore // Ruhr'}
+          <div className="doc-sheet-mast-inner">
+            <div className="doc-sheet-brand">
+              {profile?.avatarUrl ? (
+                <img className="doc-sheet-logo" src={profile.avatarUrl} alt="" />
+              ) : (
+                <span className="doc-sheet-logo placeholder">{band.slice(0, 1)}</span>
+              )}
+              <span className="doc-sheet-wordmark">
+                <strong>{band}</strong>
+                <em>{profile?.bio?.split('\n')[0] || 'Post-hardcore // Ruhr'}</em>
               </span>
             </div>
+            <span className={`doc-sheet-stamp ${status}`}>{status === 'final' ? 'Final' : 'Draft'}</span>
           </div>
-          <div className="doc-sheet-type">
-            <span className={`doc-sheet-badge ${status}`}>
-              {status === 'final' ? 'Final' : 'Draft'}
-            </span>
+
+          <div className="doc-sheet-mast-meta">
+            <span className="doc-sheet-kind">{docKindLabel(kind)}</span>
+            <span>No. {String(doc.id).padStart(3, '0')}</span>
+            <span>{new Date().toLocaleDateString('en-GB', { dateStyle: 'long' })}</span>
+            {profile?.handle ? <span>@{profile.handle}</span> : null}
           </div>
         </header>
 
-        <div className="doc-sheet-meta">
-          <span>
-            <em>No.</em>
-            {String(doc.id).padStart(3, '0')}
-          </span>
-          <span>
-            <em>Date</em>
-            {new Date().toLocaleDateString('en-GB', { dateStyle: 'long' })}
-          </span>
-          {profile?.handle ? (
-            <span>
-              <em>Contact</em>@{profile.handle}
+        <div className="doc-sheet-body">
+          <div className="doc-sheet-titlewrap">
+            <span className="doc-sheet-kicker">
+              <span className="doc-sheet-kicker-mark" aria-hidden="true">
+                ///
+              </span>
+              {docKindLabel(kind)}
             </span>
-          ) : null}
+            <h1 className="doc-sheet-title">{title || 'Untitled document'}</h1>
+            <span className="doc-sheet-rule" aria-hidden="true" />
+          </div>
+
+          <EditorContent editor={editor} />
+
+          <footer className="doc-sheet-foot">
+            <span>{band} /// Post-hardcore</span>
+            <span>{profile?.website ?? ''}</span>
+          </footer>
         </div>
-
-        <div className="doc-sheet-titlewrap">
-          <span className="doc-sheet-kicker">
-            {docKindLabel(kind)} · {band.toUpperCase()}
-          </span>
-          <h1 className="doc-sheet-title">{title || 'Untitled document'}</h1>
-          <span className="doc-sheet-rule" aria-hidden="true" />
-        </div>
-
-        <EditorContent editor={editor} />
-
-        <footer className="doc-sheet-foot">
-          <span>Post-hardcore /// {(profile?.bandName ?? 'DECHIRE').toUpperCase()}</span>
-          <span>{profile?.website ?? ''}</span>
-        </footer>
       </div>
     </div>
   );

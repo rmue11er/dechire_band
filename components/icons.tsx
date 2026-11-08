@@ -330,6 +330,14 @@ export const IconQuote = (p: IconProps) => (
   </Svg>
 );
 
+export const IconSmile = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M8.6 14.2c.8 1.2 2 1.9 3.4 1.9s2.6-.7 3.4-1.9" />
+    <path d="M9.2 9.6h.01M14.8 9.6h.01" />
+  </Svg>
+);
+
 export const IconCode = (p: IconProps) => (
   <Svg {...p}>
     <path d="m8.5 8-4.5 4 4.5 4M15.5 8l4.5 4-4.5 4" />

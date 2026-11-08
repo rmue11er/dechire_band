@@ -298,17 +298,24 @@ small things that otherwise get lost.
   navigation and renders the sheet black on white, and a **standalone HTML file** with inline styles
   for promoters who do not want a PDF. Images (logo, sheet image) are inlined as data URLs so the
   file is self-contained.
-- **Sheet design** (`styles/docs.css`): the paper is treated like printed letterhead instead of a
-  text field with a white background – accent bar on the top edge, four crop marks, a mono meta strip
-  (`No. / Date / Contact`) between hairlines, a kicker + display title with an accent rule, section
-  headings with a thin accent tick and a fading hairline, striped tables with mono uppercase headers
-  and a closing footer line with an accent dot.
+- **Sheet design, second pass** (`styles/docs.css`): the first version read like a business letter, so the
+  sheet is now built like a flyer-with-paperwork instead of a letterhead. A **dark masthead** (`#0b0a10`)
+  carries logo, the band name in the display face, the tagline in the accent colour, a rotated **stamp**
+  (FINAL/DRAFT) and a mono meta row (`type · No. · date · handle`), closed by a two-tone accent hairline.
+  Below it the body sits on bone paper with a grain dot pattern: `///` kicker, uppercase display title,
+  a two-tone accent rule, **uppercase section headings** with a thin accent tick and a fading hairline,
+  tables with night-coloured header cells (the rider look), italic accent-2 blockquotes and a closing
+  footer line. Everything colour-related is `--accent` / `--accent-2` (including `--accent-rgb` for the
+  translucent tints), so changing the accent in Settings changes the document too – no hardcoded lavender.
+- **Emoji picker** (`components/EmojiPicker.tsx`) in the toolbar: five hand-picked groups (band, mood,
+  orga, road, faces) plus the last ten picks from `localStorage`, inserted at the cursor via
+  `editor.chain().focus().insertContent(emoji)`.
 - **Sheet image** (maintainable, not a fixture): `profile.doc_media_id` + `profile.doc_mark_strength`
-  (0–26 %, default 14 %). Settings → *Document sheet* picks any asset from the media library and sets
-  the strength with a live preview. On the sheet it is a grayscale, `multiply` blended watermark with
-  a radial mask that sits behind the title block – visible at print size, never brighter than the text.
-  Because it is a profile value, screen, print and HTML export render the same image at the same strength.
-
+  (0–60 %, default 30 %). Settings → *Document sheet* picks any asset from the media library, sets the
+  strength with a slider and shows a mini preview of the masthead. On the sheet the photo sits **behind the
+  masthead** as a grayscale layer with a gradient veil, so it reads as a printed flyer background and never
+  fights the text. Because it is a profile value, screen, print and HTML export render the same image at the
+  same strength.
 ### 7.3 Brand sheet (`/brand`)
 
 - A single page that answers “how do we look?” for printers, promoters, merch and support slots:
@@ -388,6 +395,27 @@ small things that otherwise get lost.
 
 ---
 
+### 7.4 Dashboard (`/`) – the second pass
+
+The first dashboard showed everything it could: four stat cards (posts, published, media, notes), a
+performance strip, "next up", a 3×3 feed preview, recently added assets and a notes list. Half of it was
+decoration – a media counter does not help before a release, and a feed preview already exists in the
+planner where you can actually edit it.
+
+The rebuilt dashboard answers three questions only:
+
+- **Coming up** – one timeline made of scheduled posts *and* dated milestones, sorted chronologically with
+  date block, thumbnail/type icon, status pill, weekday + time and open-checklist count. This is the only
+  place where posts and dates live side by side.
+- **Needs you** – derived, not entered: drafts without a visual or caption, posts that go live within three
+  days without media, milestones with open tasks in the next 21 days. Each row is a link into the exact
+  editor. Sorted by urgency (overdue first), capped at five so it stays a nudge, not a backlog.
+- **Performance** – reach total, average reach, best weekday and the last published post. Hidden behind a
+  hint when nothing is measured yet.
+
+Plus a small shortcuts row (documents, studio, notes, website) and the band's base figures in the panel head.
+No counters that just count, no previews that duplicate a tool.
+
 ## 8. Design system
 
 ### Colours
@@ -398,7 +426,10 @@ small things that otherwise get lost.
 | `--panel` | `#100e17` | Cards, panels |
 | `--text` | `#efeaf7` | Body copy |
 | `--muted` | `#9a91b2` | Secondary text |
-| `--accent` | `#b9a5e8` | Pastel lavender, interaction, focus |
+| `--accent` | `#b9a5e8` | Pastel lavender, interaction, focus (profile accent) |
+| `--accent-rgb` | `185 165 232` | Same colour as `r g b` – every translucent tint uses `rgb(var(--accent-rgb) / x)`, so a new accent reaches every surface |
+| `--accent-2` | derived | Second CI colour (`profile.accent_2_hex`, *Auto* = darker shade of the accent) – gradients, stamps, two-tone rules |
+| `--accent-2-deep` / `--accent-2-soft` | derived | Depth + tint of the second colour |
 | `--accent-deep` | `#6b54a6` | Gradients, depth |
 | `--ok / --warn / --danger` | `#7fd3b0 / #e8c07d / #e4778b` | Status |
 
@@ -428,6 +459,19 @@ warmth and friction through rust and wound.
 after saving in settings a `palette:updated` event fires so open editors immediately show
 the new swatches. `PUT /api/palette` validates hex values and replaces the list atomically.
 The demo reset restores the recommendation.
+
+### Accent propagation
+
+The accent is a single value (`profile.accent_hex`) that fans out into tokens in `lib/palette.ts`
+(`accentTokens(hex, hex2)` → `--accent`, `--accent-rgb`, `--accent-2`, `--accent-2-rgb`,
+`--accent-deep`, `--accent-2-deep`, soft/glow/line variants). `app/layout.tsx` renders it server-side,
+`PaletteProvider` re-applies it in the browser, and the settings page dispatches `accent:updated`
+with both colours for an instant switch.
+
+Rule for new CSS: never hardcode a colour value of the accent – use `var(--accent)`,
+`var(--accent-2)` or `rgb(var(--accent-rgb) / 0.12)`. The 93 old `rgba(185, 165, 232, …)` literals in
+`styles/*.css` were replaced by exactly that, which is why notes, studio, planner, media, documents and
+the dashboard all change with one colour now.
 
 ### Typography & texture
 
