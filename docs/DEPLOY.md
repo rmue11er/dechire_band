@@ -93,6 +93,28 @@ sudo -u "$OWNER" -H bash -lc "
 
 Then **Restart App** in the Plesk Node.js panel.
 
+#### If `npm ci` already fails with `EACCES … mkdir node_modules`
+
+Then the directory above is the problem, not `.next`: the document root itself is not writable by the
+subscription user (`www`, `httpdocs` or `public` are often created as `root:psaserv`).
+
+```bash
+WEB=/var/www/vhosts/example.com/dechire.example.com/www
+OWNER=$(stat -c '%U' /var/www/vhosts/example.com)     # the subscription's system user
+ls -ld "$WEB"                                          # drwxr-xr-x root psaserv …  ← the cause
+
+sudo rm -rf "$WEB/node_modules" "$WEB/.next"           # remove leftovers from a root build
+sudo chown -R "$OWNER":psacln "$WEB"
+```
+
+Then `npm ci && npm run build` as that user (see above). nginx/Apache keep serving the folder – they read as
+root – so nothing breaks for the web server.
+
+> If Plesk later resets the ownership (`plesk repair web -y` restores `root:psaserv` on document roots), move the
+> app one level up instead – `/var/www/vhosts/example.com/dechire.example.com/app` – chown **that** to the
+> subscription user and set it as **Application Root** *and* **Document Root** in the Node.js extension. The
+> document root of the domain then stays untouched.
+
 Rules of thumb:
 
 - Every command that touches the app directory (`git pull`, `npm ci`, `npm run build`, backups) must run as the
@@ -314,7 +336,8 @@ Schema changes run themselves on start (`ensureColumn` in `lib/db.ts`); `data/` 
 | 502 / “Web application could not be started” (Passenger) | no `.next` (build missing), wrong Application Root, or startup file ≠ `server.js`; check the app log |
 | `SQLITE_CANTOPEN` or `EACCES: permission denied, open '.../data/band.db'` | `data/` not writable by the service user → `chown -R` |
 | `EACCES: permission denied, open '.../.next/trace'` + `Build directory is not writeable` | `.next` was created by another user (usually `root` from an earlier SSH build) → delete it and rebuild as the subscription user, see §2.1 |
-| `EACCES` on `package-lock.json` / `node_modules` after switching Plesk users | same cause → `chown -R <sub-user>:psacln` on the app directory |
+| `npm ci` → `EACCES … mkdir '…/node_modules'` | the document root itself is owned by `root:psaserv` → `chown -R <sub-user>:psacln` on the app directory (see §2.1) |
+| `EACCES` on `package-lock.json` after switching Plesk users | same cause → `chown -R <sub-user>:psacln` on the app directory |
 | Basic Auth prompt on `/site` | the matcher in `proxy.ts` must keep excluding `site`, `_next`, `api/files` |
 | **no** password prompt at all | `HQ_PASSWORD` is not set (or not passed by Plesk) → the gate is opt-in; log line must say `auth on` |
 | Pages look unstyled after an update | stale build → `npm run build` again and restart |
