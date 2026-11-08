@@ -185,36 +185,30 @@ The band's palette is not guessed any more – it is searched. Everything runs i
 - Manual numbers can be entered per post as well (reach, likes, comments, saves, shares).
 
 ### 10. Public website (`/site`) + configuration (`/website`)
-**Art direction: a flyer left on a wet wall.** Not a template with photos in it – a photocopied, taped,
-torn piece of paper that happens to be a website. Everything is CSS: no image assets, no library.
+**Plain black, one accent colour, photos taped to the wall.** No template furniture: no paper sheet, no
+stamps, no badges – the page is a dark room with a letter in it and the band's own photos next to it.
 
 - **Hero** – the band name in the display face, letter by letter out of the dark, with a *misregistered
-  second print run* in accent outline behind it (the photocopy slipped). A **torch**: the hero photo only
-  exists inside a 300 px light circle that follows the pointer – veil, photo and ring all react, so the
-  page has to be touched to be read. Sleeve details around it: vertical spine (`side a · tagline · 33 ⅓`),
-  `official site /// do not fold`, crew names, a hand-drawn underline under the tagline.
-- **A note from us** – a bone **sheet of paper with torn edges** (clip-path), fold line, toner smudge,
-  dashed inner frame, vertical margin print (`private — keep this`), drop cap, serif letter, ink-highlighted
-  emphasis, a signature with a pen stroke and a rotated rubber stamp. Below it the credits as a record-sleeve
-  list (names in the display face, roles in mono, dotted leaders).
-- **Contact sheet** – photos as a darkroom strip with sprocket lines, frame numbers `01…`, slight per-frame
-  tilt and marker captions. They are *undeveloped* (grayscale, dark) and develop into colour on hover.
-- **Pinned to the wall** – the feed as paper flyers with a strip of tape, each at its own angle, straightening
-  on hover.
-- **Say hi** – press quote in large serif italic next to a **receipt**: numbered links with dotted leader
-  lines, a dashed header and a small-print footer.
+  second print run* in accent outline behind it. A barely visible hero photo (22 %), sleeve details in mono
+  (`side a · tagline · 33 ⅓`, `@handle`, `official site`), a hairline scroll hint.
+- **A note from us** – the letter itself, nothing around it: `Playfair` body on pure black, generous leading,
+  `*word*` highlighted with the accent, italic signature. Right beside it the band's photos as **taped
+  prints** (paper, strip of tape, slight angle, developing into colour on hover) – the only non-accent colour
+  on the page is photo paper. No crew list, no roles, no names.
+- **From the feed** – the same taped-print language as a wall of flyers, made from published posts.
+- **Say hi** – press quote in large serif italic next to a receipt: numbered links with dotted leaders.
 - **Footer** – the band name as a giant outline.
-- **Film layer** (`SiteAtmosphere`) – grain, scanlines, vignette, hairline scroll progress.
-- **Blocks**, each switchable in the backend: hero, note (+crew), media corner, feed, connect, footer.
-- **Pre-launch mode**: switch the site off and visitors only see the gate — name with echo, tagline, crew,
-  Instagram and a `closed` stamp. `noindex` until it is switched on. No countdown by design.
+- **One accent only**: `--site-accent` (its own setting) is the single highlight colour; everything else is
+  black, bone and photo paper. No second hue, no cursor effects, no decorative graphics.
+- **Blocks**, each switchable in the backend: hero, note, photos, feed, connect, footer.
+- **Pre-launch mode**: switch the site off and visitors only see the gate — name with echo, tagline,
+  Instagram, a `closed` stamp. `noindex` until it is switched on. No countdown by design.
 - **Configured in the backend** (`/website`) with a **live preview** next to the form (desktop/mobile):
-  publish on/off, block switches, hero media, letter and crew (`name — role`, one per line), media corner
-  picker, teaser link, tagline, labels, link list, footer note, meta description and a **separate accent
-  colour** for the site.
-- It reuses the rest of the app: hero and photos come from the **media library**, the flyers are made of
-  **published posts**, and the site accent runs through the same token system as the UI.
-- **Reduced motion** is respected: the letter rise, the torch drop animation and the grain stop.
+  publish on/off, block switches, hero media, the letter, the signature line, photo picker, teaser link,
+  tagline, labels, link list, footer note, meta description and the site's own accent colour.
+- It reuses the rest of the app: the photos come from the **media library**, the flyers are made of
+  **published posts**, and the accent runs through the same token system as the UI.
+- **Reduced motion** is respected: the letter rise, the scroll hairline and the grain stop.
 
 ### Dashboard (`/`)
 Deliberately small – only what moves the band forward:

@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react';
 import Reveal from '@/components/site/Reveal';
 import SiteAtmosphere from '@/components/site/SiteAtmosphere';
-import SiteSpotlight from '@/components/site/SiteSpotlight';
 import { getSiteData } from '@/lib/site';
 import { manifestoParts, teaserEmbed } from '@/lib/siteEmbed';
 import type { MediaItem } from '@/lib/types';
@@ -21,27 +20,53 @@ function Letters({ text }: { text: string }) {
   );
 }
 
-/** Hand-drawn underline that sits under a word like it was added with a pen. */
-function Scratch({ className = '' }: { className?: string }) {
+const TAPE_TILT = ['-1.8deg', '1.4deg', '-0.9deg', '2deg'];
+
+function hexTriple(hex: string) {
+  const value = /^#[0-9a-f]{6}$/i.test(hex) ? hex.slice(1) : 'b9a5e8';
+  return [0, 2, 4]
+    .map((offset) => Number.parseInt(value.slice(offset, offset + 2), 16))
+    .join(' ');
+}
+
+/** A photo taped to the page – the one visual language the whole site uses. */
+function Taped({
+  item,
+  delay = 0,
+  angle,
+  caption = true,
+}: {
+  item: MediaItem;
+  delay?: number;
+  angle: string;
+  caption?: boolean;
+}) {
   return (
-    <svg className={`sf-scratch ${className}`} viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M2 9C48 4 92 11 140 7c46-4 92 2 158-3" />
-      <path d="M12 12c52-4 96 1 142-2" />
-    </svg>
+    <Reveal className="sf-print" delay={delay} style={{ '--tape': angle } as CSSProperties}>
+      <span className="sf-tape" aria-hidden="true" />
+      {item.mime.startsWith('video') ? (
+        <video src={item.url} autoPlay muted loop playsInline />
+      ) : (
+        <img src={item.url} alt={item.alt || item.title} loading="lazy" />
+      )}
+      {caption ? <span className="sf-print-cap">{item.title}</span> : null}
+    </Reveal>
   );
 }
 
-const TAPE_TILT = ['-1.6deg', '1.2deg', '-0.8deg', '1.8deg'];
-
 export default function SitePage() {
   const { settings, shots, feed, accentHex, bandName, handle } = getSiteData();
-  const style = { '--site-accent': settings.accentHex || accentHex } as CSSProperties;
+  const accent = settings.accentHex || accentHex;
+  const style = {
+    '--site-accent': accent,
+    '--site-accent-rgb': hexTriple(accent),
+  } as CSSProperties;
+
   const instagram = settings.links.find((link) => link.kind === 'instagram' && link.url);
   const teaser = settings.showTeaser ? teaserEmbed(settings.teaserUrl) : null;
   const letter = settings.manifesto.filter((line) => line.trim().length > 0);
-  const crew = settings.crew.filter((member) => member.name.trim().length > 0);
-  const crewLine = crew.map((member) => member.name).join(' · ');
   const year = new Date().getFullYear();
+  const noteShots = shots.slice(0, 3);
 
   /* ------------------------------------------------------------ pre-launch */
   if (!settings.published) {
@@ -64,7 +89,6 @@ export default function SitePage() {
               </span>
             </h1>
             <p className="gate-line">{settings.tagline || 'Something is being built here. Loudly, slowly.'}</p>
-            {crewLine ? <p className="gate-crew site-mono">{crewLine}</p> : null}
             {instagram ? (
               <a className="sf-link" href={instagram.url} target="_blank" rel="noreferrer">
                 instagram ↗
@@ -84,7 +108,11 @@ export default function SitePage() {
       {/* ------------------------------------------------------------- hero */}
       {settings.showHero ? (
         <header className="sf-hero">
-          <SiteSpotlight image={settings.heroUrl} video={settings.heroVideo} />
+          {settings.heroVideo ? (
+            <video className="sf-hero-bg" src={settings.heroVideo} autoPlay muted loop playsInline aria-hidden="true" />
+          ) : settings.heroUrl ? (
+            <img className="sf-hero-bg" src={settings.heroUrl} alt="" aria-hidden="true" />
+          ) : null}
           <div className="sf-hero-veil" />
 
           <div className="sf-spine" aria-hidden="true">
@@ -104,7 +132,7 @@ export default function SitePage() {
             >
               @{handle}
             </a>
-            <span className="site-mono sf-hero-note">official site /// do not fold</span>
+            <span className="site-mono sf-hero-note">official site</span>
           </div>
 
           <div className="sf-hero-core">
@@ -122,40 +150,24 @@ export default function SitePage() {
               </span>
             </h1>
 
-            {settings.tagline ? (
-              <p className="sf-tagline">
-                {settings.tagline}
-                <Scratch />
-              </p>
-            ) : null}
+            {settings.tagline ? <p className="sf-tagline">{settings.tagline}</p> : null}
           </div>
 
           <div className="sf-hero-foot">
-            <span className="sf-crewline">{crewLine}</span>
             <a className="sf-scroll" href="#note">
               <span>read the note</span>
               <i aria-hidden="true" />
             </a>
           </div>
-
-          <div className="sf-torn" aria-hidden="true" />
         </header>
       ) : null}
 
       {/* -------------------------------------------------------------- note */}
-      {settings.showIntro && (letter.length || crew.length) ? (
+      {settings.showIntro && letter.length ? (
         <section className="sf-note" id="note">
           <div className="site-wrap sf-note-wrap">
-            <Reveal className="sf-sheet">
-              <span className="sf-sheet-edge" aria-hidden="true" />
-              <span className="sf-sheet-margin" aria-hidden="true">
-                private — keep this
-              </span>
-
-              <div className="sf-sheet-head">
-                <span className="site-mono">a note from us</span>
-                <span className="site-mono">no. 01 / {year}</span>
-              </div>
+            <Reveal className="sf-note-text">
+              <span className="sf-label">a note from us</span>
 
               {settings.introTitle ? <h2 className="sf-note-title">{settings.introTitle}</h2> : null}
 
@@ -169,108 +181,59 @@ export default function SitePage() {
                 ))}
               </div>
 
-              {settings.introSignature ? (
-                <p className="sf-sign">
-                  {settings.introSignature}
-                  <Scratch className="sf-sign-scratch" />
-                </p>
-              ) : null}
-
-              <span className="sf-stamp" aria-hidden="true">
-                <span>post</span>
-                <span>hardcore</span>
-                <span>{year}</span>
-              </span>
+              {settings.introSignature ? <p className="sf-sign">{settings.introSignature}</p> : null}
             </Reveal>
 
-            {crew.length ? (
-              <Reveal className="sf-credits" delay={80}>
-                <span className="site-mono sf-credits-label">the people in the room</span>
-                <ul>
-                  {crew.map((member) => (
-                    <li key={member.name}>
-                      <strong>{member.name}</strong>
-                      {member.role ? <span>{member.role}</span> : null}
-                    </li>
-                  ))}
-                </ul>
-              </Reveal>
+            {settings.showMedia && noteShots.length ? (
+              <div className="sf-note-photos">
+                {noteShots.map((item, index) => (
+                  <Taped
+                    key={item.id}
+                    item={item}
+                    delay={index * 90}
+                    angle={TAPE_TILT[index % TAPE_TILT.length]}
+                    caption={false}
+                  />
+                ))}
+                {settings.mediaNote ? <span className="sf-note-caption">{settings.mediaNote}</span> : null}
+              </div>
             ) : null}
           </div>
         </section>
       ) : null}
 
-      {/* ------------------------------------------------------- contact sheet */}
-      {settings.showMedia && (shots.length || teaser) ? (
-        <section className="sf-shots">
+      {/* ------------------------------------------------------------ teaser */}
+      {settings.showMedia && teaser ? (
+        <section className="sf-block">
           <div className="site-wrap">
-            <header className="sf-head">
-              <b>{settings.mediaTitle || 'contact sheet'}</b>
-              <span className="site-mono">
-                roll 01 /// {String(shots.length).padStart(2, '0')} frames
-              </span>
-            </header>
-
-            {teaser ? (
-              <Reveal className="sf-teaser">
-                <span className="site-mono">{teaser.kind === 'video' ? 'clip /// play' : 'watch /// outside'}</span>
-                <div className="sf-teaser-frame">
-                  {teaser.kind === 'video' ? (
-                    <video src={teaser.src} controls playsInline />
-                  ) : (
-                    <iframe
-                      src={teaser.src}
-                      title={`${bandName} clip`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
-                      allowFullScreen
-                      loading="lazy"
-                    />
-                  )}
-                </div>
-              </Reveal>
-            ) : null}
-
-            {shots.length ? (
-              <div className="sf-strip">
-                {shots.map((item: MediaItem, index: number) => (
-                  <Reveal
-                    key={item.id}
-                    className="sf-frame"
-                    delay={index * 60}
-                    style={{ '--tilt': `${((index % 4) - 1.5) * 0.9}deg` } as CSSProperties}
-                  >
-                    <span className="sf-frame-no">{String(index + 1).padStart(2, '0')}</span>
-                    <div className="sf-frame-img">
-                      {item.mime.startsWith('video') ? (
-                        <video src={item.url} autoPlay muted loop playsInline />
-                      ) : (
-                        <img src={item.url} alt={item.alt || item.title} loading="lazy" />
-                      )}
-                    </div>
-                    <figcaption>{item.title}</figcaption>
-                  </Reveal>
-                ))}
+            <Reveal className="sf-teaser">
+              <span className="site-mono">{teaser.kind === 'video' ? 'clip /// play loud' : 'watch /// outside'}</span>
+              <div className="sf-teaser-frame">
+                {teaser.kind === 'video' ? (
+                  <video src={teaser.src} controls playsInline />
+                ) : (
+                  <iframe
+                    src={teaser.src}
+                    title={`${bandName} clip`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                    loading="lazy"
+                  />
+                )}
               </div>
-            ) : null}
-
-            {settings.mediaNote ? (
-              <Reveal className="sf-marginal" delay={90}>
-                <i aria-hidden="true">*</i>
-                {settings.mediaNote}
-              </Reveal>
-            ) : null}
+            </Reveal>
           </div>
         </section>
       ) : null}
 
       {/* -------------------------------------------------------------- feed */}
       {settings.showFeed && feed.length ? (
-        <section className="sf-feed">
+        <section className="sf-block sf-wall-section">
           <div className="site-wrap">
-            <header className="sf-head">
-              <b>{settings.feedTitle || 'pinned to the wall'}</b>
+            <Reveal className="sf-label sf-label-wide">
+              {settings.feedTitle || 'from the feed'}
               <span className="site-mono">last things we put outside</span>
-            </header>
+            </Reveal>
 
             <div className="sf-wall">
               {feed.map((item, index) => (
@@ -297,7 +260,7 @@ export default function SitePage() {
         <section className="sf-connect">
           <div className="site-wrap">
             <Reveal className="sf-press">
-              <span className="site-mono">say hi</span>
+              <span className="sf-label">say hi</span>
               <blockquote>
                 {settings.pressQuote ||
                   'Booking, collabs, or just to tell us a song helped — the inbox is open and we answer, eventually.'}
@@ -323,9 +286,7 @@ export default function SitePage() {
                   </li>
                 ))}
               </ul>
-              <span className="site-mono sf-receipt-foot">
-                {settings.footerNote || `post-hardcore /// ${year}`}
-              </span>
+              <span className="site-mono sf-receipt-foot">{settings.footerNote || `post-hardcore /// ${year}`}</span>
             </Reveal>
           </div>
         </section>
@@ -339,12 +300,13 @@ export default function SitePage() {
           </div>
           <div className="sf-foot-row">
             <span className="site-mono">{settings.footerNote || `© ${year} ${bandName}`}</span>
-            <span className="site-mono">{crewLine || `side b /// ${year}`}</span>
             {instagram ? (
               <a className="site-mono" href={instagram.url} target="_blank" rel="noreferrer">
                 @{handle} ↗
               </a>
-            ) : null}
+            ) : (
+              <span className="site-mono">@{handle}</span>
+            )}
           </div>
         </footer>
       ) : null}

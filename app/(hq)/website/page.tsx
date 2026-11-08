@@ -28,8 +28,8 @@ const LINK_KINDS = ['instagram', 'bandcamp', 'spotify', 'youtube', 'tiktok', 'ti
 
 const SECTIONS: { key: keyof SiteSettings; label: string; hint: string }[] = [
   { key: 'showHero', label: 'Hero', hint: 'Name, photo, tagline' },
-  { key: 'showIntro', label: 'A note from us', hint: 'Letter + crew' },
-  { key: 'showMedia', label: 'Media corner', hint: 'Photos and a clip' },
+  { key: 'showIntro', label: 'A note from us', hint: 'The letter' },
+  { key: 'showMedia', label: 'Photos', hint: 'Taped next to the letter + clip' },
   { key: 'showFeed', label: 'Feed', hint: 'Latest published posts' },
   { key: 'showConnect', label: 'Say hi', hint: 'Quote and links' },
   { key: 'showFooter', label: 'Footer', hint: 'Big name, small print' },
@@ -65,21 +65,6 @@ function Toggle({
     </div>
   );
 }
-
-/** "Marla — voice" per line → crew list. */
-function parseCrew(value: string) {
-  return value
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const parts = line.split(/\s+[—–|]\s+|\s+-\s+/);
-      return { name: parts[0].trim(), role: (parts[1] ?? '').trim() };
-    });
-}
-
-const crewToText = (crew: { name: string; role: string }[]) =>
-  crew.map((member) => (member.role ? `${member.name} — ${member.role}` : member.name)).join('\n');
 
 export default function WebsitePage() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -205,7 +190,7 @@ export default function WebsitePage() {
             <div className="panel-body web-stack">
               <Toggle
                 label="Site is live"
-                hint="Off = only the gate is shown (name, tagline, crew, Instagram)."
+                hint="Off = only the gate is shown (name, tagline, Instagram)."
                 on={draft.published}
                 onToggle={(value) => {
                   patch({ published: value });
@@ -355,13 +340,15 @@ export default function WebsitePage() {
                 />
               </Field>
 
-              <Field label="Who plays what" hint={<span className="count">name — role, one per line</span>}>
-                <textarea
-                  className="textarea"
-                  rows={4}
-                  value={crewToText(draft.crew)}
-                  onChange={(event) => patch({ crew: parseCrew(event.target.value) })}
-                  placeholder={'Marla — voice\nBene — guitar'}
+              <Field
+                label="Signature"
+                hint={<span className="count">the line under the letter – leave empty for none</span>}
+              >
+                <input
+                  className="input"
+                  value={draft.introSignature}
+                  onChange={(event) => patch({ introSignature: event.target.value })}
+                  placeholder="— no one, in particular"
                 />
               </Field>
             </div>
