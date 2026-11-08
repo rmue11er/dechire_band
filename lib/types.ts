@@ -90,6 +90,10 @@ export interface Profile {
   avatarUrl: string | null;
   highlightNames: string[];
   accentHex: string;
+  /** Watermark used on document sheets – subtle by design. */
+  docMediaId: number | null;
+  docImageUrl: string | null;
+  docMarkStrength: number;
   updatedAt: string;
 }
 

@@ -21,6 +21,11 @@ export async function PATCH(request: Request) {
   if (body.avatarMediaId !== undefined) patch.avatarMediaId = body.avatarMediaId ? Number(body.avatarMediaId) : null;
   if (Array.isArray(body.highlightNames)) patch.highlightNames = body.highlightNames.map(String);
   if (typeof body.accentHex === 'string' && isHex(body.accentHex)) patch.accentHex = body.accentHex.toLowerCase();
+  if (body.docMediaId !== undefined) patch.docMediaId = body.docMediaId ? Number(body.docMediaId) : null;
+  if (body.docMarkStrength !== undefined) {
+    const strength = Math.max(0, Math.min(30, Math.round(Number(body.docMarkStrength) || 0)));
+    patch.docMarkStrength = strength;
+  }
 
   return ok({ profile: updateProfile(patch) });
 }

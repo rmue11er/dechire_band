@@ -7,6 +7,7 @@ import {
   IconCheck,
   IconClock,
   IconDatabase,
+  IconDocument,
   IconDownload,
   IconEye,
   IconImage,
@@ -37,6 +38,11 @@ export default function SettingsPage() {
     avatarMediaId: null as number | null,
   });
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [docPickerOpen, setDocPickerOpen] = useState(false);
+  const [docMediaId, setDocMediaId] = useState<number | null>(null);
+  const [docImageUrl, setDocImageUrl] = useState<string | null>(null);
+  const [docMark, setDocMark] = useState(14);
+  const [docSaving, setDocSaving] = useState(false);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [removingDemo, setRemovingDemo] = useState(false);
@@ -87,6 +93,9 @@ export default function SettingsPage() {
       avatarMediaId: next.avatarMediaId,
     });
     setAvatarUrl(next.avatarUrl);
+    setDocMediaId(next.docMediaId ?? null);
+    setDocImageUrl(next.docImageUrl ?? null);
+    setDocMark(next.docMarkStrength ?? 14);
   };
 
   useEffect(() => {
@@ -149,6 +158,28 @@ export default function SettingsPage() {
       toast(error.message ?? 'Failed to save', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveDocSheet = async (patch: { docMediaId?: number | null; docMarkStrength?: number }) => {
+    setDocSaving(true);
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Failed to save');
+      setProfile(data.profile);
+      setDocMediaId(data.profile.docMediaId ?? null);
+      setDocImageUrl(data.profile.docImageUrl ?? null);
+      setDocMark(data.profile.docMarkStrength ?? 14);
+      toast('Document sheet updated');
+    } catch (error: any) {
+      toast(error.message ?? 'Failed to save', 'error');
+    } finally {
+      setDocSaving(false);
     }
   };
 
@@ -694,6 +725,84 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      <section className="panel docsheet-panel">
+        <div className="panel-head">
+          <div className="panel-title">
+            <IconDocument size={16} />
+            Document sheet
+          </div>
+          <span className="mono small muted">{docSaving ? 'Saving …' : docImageUrl ? 'image set' : 'no image'}</span>
+        </div>
+        <div className="panel-body">
+          <p className="palette-intro">
+            Documents are laid out on a white band sheet. The image you pick sits behind the title block as a faint
+            watermark – present, but never in the way of lyrics, riders or contracts.
+          </p>
+
+          <div className="docsheet-grid">
+            <div className="docsheet-preview" aria-hidden="true">
+              <span className="docsheet-preview-bar" />
+              <div className="docsheet-preview-head">
+                <strong>DECHIRE</strong>
+                <em>Tech Rider</em>
+              </div>
+              <div className="docsheet-preview-lines">
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+              {docImageUrl ? (
+                <img src={docImageUrl} alt="" style={{ opacity: docMark / 100 }} />
+              ) : null}
+            </div>
+
+            <div className="docsheet-controls">
+              <div className="docsheet-thumb">
+                {docImageUrl ? <img src={docImageUrl} alt="" /> : <span>no image</span>}
+              </div>
+
+              <div className="docsheet-actions">
+                <button type="button" className="btn btn-sm" onClick={() => setDocPickerOpen(true)}>
+                  <IconImage size={14} />
+                  {docImageUrl ? 'Change image' : 'Choose image'}
+                </button>
+                {docImageUrl ? (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => saveDocSheet({ docMediaId: null })}
+                  >
+                    <IconTrash size={14} /> Remove
+                  </button>
+                ) : null}
+              </div>
+
+              <label className={`docsheet-strength ${docImageUrl ? '' : 'is-disabled'}`}>
+                <span>
+                  Strength <em>{docMark}%</em>
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={26}
+                  step={1}
+                  value={docMark}
+                  disabled={!docImageUrl}
+                  onChange={(event) => setDocMark(Number(event.target.value))}
+                  onPointerUp={() => saveDocSheet({ docMarkStrength: docMark })}
+                  onKeyUp={() => saveDocSheet({ docMarkStrength: docMark })}
+                />
+              </label>
+
+              <p className="docsheet-hint">
+                Around 10–16% stays readable in print. Use a photo, a logo or a texture from your media library.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="panel">
         <div className="panel-head">
           <div className="panel-title">
@@ -1069,6 +1178,19 @@ Recommendation “Bruised Bloom”
           </div>
         </div>
       </section>
+
+      <MediaPicker
+        open={docPickerOpen}
+        onClose={() => setDocPickerOpen(false)}
+        media={media}
+        selectedIds={docMediaId ? [docMediaId] : []}
+        onUploaded={(items) => setMedia((current) => [...items, ...current])}
+        onConfirm={(ids) => {
+          const id = ids[0] ?? null;
+          setDocPickerOpen(false);
+          if (id) saveDocSheet({ docMediaId: id });
+        }}
+      />
 
       <MediaPicker
         open={pickerOpen}

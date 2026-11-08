@@ -134,8 +134,15 @@ npm run typecheck    # tsc --noEmit
 - **CI layout**: every document is rendered as a branded sheet – logo, band name, document type,
   date, handle in the header, accent rule in the CI colour, footer with website and “Post-hardcore /// …”.
   The HTML export and the print/PDF output use the same design.
+- **Sheet design**: accent bar at the top edge, crop marks in the corners, a mono meta strip
+  (`No. / Date / Contact`), a kicker + big title with an accent rule, hairline section headings,
+  striped tables and a closing footer line.
+- **Sheet image** (Settings → Document sheet): pick any photo or logo from the media library – it sits
+  behind the title area as a faint, grayscale, multiplied watermark. Strength is adjustable (0–26 %,
+  default 14 %) and saved with the profile, so screen, print and HTML export stay identical.
 - Autosave (900 ms), draft/final status, tags, search and type filter.
-- Export as **print-ready PDF** (print stylesheet, only the sheet on paper) or as a standalone HTML file.
+- Export as **print-ready PDF** (print stylesheet, only the sheet on paper) or as a standalone HTML
+  file – images are inlined as data URLs, so the exported file works offline.
 
 ### 7. Brand sheet (`/brand`)
 - One page CI guide generated from the live profile and palette: logo on night and bone,

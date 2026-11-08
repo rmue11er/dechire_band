@@ -538,10 +538,14 @@ export function getProfile(): Profile {
       avatarUrl: null,
       highlightNames: [],
       accentHex: '#b9a5e8',
+      docMediaId: null,
+      docImageUrl: null,
+      docMarkStrength: 14,
       updatedAt: new Date().toISOString(),
     };
   }
   const avatar = row.avatar_media_id ? getMedia(Number(row.avatar_media_id)) : null;
+  const docImage = row.doc_media_id ? getMedia(Number(row.doc_media_id)) : null;
   return {
     bandName: row.band_name,
     handle: row.handle,
@@ -553,6 +557,9 @@ export function getProfile(): Profile {
     avatarUrl: avatar?.url ?? null,
     highlightNames: parseList(row.highlight_names),
     accentHex: row.accent_hex || '#b9a5e8',
+    docMediaId: row.doc_media_id == null ? null : Number(row.doc_media_id),
+    docImageUrl: docImage?.url ?? null,
+    docMarkStrength: Number(row.doc_mark_strength ?? 14),
     updatedAt: row.updated_at,
   };
 }
@@ -570,6 +577,8 @@ export function updateProfile(patch: Record<string, any>) {
     avatarMediaId: 'avatar_media_id',
     highlightNames: 'highlight_names',
     accentHex: 'accent_hex',
+    docMediaId: 'doc_media_id',
+    docMarkStrength: 'doc_mark_strength',
   };
   for (const [key, column] of Object.entries(map)) {
     if (patch[key] !== undefined) {

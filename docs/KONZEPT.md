@@ -296,7 +296,18 @@ small things that otherwise get lost.
 - Same autosave pattern as notes (900 ms debounce, version counter, `⌘S`, dirty/saving/saved state).
 - Two exports, both without a server round-trip: **print → PDF** via a print stylesheet that hides
   navigation and renders the sheet black on white, and a **standalone HTML file** with inline styles
-  for promoters who do not want a PDF.
+  for promoters who do not want a PDF. Images (logo, sheet image) are inlined as data URLs so the
+  file is self-contained.
+- **Sheet design** (`styles/docs.css`): the paper is treated like printed letterhead instead of a
+  text field with a white background – accent bar on the top edge, four crop marks, a mono meta strip
+  (`No. / Date / Contact`) between hairlines, a kicker + display title with an accent rule, section
+  headings with a thin accent tick and a fading hairline, striped tables with mono uppercase headers
+  and a closing footer line with an accent dot.
+- **Sheet image** (maintainable, not a fixture): `profile.doc_media_id` + `profile.doc_mark_strength`
+  (0–26 %, default 14 %). Settings → *Document sheet* picks any asset from the media library and sets
+  the strength with a live preview. On the sheet it is a grayscale, `multiply` blended watermark with
+  a radial mask that sits behind the title block – visible at print size, never brighter than the text.
+  Because it is a profile value, screen, print and HTML export render the same image at the same strength.
 
 ### 7.3 Brand sheet (`/brand`)
 
@@ -464,7 +475,8 @@ milestones   (id, title, date, kind, note, done, ...)
 documents    (id, title, kind, status, content, plain_text, tags, ...)
 palette      (id, name, hex, role, position)
 profile      (id=1, band_name, handle, bio, website, followers, following,
-              avatar_media_id, highlight_names, accent_hex, ...)
+              avatar_media_id, highlight_names, accent_hex,
+              doc_media_id, doc_mark_strength, ...)
 site         (id=1, published, band_name, tagline, manifesto JSON (the letter),
               intro_title, intro_signature, crew JSON, hero_media_id, hero_video,
               hero_overlay, grain, media_title, media_note, media_ids JSON,
