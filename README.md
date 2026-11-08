@@ -185,25 +185,36 @@ The band's palette is not guessed any more – it is searched. Everything runs i
 - Manual numbers can be entered per post as well (reach, likes, comments, saves, shares).
 
 ### 10. Public website (`/site`) + configuration (`/website`)
-- **A one-pager that sounds like a person, not a press kit.** Full-screen hero with the band name rising
-  letter by letter, a slow photo drift, film grain and scanlines, an outlined ghost of the name behind it, and
-  the four names in the corner.
-- **Blocks**, each one switchable in the backend:
-  1. **Hero** – photo (or video loop), tagline, crew names, veil strength.
-  2. **A note from us** – a serif letter in first person with a signature line, followed by who plays what.
-  3. **Media corner** – a small mosaic of photos/clips from the library, optional teaser embed above it and
-     one italic caption underneath.
-  4. **Feed** – the latest published posts as small tiles linking to their Instagram permalink.
-  5. **Say hi** – one big line (or your own quote) plus the link list, Instagram first.
-  6. **Footer** – the band name as a giant outline with the small print.
-- **Pre-launch mode**: switch the site off and visitors only see the gate — name, tagline, crew and
-  Instagram. The page is `noindex` until it is switched on. There is no countdown by design.
+**Art direction: a flyer left on a wet wall.** Not a template with photos in it – a photocopied, taped,
+torn piece of paper that happens to be a website. Everything is CSS: no image assets, no library.
+
+- **Hero** – the band name in the display face, letter by letter out of the dark, with a *misregistered
+  second print run* in accent outline behind it (the photocopy slipped). A **torch**: the hero photo only
+  exists inside a 300 px light circle that follows the pointer – veil, photo and ring all react, so the
+  page has to be touched to be read. Sleeve details around it: vertical spine (`side a · tagline · 33 ⅓`),
+  `official site /// do not fold`, crew names, a hand-drawn underline under the tagline.
+- **A note from us** – a bone **sheet of paper with torn edges** (clip-path), fold line, toner smudge,
+  dashed inner frame, vertical margin print (`private — keep this`), drop cap, serif letter, ink-highlighted
+  emphasis, a signature with a pen stroke and a rotated rubber stamp. Below it the credits as a record-sleeve
+  list (names in the display face, roles in mono, dotted leaders).
+- **Contact sheet** – photos as a darkroom strip with sprocket lines, frame numbers `01…`, slight per-frame
+  tilt and marker captions. They are *undeveloped* (grayscale, dark) and develop into colour on hover.
+- **Pinned to the wall** – the feed as paper flyers with a strip of tape, each at its own angle, straightening
+  on hover.
+- **Say hi** – press quote in large serif italic next to a **receipt**: numbered links with dotted leader
+  lines, a dashed header and a small-print footer.
+- **Footer** – the band name as a giant outline.
+- **Film layer** (`SiteAtmosphere`) – grain, scanlines, vignette, hairline scroll progress.
+- **Blocks**, each switchable in the backend: hero, note (+crew), media corner, feed, connect, footer.
+- **Pre-launch mode**: switch the site off and visitors only see the gate — name with echo, tagline, crew,
+  Instagram and a `closed` stamp. `noindex` until it is switched on. No countdown by design.
 - **Configured in the backend** (`/website`) with a **live preview** next to the form (desktop/mobile):
   publish on/off, block switches, hero media, letter and crew (`name — role`, one per line), media corner
   picker, teaser link, tagline, labels, link list, footer note, meta description and a **separate accent
   colour** for the site.
-- It reuses the rest of the app: hero and photos come from the **media library**, the feed strip is made of
+- It reuses the rest of the app: hero and photos come from the **media library**, the flyers are made of
   **published posts**, and the site accent runs through the same token system as the UI.
+- **Reduced motion** is respected: the letter rise, the torch drop animation and the grain stop.
 
 ### Dashboard (`/`)
 Deliberately small – only what moves the band forward:

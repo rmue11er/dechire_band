@@ -393,6 +393,32 @@ small things that otherwise get lost.
   the cinematic rules. The shell split runs through route groups: `app/layout.tsx` = document only,
   `app/(hq)/layout.tsx` = sidebar + palette + toasts + scheduler heartbeat, `app/site/` = public layout.
 
+### 7.7 Public website – third pass: "a flyer left on a wet wall"
+
+The second version was warm and personal but still looked like a website with a nice font. The third pass
+starts from a physical object instead: **a photocopied flyer taped to a wet wall** – misregistered, torn,
+creasing, with a stamp, a margin note and a torch of light.
+
+- **Language of the artefact, not of the medium.** Torn paper edge (a 30-point `clip-path`), a fold line, a
+  toner smudge, a dashed inner frame, a vertical margin print (`private — keep this`) and a rotated rubber
+  stamp are the layout devices. Sections are numbered in roman numerals, the press quote sits next to a
+  **receipt** with dotted leaders, the footer is the band name as an outline.
+- **The torch** (`components/site/SiteSpotlight.tsx`): the hero photo is only visible inside a 300 px circle
+  that follows the pointer. The pointer writes `--sx/--sy` on the hero, and photo, veil (`mask-image` with a
+  hole), warm accent bloom (`mix-blend-mode: screen`) and a thin ring all read the same two variables. It
+  forces a first physical interaction and it means the page keeps a secret until you move.
+- **Misregistration**: the title is printed twice – once solid, once as an accent outline offset by 8/9 px,
+  like a second colour pass that slipped. Pure CSS (`-webkit-text-stroke`), no images.
+- **Contact sheet**: photos in a darkroom strip with sprocket lines, frame numbers, per-frame tilt from a CSS
+  variable. They start undeveloped (grayscale, dark) and develop into colour on hover.
+- **Flyer wall**: the feed as paper flyers with a strip of tape at their own angle, straightening on hover.
+- **The letter is still the centre** – the sheet only exists to carry it: Playfair body, drop cap, ink
+  highlight for emphasis, signature with a pen stroke.
+- **Motion stays honest**: letter rise, torch ring, grain steps, hairline scroll bar; everything is switched
+  off under `prefers-reduced-motion`.
+- Still: no countdown, no release showcase, no marquee. All blocks switchable in `/website`, all content from
+  the database, one accent colour for the site.
+
 ---
 
 ### 7.4 Dashboard (`/`) – the second pass

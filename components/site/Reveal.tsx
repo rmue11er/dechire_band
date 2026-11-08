@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 /** Fades a block in when it scrolls into view – once, slowly, no bouncing. */
 export default function Reveal({
@@ -9,12 +9,14 @@ export default function Reveal({
   as: Tag = 'div',
   className = '',
   href,
+  style,
 }: {
   children: ReactNode;
   delay?: number;
   as?: any;
   className?: string;
   href?: string;
+  style?: CSSProperties;
 }) {
   const ref = useRef<HTMLElement | null>(null);
   const [shown, setShown] = useState(false);
@@ -48,7 +50,7 @@ export default function Reveal({
       target={href && !href.startsWith('mailto:') ? '_blank' : undefined}
       rel={href ? 'noreferrer' : undefined}
       className={`reveal ${shown ? 'in' : ''} ${className}`.trim()}
-      style={{ transitionDelay: `${delay}ms` }}
+      style={{ ...style, transitionDelay: `${delay}ms` }}
     >
       {children}
     </Tag>
