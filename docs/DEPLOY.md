@@ -341,6 +341,7 @@ Schema changes run themselves on start (`ensureColumn` in `lib/db.ts`); `data/` 
 | --- | --- |
 | `env: 'node': No such file or directory` on `npm run build` | `/opt/plesk/node/<major>/bin` is not in `PATH` → `export PATH=/opt/plesk/node/24/bin:$PATH` |
 | `ERR_UNKNOWN_BUILTIN_MODULE: No such built-in module: node:sqlite` | Node too old → 24.x, or `NODE_OPTIONS=--experimental-sqlite` on 22 |
+| **403 Forbidden** on every URL | usually not the app: Node.js is not enabled for the domain, the Document Root does not exist / is empty, or the web server cannot read the folder (group lost after `chown`). See §9.1 |
 | 502 / “Web application could not be started” (Passenger) | no `.next` (build missing), wrong Application Root, or startup file ≠ `server.js`; check the app log |
 | `SQLITE_CANTOPEN` or `EACCES: permission denied, open '.../data/band.db'` | `data/` not writable by the service user → `chown -R` |
 | `EACCES: permission denied, open '.../.next/trace'` + `Build directory is not writeable` | `.next` was created by another user (usually `root` from an earlier SSH build) → delete it and rebuild as the subscription user, see §2.1 |
@@ -352,6 +353,48 @@ Schema changes run themselves on start (`ensureColumn` in `lib/db.ts`); `data/` 
 | Build dies with `Killed` | RAM → add swap: `fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile` |
 | Instagram upload: “media could not be fetched” | `publicBase` wrong, or `/api/files` is blocked by Basic Auth/firewall |
 | Reload loop while developing on the server | `npm run dev` only — Turbopack watches the WAL files in `data/`. Use the built app in production |
+
+### 9.1 403 Forbidden
+
+A 403 comes from **nginx/Apache, not from the app** – our own gate would answer *401*. Work through this list:
+
+```bash
+WEB=/var/www/vhosts/example.com/dechire.example.com/www
+
+# 1. Is Node.js running for this domain? Plesk → Node.js panel → status must be
+#    "enabled / running". If it says "disabled", the domain is a plain static site
+#    and nginx looks for an index.html in the Document Root → 403.
+
+# 2. Can the web server read the folder? (this is the classic after a chown)
+namei -l "$WEB"
+#    every directory on the way needs x for others (755), files 644.
+#    Plesk's Apache/nginx run as group `psaserv`, so:
+sudo chown -R <sub-user>:psaserv "$WEB"
+sudo find "$WEB" -type d -exec chmod 755 {} +
+sudo find "$WEB" -type f -exec chmod 644 {} +
+sudo chown -R <sub-user>:psacln "$WEB/data"        # keep the DB writable for the app
+
+# 3. Does the Document Root exist and match the panel?
+#    /dechire.example.com/www  →  /var/www/vhosts/example.com/dechire.example.com/www
+ls -la "$WEB" | head
+
+# 4. Does the app answer at all? (bypasses the proxy)
+sudo -u <sub-user> -H bash -lc 'cd "$WEB" && PORT=3999 node server.js' &
+curl -sI http://127.0.0.1:3999/site | head -1     # 200 = app fine, 403 = proxy/permissions
+kill %1
+```
+
+Logs to read, in this order: `~/logs/` in Plesk → `*_error_log` (nginx/Apache),
+`/var/www/vhosts/example.com/logs/*/error_log` (Passenger/app).
+
+Most common causes, in the order they actually happen:
+
+1. `chown -R user:psacln` was used for the whole app → the web server is no longer in the folder's group →
+   `chgrp -R psaserv <app>` (keep the **owner** as the subscription user, only the group changes; `data/` stays
+   `psacln` so the app can write).
+2. Node.js extension not enabled for the *subdomain* (only for the main domain).
+3. Document Root points at `/…/www/public` but that folder was never created.
+4. Application Root ≠ folder with `package.json` / `server.js`.
 
 ---
 
