@@ -34,6 +34,11 @@ extension: `plesk ext nodejs --update`, then pick the version in **Websites & Do
 ## 2. Put the files on the server
 
 ```bash
+# Plesk installs Node outside the normal PATH – the build needs it
+# (npm spawns `next`, whose shebang is `#!/usr/bin/env node`).
+export PATH=/opt/plesk/node/24/bin:$PATH
+node -v            # v24.x
+
 # adjust domain + path to your subscription
 cd /var/www/vhosts/example.com
 git clone https://github.com/rmue11er/dechire_band.git bandhq
@@ -46,6 +51,13 @@ npm run build
 
 `npm ci && npm run build` needs SSH access. Plesk has the button **Websites & Domains → Web Hosting Access**
 to enable it (or use the Plesk **Git** extension to clone).
+
+> **If you build as `root`,** the app later runs as the subscription user and cannot write `data/`
+> (`SQLITE_CANTOPEN`). Fix ownership before starting the app:
+>
+> ```bash
+> chown -R "$(stat -c '%U' /var/www/vhosts/example.com)":psacln /var/www/vhosts/example.com/bandhq
+> ```
 
 > Build on the server, not on your laptop: `.next` is tied to the Node major and the OpenSSL build of the
 > machine. Deploy the source and build there.
@@ -230,6 +242,7 @@ Schema changes run themselves on start (`ensureColumn` in `lib/db.ts`); `data/` 
 
 | Symptom | Cause / fix |
 | --- | --- |
+| `env: 'node': No such file or directory` on `npm run build` | `/opt/plesk/node/<major>/bin` is not in `PATH` → `export PATH=/opt/plesk/node/24/bin:$PATH` |
 | `ERR_UNKNOWN_BUILTIN_MODULE: No such built-in module: node:sqlite` | Node too old → 24.x, or `NODE_OPTIONS=--experimental-sqlite` on 22 |
 | 502 / “Web application could not be started” (Passenger) | no `.next` (build missing), wrong Application Root, or startup file ≠ `server.js`; check the app log |
 | `SQLITE_CANTOPEN` or `EACCES: permission denied, open '.../data/band.db'` | `data/` not writable by the service user → `chown -R` |
