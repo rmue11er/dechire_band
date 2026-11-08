@@ -220,6 +220,9 @@ chmod -R u+rwX data
 ```
 
 - `data/band.db` + `data/band.db-wal` are the database, `data/uploads/` the files. Move them together.
+- `data/fonts/` holds the self-hosted Google Fonts you added in the studio (plus a cached catalogue list).
+  Adding a font needs outbound HTTPS to `fonts.google.com` **once per font**; after that the studio and the
+  exports work without internet.
 - **Never delete or replace `data/` when deploying.** It is not in git and it is not in the build.
 - Backups: the button in **Settings → Backup** (ZIP with a consistent database copy + uploads), or from cron:
 

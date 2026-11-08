@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   IconAlignBottom,
   IconAlignCenter,
@@ -12,6 +13,8 @@ import {
   IconBringFront,
   IconCopy,
   IconLock,
+  IconPlus,
+  IconSearch,
   IconSendBack,
   IconTrash,
   IconUnlock,
@@ -19,7 +22,10 @@ import {
 } from '@/components/icons';
 import { ColorField, IconBtn, NumberField, Row, Section, SelectField, SliderField, ToggleGroup } from '@/components/studio/controls';
 import { StickerGlyph } from '@/components/studio/ElementContent';
+import FontBrowser from '@/components/studio/FontBrowser';
+import { useCustomFonts } from '@/components/studio/useCustomFonts';
 import { BLEND_MODES, FONTS, FORMATS, SHAPES, STICKERS, TEXTURES, fontById, textureBackground } from '@/lib/design';
+import type { FontOption } from '@/lib/design';
 import type { Design, DesignElement } from '@/lib/types';
 
 export type AlignTarget = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
@@ -55,6 +61,17 @@ export default function StudioInspector({
   onReplaceImage: () => void;
   onClose: () => void;
 }) {
+  const { fonts: googleFonts } = useCustomFonts();
+  const [fontBrowserOpen, setFontBrowserOpen] = useState(false);
+
+  const pickFont = (font: FontOption) => {
+    const current = element && element.type === 'text' ? element.fontWeight : font.weights[0];
+    const weight = font.weights.includes(current)
+      ? current
+      : font.weights[Math.min(font.weights.length - 1, Math.floor(font.weights.length / 2))];
+    onUpdateElement({ fontFamily: font.id, fontWeight: weight });
+  };
+
   if (!element) {
     return (
       <div className="studio-inspector">
@@ -161,7 +178,6 @@ export default function StudioInspector({
   const isSticker = element.type === 'sticker';
   const isTexture = element.type === 'texture';
   const font = isText ? fontById(element.fontFamily) : null;
-
   const typeLabel = {
     text: 'Text',
     shape: 'Shape',
@@ -293,7 +309,39 @@ export default function StudioInspector({
                     : next.weights[Math.min(next.weights.length - 1, Math.floor(next.weights.length / 2))];
                   onUpdateElement({ fontFamily: id, fontWeight: weight });
                 }}
-                options={FONTS.map((item) => ({ value: item.id, label: `${item.label} – ${item.mood}` }))}
+                groups={[
+                  {
+                    label: 'Built in',
+                    options: FONTS.map((item) => ({ value: item.id, label: `${item.label} – ${item.mood}` })),
+                  },
+                  ...(googleFonts.length
+                    ? [
+                        {
+                          label: 'Google Fonts (self-hosted)',
+                          options: googleFonts.map((item) => ({
+                            value: item.id,
+                            label: `${item.label} – ${item.mood}`,
+                          })),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost font-browse-btn"
+                onClick={() => setFontBrowserOpen(true)}
+              >
+                <IconSearch size={13} /> Search Google Fonts
+                {googleFonts.length ? <span className="font-count">{googleFonts.length}</span> : null}
+              </button>
+              <FontBrowser
+                open={fontBrowserOpen}
+                onClose={() => setFontBrowserOpen(false)}
+                onPick={(font) => {
+                  pickFont(font);
+                  setFontBrowserOpen(false);
+                }}
               />
               <div className="grid-2">
                 <Row label="Size">

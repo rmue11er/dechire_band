@@ -18,6 +18,7 @@ import MediaPicker from '@/components/MediaPicker';
 import CanvasSurface from '@/components/studio/CanvasSurface';
 import StudioInspector, { type AlignTarget } from '@/components/studio/StudioInspector';
 import StudioLeftPanel, { type StudioTab } from '@/components/studio/StudioLeftPanel';
+import { useCustomFonts } from '@/components/studio/useCustomFonts';
 import {
   DEFAULT_BACKGROUND,
   TEMPLATES,
@@ -174,6 +175,8 @@ function SelectionFrame({
 
 export default function DesignEditor({ designId }: { designId: number }) {
   const router = useRouter();
+  // Subscribing here re-renders the canvas once the self-hosted fonts arrive.
+  useCustomFonts();
   const [design, setDesign] = useState<Design | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);

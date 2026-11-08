@@ -246,6 +246,21 @@ capturing the shifted element directly would put the content outside the image.
 Web fonts are embedded from the stylesheets by `html-to-image`; that is why only the
 **latin subsets** of the Fontsource packages are loaded.
 
+### 6.7 Google Fonts (search, but self-hosted)
+
+- The catalogue comes from Google's public metadata list (`fonts.google.com/metadata/fonts`, ~1,900 families),
+  fetched by our own server, trimmed to what matters and cached in `data/fonts/metadata.json` for a week.
+- Picking a family downloads it **once**: `css2?family=…` with a browser UA, keep `latin` + `latin-ext`, up to
+  three weights (400/700 plus one light or black), store the `woff2` files next to the catalogue and keep the
+  `unicode-range` from the original rules.
+- Serving, not linking: `lib/fonts.ts` generates the `@font-face` rules with **our own** URLs
+  (`/api/fonts/file/…`), the client injects them as a `<style>` tag. That keeps DSGVO out of the equation, works
+  offline afterwards and — the reason for the whole detour — lets `html-to-image` embed the type on export.
+- The registered families are merged into the studio's font registry (`registerFonts` in `lib/design.ts`), so
+  the canvas resolves them by id exactly like the built-in nine. The list is a `useSyncExternalStore` snapshot,
+  which is what makes canvases and previews re-render when a font arrives.
+- Removing a font deletes the row and its files; “Reset” clears the table too but keeps the catalogue cache.
+
 ## 7. Tools 5–8 – calendar, documents, brand sheet & workflow
 
 The first four tools cover the feed. These cover the rest of band life: dates, paperwork, CI and the

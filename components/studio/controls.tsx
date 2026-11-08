@@ -195,21 +195,33 @@ export function SelectField({
   value,
   onChange,
   options,
+  groups,
 }: {
   label?: string;
   value: string;
   onChange: (value: string) => void;
-  options: { value: string; label: string }[];
+  options?: { value: string; label: string }[];
+  groups?: { label: string; options: { value: string; label: string }[] }[];
 }) {
   return (
     <div className="select-field">
       {label ? <span className="ins-label">{label}</span> : null}
       <select className="select" value={value} onChange={(event) => onChange(event.target.value)}>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
+        {groups
+          ? groups.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))
+          : (options ?? []).map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
       </select>
     </div>
   );

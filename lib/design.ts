@@ -123,7 +123,33 @@ export const FONTS: FontOption[] = [
   },
 ];
 
-export const fontById = (id: string) => FONTS.find((font) => font.id === id) ?? FONTS[0];
+/**
+ * Self-hosted Google Fonts are registered at runtime (see the studio), so the
+ * canvas and the inspector can resolve them like the built-in ones.
+ */
+let runtimeFonts: FontOption[] = [];
+let merged: FontOption[] = FONTS;
+const fontListeners = new Set<() => void>();
+
+export function registerFonts(list: FontOption[]) {
+  runtimeFonts = Array.isArray(list) ? list : [];
+  merged = runtimeFonts.length ? [...FONTS, ...runtimeFonts] : FONTS;
+  fontListeners.forEach((listener) => listener());
+}
+
+export function subscribeFonts(listener: () => void) {
+  fontListeners.add(listener);
+  return () => {
+    fontListeners.delete(listener);
+  };
+}
+
+/** Stable reference – safe as a `useSyncExternalStore` snapshot. */
+export const allFonts = () => merged;
+
+const fontStack = (id: string) => merged.find((font) => font.id === id) ?? FONTS[0];
+
+export const fontById = (id: string) => fontStack(id);
 
 export const TEXT_SHADOWS: Record<TextElement['shadow'], string> = {
   none: 'none',

@@ -11,6 +11,7 @@ import {
   IconTrash,
 } from '@/components/icons';
 import SurfacePreview from '@/components/studio/SurfacePreview';
+import { useCustomFonts } from '@/components/studio/useCustomFonts';
 import { EmptyState, Field, Modal, PageHead, Spinner } from '@/components/ui';
 import { DEFAULT_BACKGROUND, FORMATS, TEMPLATES } from '@/lib/design';
 import { timeAgo } from '@/lib/format';
@@ -21,6 +22,8 @@ const numberFormat = (value: number) => value.toLocaleString('en-GB');
 
 export default function StudioGallery() {
   const router = useRouter();
+  // Loads the self-hosted Google Fonts so the previews render correctly.
+  useCustomFonts();
   const [designs, setDesigns] = useState<Design[]>([]);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);

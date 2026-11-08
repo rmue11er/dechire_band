@@ -92,6 +92,10 @@ npm run typecheck    # tsc --noEmit
   - **Layers**: list with visibility, lock, order and delete.
 - **7 templates**: release slammer, show poster, lyrics, merch drop, story announcement, statement, band photo.
 - **Formats**: feed 1:1, feed 4:5, story 9:16 – including “fit elements to format”.
+- **Google Fonts, self-hosted**: search all ~1,900 families in the inspector; a font is downloaded **once** onto
+  your server (`data/fonts/`, latin + latin-ext, up to three weights) and served from your own origin. No
+  requests to Google while working, exports keep the typeface, and the families show up in the font picker
+  next to the nine built-in ones.
 - **Export**: PNG at 2× resolution, save “to library” or drop it into the planner as a
   **draft post** with one click (PNG → media → draft).
 
@@ -276,13 +280,15 @@ server.js                  Startable Node server for Passenger / systemd
 components/                InstagramMock, PostEditor, PostPerformance, SnippetMenu, MediaPicker,
                            NoteEditor, DocEditor, CommandPalette, UI primitives, icons
 components/site/           Reveal, SiteAtmosphere (film layer of the public page)
-components/studio/         Canvas renderer, editor, tool panel, inspector, gallery
+components/studio/         Canvas renderer, editor, tool panel, inspector, gallery,
+                           FontBrowser (Google Fonts search) + useCustomFonts store
 lib/
   db.ts                    SQLite connection, schema, migrations, atomic seed
   repo.ts                  Queries & mappers
   seed.ts                  Demo content + generated SVG artwork
   site.ts                  Public site settings, blocks, crew and media corner data
   siteEmbed.ts             Teaser links → YouTube/Vimeo/Instagram/video embeds
+  fonts.ts                 Google Fonts search, one-time download, @font-face CSS
   design.ts                Design model, shapes, fonts, textures, templates
   docTemplates.ts          Rider, contract, itinerary, press & stage-plot templates
   instagram.ts             Meta Graph API client (publish, insights, token refresh, sandbox)
@@ -292,7 +298,7 @@ lib/
   exporters.ts             Caption/metadata/README/HTML export
   zip.ts, api.ts, format.ts, toast.ts, types.ts
 styles/                    base, dashboard, planner, media, notes, settings, studio, calendar, docs,
-                           brand, command, website, site
+                           brand, command, website, site, fonts
 data/                      band.db + uploads (git-ignored, created on first start)
 docs/KONZEPT.md            Product and architecture plan
 docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + nginx, cron, backups
@@ -321,6 +327,7 @@ docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + ngin
 | GET/POST | `/api/instagram` | Status, save, test, publish, sync |
 | GET/POST | `/api/scheduler` | Auto-publish status / run it (also for cron) |
 | GET/PUT | `/api/site` | Public site settings, blocks, crew, media corner |
+| GET/POST/DELETE | `/api/fonts`, `/api/fonts/:id` | Self-hosted Google Fonts (search: `/api/fonts/search?q=`) |
 | POST | `/api/media/:id/replace` | Swap the file of an asset |
 | GET | `/api/backup`, `POST /api/restore` | Backup ZIP / restore it |
 | GET | `/api/export/calendar` | `.ics` calendar feed |
@@ -378,6 +385,9 @@ Things that actually matter:
 ## Notes
 
 - All data lives in `data/` – back up the folder and you have a backup.
+- Added Google Fonts live in `data/fonts/` (font files + a cached catalogue list) and in the `fonts` table; both
+  are part of the folder backup. Adding a font needs outbound HTTPS to `fonts.google.com` once — after that
+  the studio works offline.
 - “Settings → Reset” deletes posts, media, notes, designs, milestones and documents, reseeds the demo
   data and restores the default accent + palette.
 - The demo images are generated SVG artwork in the band look; just upload real photos/logos.
