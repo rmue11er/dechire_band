@@ -1,0 +1,450 @@
+/* ============================================================
+   Calendar – milestones, deadlines, releases
+   ============================================================ */
+
+.cal-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 16px;
+  align-items: start;
+}
+
+.cal-panel {
+  padding: 18px 18px 14px;
+}
+
+.cal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cal-month {
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  min-width: 132px;
+  text-align: center;
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.cal-weekdays span {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  padding-left: 8px;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cal-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 96px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.012);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.cal-cell:hover {
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cal-cell.out {
+  opacity: 0.4;
+}
+
+.cal-cell.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.cal-day {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  padding-left: 2px;
+}
+
+.cal-cell.today .cal-day {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.cal-cell.today {
+  box-shadow: inset 0 0 0 1px var(--accent-soft);
+}
+
+.cal-items {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.cal-chip {
+  display: block;
+  width: 100%;
+  padding: 3px 6px;
+  border: 0;
+  border-left: 2px solid var(--k, var(--muted));
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: 10.5px;
+  line-height: 1.3;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.cal-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.cal-chip.done {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.cal-more {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+  padding-left: 6px;
+}
+
+.cal-hint {
+  margin: 12px 2px 0;
+  font-size: 11.5px;
+  color: var(--muted-2);
+}
+
+/* kind colours ------------------------------------------------------------ */
+
+.cal-chip.release,
+.cal-dot.release,
+.cal-kind.release {
+  --k: var(--accent);
+  color: var(--accent);
+}
+
+.cal-chip.show,
+.cal-dot.show,
+.cal-kind.show {
+  --k: #7fd3b0;
+  color: #7fd3b0;
+}
+
+.cal-chip.deadline,
+.cal-dot.deadline,
+.cal-kind.deadline {
+  --k: #e4778b;
+  color: #e4778b;
+}
+
+.cal-chip.meeting,
+.cal-dot.meeting,
+.cal-kind.meeting {
+  --k: #8792a6;
+  color: #8792a6;
+}
+
+.cal-chip.content,
+.cal-dot.content,
+.cal-kind.content {
+  --k: #e8c07d;
+  color: #e8c07d;
+}
+
+.cal-chip.other,
+.cal-dot.other,
+.cal-kind.other {
+  --k: var(--muted);
+  color: var(--muted);
+}
+
+.cal-chip.release,
+.cal-chip.show,
+.cal-chip.deadline,
+.cal-chip.meeting,
+.cal-chip.content,
+.cal-chip.other {
+  color: var(--text);
+}
+
+/* side column ------------------------------------------------------------- */
+
+.cal-side {
+  display: grid;
+  gap: 16px;
+}
+
+.cal-daylist {
+  display: grid;
+  gap: 8px;
+}
+
+.cal-dayrow {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cal-dayrow:hover {
+  border-color: var(--line-strong);
+}
+
+.cal-dayrow strong {
+  font-size: 13px;
+}
+
+.cal-dayrow.done strong {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.cal-done {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ok);
+}
+
+.cal-kind {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  justify-self: start;
+}
+
+.cal-upcoming {
+  display: grid;
+  gap: 6px;
+}
+
+.cal-upnext {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.02);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cal-upnext:hover {
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cal-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--k, var(--muted));
+  flex: none;
+}
+
+.cal-upnext-main {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.cal-upnext-main strong {
+  font-size: 12.5px;
+}
+
+/* legend + posts ---------------------------------------------------------- */
+
+.cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cal-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cal-toggle:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.cal-toggle.on {
+  color: var(--text);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cal-chip.post,
+.cal-dot.post,
+.cal-kind.post {
+  --k: #6fc2d8;
+  color: #6fc2d8;
+  text-decoration: none;
+}
+
+.cal-chip.post {
+  color: var(--text);
+}
+
+.cal-dayrow.post {
+  text-decoration: none;
+  color: inherit;
+}
+
+.cal-kind.post {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cal-checkline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.cal-checkbar {
+  flex: 1 1 auto;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.09);
+  overflow: hidden;
+}
+
+.cal-checkbar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+}
+
+/* checklist editor (milestone dialog) ------------------------------------- */
+
+.checklist-editor {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.checklist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.checklist-items {
+  display: grid;
+  gap: 6px;
+}
+
+.checklist-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.checklist-item input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* shared small helper ----------------------------------------------------- */
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.check-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 1080px) {
+  .cal-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .cal-cell {
+    min-height: 68px;
+  }
+
+  .cal-chip {
+    font-size: 9px;
+    padding: 2px 4px;
+  }
+
+  .cal-weekdays span {
+    padding-left: 4px;
+    font-size: 8px;
+  }
+}
