@@ -79,6 +79,7 @@
 
 .timeline-row.milestone .timeline-date {
   border-style: dashed;
+  border-color: rgb(var(--accent-2-rgb) / 0.5);
   background: none;
 }
 
@@ -180,7 +181,7 @@
 }
 
 .attention-row.info .attention-dot {
-  background: var(--accent);
+  background: var(--accent-2);
 }
 
 .attention-main {

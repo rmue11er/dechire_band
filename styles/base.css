@@ -112,7 +112,7 @@ button {
 }
 
 ::selection {
-  background: var(--accent);
+  background: var(--accent-2);
   color: #08060d;
 }
 
@@ -315,8 +315,8 @@ button {
   font-size: 10px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--accent);
-  opacity: 0.85;
+  color: var(--accent-2);
+  opacity: 0.9;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -412,6 +412,7 @@ button {
 
 .btn-ghost:hover {
   color: var(--text);
+  border-color: var(--accent-2);
 }
 
 .btn-danger {
@@ -473,7 +474,7 @@ button {
 }
 
 .panel-title svg {
-  color: var(--accent);
+  color: var(--accent-2);
 }
 
 .panel-body {
@@ -591,6 +592,12 @@ button {
   background: rgb(var(--accent-rgb) / 0.1);
 }
 
+.chip.secondary {
+  color: var(--accent-2);
+  border-color: rgb(var(--accent-2-rgb) / 0.35);
+  background: rgb(var(--accent-2-rgb) / 0.12);
+}
+
 .dot {
   width: 6px;
   height: 6px;
@@ -619,9 +626,9 @@ button {
 }
 
 .status.scheduled {
-  color: var(--accent);
-  background: rgb(var(--accent-rgb) / 0.12);
-  border-color: rgb(var(--accent-rgb) / 0.3);
+  color: var(--accent-2);
+  background: rgb(var(--accent-2-rgb) / 0.12);
+  border-color: rgb(var(--accent-2-rgb) / 0.32);
 }
 
 .status.published {

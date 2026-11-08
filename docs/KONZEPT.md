@@ -452,7 +452,7 @@ hue are perceptually even, which is exactly what words like “pastel”, “mut
 | `--muted` | `#9a91b2` | Secondary text |
 | `--accent` | `#b9a5e8` | Pastel lavender, interaction, focus (profile accent) |
 | `--accent-rgb` | `185 165 232` | Same colour as `r g b` – every translucent tint uses `rgb(var(--accent-rgb) / x)`, so a new accent reaches every surface |
-| `--accent-2` | derived | Second CI colour (`profile.accent_2_hex`, *Auto* = darker shade of the accent) – gradients, stamps, two-tone rules |
+| `--accent-2` | derived | **Second working colour** (`profile.accent_2_hex`, *Auto* = sibling tone, hue +26°): page kickers, panel icons, `scheduled` badges, meta labels, document kicker, milestone dates, selection, `.chip.secondary` – plus gradients and two-tone rules |
 | `--accent-2-deep` / `--accent-2-soft` | derived | Depth + tint of the second colour |
 | `--accent-deep` | `#6b54a6` | Gradients, depth |
 | `--ok / --warn / --danger` | `#7fd3b0 / #e8c07d / #e4778b` | Status |
@@ -488,7 +488,14 @@ The demo reset restores the recommendation.
 
 The accent is a single value (`profile.accent_hex`) that fans out into tokens in `lib/palette.ts`
 (`accentTokens(hex, hex2)` → `--accent`, `--accent-rgb`, `--accent-2`, `--accent-2-rgb`,
-`--accent-deep`, `--accent-2-deep`, soft/glow/line variants). `app/layout.tsx` renders it server-side,
+`--accent-deep`, `--accent-2-deep`, soft/glow/line variants).
+
+The two colours have job descriptions, so the UI does not turn into a gradient: **`--accent` is
+interaction** (buttons, active nav, focus rings, slider tracks, document stamp and rule) and
+**`--accent-2` is information** (page kickers, panel-title icons, `scheduled` badges, meta labels,
+document kicker and footer dot, milestone dates in the dashboard timeline, `.chip.secondary`, text
+selection). Without a chosen second colour it is derived with `siblingAccent()` – hue +26°, slightly
+lighter, slightly less chroma – which is visibly its own tone but stays in the family. `app/layout.tsx` renders it server-side,
 `PaletteProvider` re-applies it in the browser, and the settings page dispatches `accent:updated`
 with both colours for an instant switch.
 

@@ -260,11 +260,19 @@ and derived into every token the design system needs (`--accent`, `--accent-rgb`
 The layout renders it server-side so there is no flash, and the settings page applies it instantly
 while picking (`accent:updated` event). Pick a CI colour, any hex, or jump back to the CI primary.
 
-**Second colour (optional):** `profile.accent_2_hex` sets `--accent-2`. Leave it on *Auto* and the second
-tone is derived from the first one; pick a CI colour and gradients, stamps and the second half of two-tone
-elements switch over as well. Nothing in the app hardcodes a lavender value any more – every translucent
-surface uses `rgb(var(--accent-rgb) / x)`, so notes, studio, planner, media, documents, dashboard and
-the brand sheet all follow the accent you pick.
+**Second colour (optional):** `profile.accent_2_hex` sets `--accent-2` – a working colour, not a gradient
+partner. It carries the *information* layer of the UI while the primary carries interaction:
+
+| Primary accent (`--accent`) | Secondary accent (`--accent-2`) |
+| --- | --- |
+| buttons, active navigation, focus rings, slider tracks, primary markers | page kickers (`.eyebrow`), panel-title icons, `scheduled` badges, meta labels, the document kicker, milestone dates in the timeline, text selection, ghost-button hover, `.chip.secondary` |
+
+Leave it on *Auto* and the second tone is a sibling of the primary (hue +26°, slightly lighter, a bit
+less chroma) – recognisably its own colour, still in the family. Pick a CI colour and it takes over
+everywhere at once (also possible from the colour lab with the `2nd` button on any swatch). Nothing in
+the app hardcodes a lavender value any more – every translucent surface uses
+`rgb(var(--accent-rgb) / x)` or `rgb(var(--accent-2-rgb) / x)`, so notes, studio, planner, media,
+documents, dashboard and the brand sheet all follow the two colours you pick.
 
 ---
 

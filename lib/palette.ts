@@ -1,4 +1,5 @@
 import type { PaletteColor } from './types';
+import { hexToOklch, oklchToHex } from './colorlab';
 
 /**
  * CI “Bruised Bloom” – emotional post-hardcore.
@@ -79,8 +80,21 @@ const rgbTriple = (hex: string) => {
 
 export const DEFAULT_ACCENT = '#b9a5e8';
 
-/** Second CI colour. `null` = derived automatically from the primary accent. */
+/**
+ * Second CI colour. `null` = derived from the primary accent: a *visible*
+ * sibling (hue +26°, a touch lighter, a bit less chroma) so the second colour
+ * is recognisable as its own tone and not a second helping of the first one.
+ */
 export type SecondaryAccent = string | null;
+
+function siblingAccent(hex: string) {
+  const { l, c, h } = hexToOklch(hex);
+  return oklchToHex({
+    l: Math.min(0.94, l * 1.04 + 0.03),
+    c: Math.max(0.035, c * 0.82),
+    h: (h + 26) % 360,
+  });
+}
 
 /**
  * Everything the design system needs from one accent hex – the whole UI follows
@@ -89,7 +103,7 @@ export type SecondaryAccent = string | null;
  */
 export function accentTokens(hex: string, hex2?: SecondaryAccent): Record<string, string> {
   const base = isHex(hex) ? hex.trim().toLowerCase() : DEFAULT_ACCENT;
-  const second = hex2 && isHex(hex2) ? hex2.trim().toLowerCase() : shade(base, 0.14);
+  const second = hex2 && isHex(hex2) ? hex2.trim().toLowerCase() : siblingAccent(base);
   return {
     '--accent': base,
     '--accent-rgb': rgbTriple(base),

@@ -690,9 +690,10 @@ export default function SettingsPage() {
         </div>
         <div className="panel-body">
           <p className="palette-intro">
-            The accent colour drives buttons, active navigation, focus rings, highlights – and every document
-            sheet. Pick a second colour if you want two-tone gradients and stamps; leave it on <em>Auto</em> and
-            the second tone is derived from the first one.
+            The <strong>primary</strong> accent drives interaction: buttons, active navigation, focus rings and the
+            document sheet. The <strong>secondary</strong> colour is a working colour of its own – page kickers, panel
+            icons, <em>scheduled</em> badges, meta labels and links use it, and it is the second half of two-tone
+            elements. Leave it on <em>Auto</em> and it becomes a sibling tone of the primary (hue +26°).
           </p>
 
           <div className="accent-rows">
@@ -790,6 +791,7 @@ export default function SettingsPage() {
               <IconCheck size={14} /> Primary button
             </button>
             <span className="chip accent">Active chip</span>
+            <span className="chip secondary">Scheduled</span>
             <span className="accent-preview-dot" />
             <span className="accent-preview-two-tone" aria-hidden="true" />
             <span className="mono small muted">preview</span>

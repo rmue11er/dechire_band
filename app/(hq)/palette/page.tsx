@@ -151,6 +151,29 @@ export default function PaletteLabPage() {
     }
   };
 
+  const setSecondary = async (hex: string) => {
+    setBusy(`second-${hex}`);
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accent2Hex: hex }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Failed to save');
+      setProfile(data.profile);
+      applyAccent(data.profile.accentHex ?? DEFAULT_ACCENT, hex);
+      window.dispatchEvent(
+        new CustomEvent('accent:updated', { detail: { accent: data.profile.accentHex, accent2: hex } })
+      );
+      toast('Second colour set');
+    } catch (error: any) {
+      toast(error.message ?? 'Failed to set second colour', 'error');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const generate = () => {
     const generated = generatePalette(seed, mood, scheme);
     setColors(generated.colors);
@@ -406,9 +429,18 @@ export default function PaletteLabPage() {
                             className="lab-mini"
                             onClick={() => setAccent(swatch.hex)}
                             disabled={busy !== null}
-                            title="Set as UI accent"
+                            title="Set as primary UI accent"
                           >
                             accent
+                          </button>
+                          <button
+                            type="button"
+                            className="lab-mini"
+                            onClick={() => setSecondary(swatch.hex)}
+                            disabled={busy !== null}
+                            title="Set as the second UI accent"
+                          >
+                            2nd
                           </button>
                           <button type="button" className="lab-mini" onClick={() => copy(swatch.hex)} title="Copy hex">
                             copy
