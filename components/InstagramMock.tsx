@@ -7,6 +7,7 @@ import {
   IconChevronRight,
   IconComment,
   IconDots,
+  IconEye,
   IconFilm,
   IconGrid,
   IconHeart,
@@ -79,16 +80,21 @@ function ProfileView({
   posts,
   showStatus,
   onSelectPost,
+  onReorder,
   activeId,
 }: {
   profile: Profile;
   posts: Post[];
   showStatus: boolean;
   onSelectPost?: (id: number) => void;
+  /** Drag a tile onto another one to move it in the grid. */
+  onReorder?: (draggedId: number, targetId: number) => void;
   activeId?: number | null;
 }) {
   const highlights = profile.highlightNames.slice(0, 5);
   const [highlightIndex, setHighlightIndex] = useState(0);
+  const [dragId, setDragId] = useState<number | null>(null);
+  const [overId, setOverId] = useState<number | null>(null);
   const coverFor = (index: number) =>
     posts[index]?.media[0]?.url ?? posts[0]?.media[0]?.url ?? profile.avatarUrl;
 
@@ -177,14 +183,53 @@ function ProfileView({
           posts.map((post) => {
             const cover = post.media[0];
             return (
-              <button
+              <div
                 key={post.id}
-                type="button"
-                className={`ig-tile ${activeId === post.id ? 'active' : ''}`}
+                role="button"
+                tabIndex={0}
+                draggable={Boolean(onReorder)}
+                className={`ig-tile ${activeId === post.id ? 'active' : ''} ${
+                  dragId === post.id ? 'dragging' : ''
+                } ${overId === post.id && dragId !== post.id ? 'drop' : ''}`}
                 onClick={() => onSelectPost?.(post.id)}
-                title="Open this post in the preview"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onSelectPost?.(post.id);
+                  }
+                }}
+                title="Open this post · drag to reorder"
+                aria-label="Open this post in the single post view"
+                onDragStart={(event) => {
+                  if (!onReorder) return;
+                  event.dataTransfer.setData('text/plain', String(post.id));
+                  event.dataTransfer.effectAllowed = 'move';
+                  setDragId(post.id);
+                }}
+                onDragEnd={() => {
+                  setDragId(null);
+                  setOverId(null);
+                }}
+                onDragOver={(event) => {
+                  if (!onReorder) return;
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = 'move';
+                  if (overId !== post.id) setOverId(post.id);
+                }}
+                onDragLeave={() => setOverId((current) => (current === post.id ? null : current))}
+                onDrop={(event) => {
+                  if (!onReorder) return;
+                  event.preventDefault();
+                  const source = dragId ?? Number(event.dataTransfer.getData('text/plain'));
+                  setDragId(null);
+                  setOverId(null);
+                  if (source && source !== post.id) onReorder(source, post.id);
+                }}
               >
                 <MediaThumb media={cover} className="ig-tile-media" />
+                <span className="ig-tile-open" aria-hidden="true">
+                  <IconEye size={13} />
+                </span>
                 {post.type === 'carousel' && post.media.length > 1 ? (
                   <span className="ig-tile-badge">
                     <IconLayers size={12} />
@@ -198,7 +243,7 @@ function ProfileView({
                 {showStatus && post.status !== 'published' ? (
                   <span className={`ig-tile-status ${post.status}`}>{post.status === 'draft' ? 'Draft' : 'Scheduled'}</span>
                 ) : null}
-              </button>
+              </div>
             );
           })
         )}
@@ -378,6 +423,7 @@ export default function InstagramMock({
   activePost,
   showStatus = false,
   onSelectPost,
+  onReorder,
   onPrev,
   onNext,
 }: {
@@ -387,6 +433,7 @@ export default function InstagramMock({
   activePost?: Post | null;
   showStatus?: boolean;
   onSelectPost?: (id: number) => void;
+  onReorder?: (draggedId: number, targetId: number) => void;
   onPrev?: () => void;
   onNext?: () => void;
 }) {
@@ -403,6 +450,7 @@ export default function InstagramMock({
                 posts={posts}
                 showStatus={showStatus}
                 onSelectPost={onSelectPost}
+                onReorder={onReorder}
                 activeId={activePost?.id ?? null}
               />
             ) : (

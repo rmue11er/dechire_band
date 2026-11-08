@@ -94,9 +94,11 @@ flowchart LR
 
 
 ### 3.3 Queue
-
-- The list *is* the feed order (position 1 top left).
-- Dragging sets the position through the API, the preview updates optimistically right away.
+- The list *is* the feed order (position 1 top left) — the number sits on the thumbnail, the row shows status, date
+  and a hover-only grip/export so the list stays quiet.
+- Dragging sets the position through the API, the preview updates optimistically right away. **The profile grid
+  is a drop surface too**: dragging a tile onto another one is the most direct way to design a grid, and it calls
+  the same endpoint. Clicking a tile opens that post in the single-post view *and* in the editor.
 - Filter by status; “sort by date” orders chronologically.
 - Each row has a direct ZIP download.
 

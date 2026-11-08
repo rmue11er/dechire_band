@@ -15,8 +15,8 @@ import {
 import InstagramMock from '@/components/InstagramMock';
 import { MediaThumb } from '@/components/MediaThumb';
 import PostEditor from '@/components/PostEditor';
-import { EmptyState, PageHead, Segmented, Spinner, StatusBadge } from '@/components/ui';
-import { formatTime, relativeDay } from '@/lib/format';
+import { EmptyState, PageHead, Segmented, Spinner } from '@/components/ui';
+import { formatShortDate, formatTime, relativeDay } from '@/lib/format';
 import { toast } from '@/lib/toast';
 import type { MediaItem, Post, PostStatus, Profile } from '@/lib/types';
 
@@ -128,16 +128,18 @@ export default function PlannerPage() {
     });
   };
 
-  const onDrop = (targetId: number) => {
+  /** Moves `draggedId` to the slot of `targetId` – used by the list and the grid. */
+  const movePost = (draggedId: number | null, targetId: number) => {
+    const source = draggedId ?? dragId;
     setDragging(false);
-    if (dragId == null || dragId === targetId) return;
+    if (source == null || source === targetId) return;
     const ids = posts.map((post) => post.id);
-    const from = ids.indexOf(dragId);
+    const from = ids.indexOf(source);
     const to = ids.indexOf(targetId);
     if (from < 0 || to < 0) return;
     const next = [...ids];
     next.splice(from, 1);
-    next.splice(to, 0, dragId);
+    next.splice(to, 0, source);
     setDragId(null);
     reorder(next);
     toast('Feed order updated');
@@ -284,12 +286,13 @@ export default function PlannerPage() {
               setCreating(false);
               setMode('post');
             }}
+            onReorder={(dragged, target) => movePost(dragged, target)}
             onPrev={() => navigatePost(-1)}
             onNext={() => navigatePost(1)}
           />
           <p className="preview-hint">
             <IconSparkles size={13} />
-            Live preview · {posts.length} posts · tile = single post, 1:1 button = grid crop
+            Click a tile for the single post · drag a tile to move it in the grid
           </p>
         </div>
 
@@ -300,7 +303,7 @@ export default function PlannerPage() {
                 <IconLayers size={16} />
                 Feed order
               </div>
-              <span className="mono small muted">{posts.length}</span>
+              <span className="queue-count mono">{posts.length}</span>
             </div>
 
             <div className="queue-filter">
@@ -314,6 +317,12 @@ export default function PlannerPage() {
                 ]}
               />
             </div>
+
+            {visiblePosts.length && filter === 'all' ? (
+              <div className="queue-top-label">
+                <span className="mono">Top left in your profile</span>
+              </div>
+            ) : null}
 
             <div className="queue-list">
               {visiblePosts.length === 0 ? (
@@ -340,29 +349,37 @@ export default function PlannerPage() {
                         setDragging(false);
                       }}
                       onDragOver={(event) => event.preventDefault()}
-                      onDrop={() => onDrop(post.id)}
+                      onDrop={() => movePost(dragId, post.id)}
                       onClick={() => {
                         setCreating(false);
                         setSelectedId(post.id);
                         setMode('post');
                       }}
                       className={`queue-item ${isActive ? 'active' : ''} ${dragId === post.id ? 'dragging' : ''}`}
+                      title={`${post.caption?.split('\n')[0]?.trim() || 'Untitled post'} – drag to move`}
                     >
-                      <span className="queue-drag">
-                        <IconDrag size={13} />
+                      <span className="queue-grip" aria-hidden="true">
+                        <IconDrag size={12} />
                       </span>
-                      <span className="queue-index">{String(index + 1).padStart(2, '0')}</span>
+
                       <span className="queue-thumb">
                         <MediaThumb media={post.media[0]} className="queue-thumb-img" />
+                        <span className="queue-slot">{index + 1}</span>
                       </span>
+
                       <span className="queue-info">
-                        <span className="queue-caption truncate">
-                          {post.caption?.split('\n')[0]?.trim() || 'Ohne Caption'}
+                        <span className="queue-caption">
+                          {post.caption?.split('\n')[0]?.trim() || 'Untitled post'}
                         </span>
                         <span className="queue-meta">
-                          <StatusBadge status={post.status} />
-                          <span className="mono">
-                            {post.scheduledAt ? `${relativeDay(post.scheduledAt)} · ${formatTime(post.scheduledAt)}` : 'no date'}
+                          <span className={`queue-dot ${post.status}`} aria-hidden="true" />
+                          <span className="queue-status">
+                            {post.status === 'draft' ? 'Draft' : post.status === 'scheduled' ? 'Scheduled' : 'Published'}
+                          </span>
+                          <span className="queue-date">
+                            {post.scheduledAt
+                              ? `${formatShortDate(post.scheduledAt)} · ${formatTime(post.scheduledAt)}`
+                              : 'no date'}
                           </span>
                           {post.igError ? (
                             <span className="queue-error" title={post.igError}>
@@ -371,6 +388,7 @@ export default function PlannerPage() {
                           ) : null}
                         </span>
                       </span>
+
                       <a
                         className="queue-export"
                         href={`/api/export/post/${post.id}`}
@@ -386,8 +404,10 @@ export default function PlannerPage() {
             </div>
 
             <div className="queue-foot">
-              <span className="mono">Drag = reorder</span>
-              {dragging ? <span className="chip accent">Drop to slot in</span> : null}
+              <span className="mono">
+                {dragging ? 'Drop where it belongs' : 'Drag here or in the grid'}
+              </span>
+              {dragging ? <span className="chip accent">Reordering</span> : null}
             </div>
           </div>
         </div>

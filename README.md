@@ -53,8 +53,9 @@ npm run typecheck    # tsc --noEmit
 ## The tools
 
 ### 1. Post planner (`/planner`)
-- **Real-time Instagram mockup**: profile grid (click any tile to inspect that post) and a single-post view
-  with prev/next, carousel, likes, caption folding like the real app, plus a **1:1 grid-crop toggle**
+- **Real-time Instagram mockup**: profile grid and a single-post view. **Click a tile → that post opens in the
+  single post view** (and in the editor), **drag a tile → it moves in the grid** (the drop target is highlighted),
+  prev/next, carousel, likes, caption folding like the real app, plus a **1:1 grid-crop toggle**
   that shows how the tile will be cropped.
 - **Editor split into three tabs** – Content, Publish, Insights – with a **readiness row** on top:
   media, caption, hook, alt text, hashtags and date, each a click away, and a clear
@@ -70,7 +71,8 @@ npm run typecheck    # tsc --noEmit
   to *Scheduled* yourself.
 - **Snippets**: saved hashtag sets, captions and hooks drop into caption or first comment with one click.
 - **Performance per post**: publish to Instagram, sync insights or type the numbers in by hand.
-- **Duplicate** a post as a new draft, **reorder the feed by drag & drop**, sort by date, `⌘S` saves.
+- **Duplicate** a post as a new draft, **reorder the feed by drag & drop** (in the grid or in the *Feed order*
+  list on the right — both call the same endpoint), sort by date, `⌘S` saves.
 - **Export**:
   - `Feed as PNG` – snapshot of the mockup (2× resolution) for band chat decisions.
   - `Plan as ZIP` – the whole plan (see below).
