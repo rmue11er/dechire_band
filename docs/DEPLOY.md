@@ -62,6 +62,46 @@ to enable it (or use the Plesk **Git** extension to clone).
 > Build on the server, not on your laptop: `.next` is tied to the Node major and the OpenSSL build of the
 > machine. Deploy the source and build there.
 
+### 2.1 “Build directory is not writeable” (EACCES on `.next`)
+
+Almost always the same story: the last `npm run build` ran as **root** (SSH as root, or a script started by
+root), so `.next/` belongs to root. The web app and the Plesk Node.js buttons run as the **subscription user**
+and cannot write into it.
+
+```bash
+WEB=/var/www/vhosts/example.com/dechire.example.com/www   # your document root
+OWNER=$(stat -c '%U' "$WEB")                              # e.g. example_user
+
+# 1. who owns what?
+ls -ld "$WEB" "$WEB/.next" 2>/dev/null
+#    drwxr-xr-x 4 root root … .next      ← that's the problem
+
+# 2. remove the root-owned build (safe, it is generated)
+sudo rm -rf "$WEB/.next"
+
+# 3. hand the whole app back to the subscription user
+sudo chown -R "$OWNER":psacln "$WEB"
+sudo find "$WEB" -type d -exec chmod 755 {} +
+sudo find "$WEB" -type f -exec chmod 644 {} +
+
+# 4. build as that user – never as root
+sudo -u "$OWNER" -H bash -lc "
+  export PATH=/opt/plesk/node/24/bin:\$PATH
+  cd '$WEB' && npm ci && npm run build
+"
+```
+
+Then **Restart App** in the Plesk Node.js panel.
+
+Rules of thumb:
+
+- Every command that touches the app directory (`git pull`, `npm ci`, `npm run build`, backups) must run as the
+  **subscription user** – `sudo -u <owner> -H bash -lc '…'`.
+- `data/` and `data/uploads/` must stay writable by that user (`chown -R <owner>:psacln data`).
+- Never `npm run dev` on the server (Turbopack watches the SQLite WAL and restarts in a loop).
+- If you add files as root later, only the new files need `chown` – `.next` and `node_modules` can always be
+  deleted and rebuilt.
+
 ---
 
 ## 3. Option A — Plesk's Node.js extension (a few clicks)
@@ -273,6 +313,8 @@ Schema changes run themselves on start (`ensureColumn` in `lib/db.ts`); `data/` 
 | `ERR_UNKNOWN_BUILTIN_MODULE: No such built-in module: node:sqlite` | Node too old → 24.x, or `NODE_OPTIONS=--experimental-sqlite` on 22 |
 | 502 / “Web application could not be started” (Passenger) | no `.next` (build missing), wrong Application Root, or startup file ≠ `server.js`; check the app log |
 | `SQLITE_CANTOPEN` or `EACCES: permission denied, open '.../data/band.db'` | `data/` not writable by the service user → `chown -R` |
+| `EACCES: permission denied, open '.../.next/trace'` + `Build directory is not writeable` | `.next` was created by another user (usually `root` from an earlier SSH build) → delete it and rebuild as the subscription user, see §2.1 |
+| `EACCES` on `package-lock.json` / `node_modules` after switching Plesk users | same cause → `chown -R <sub-user>:psacln` on the app directory |
 | Basic Auth prompt on `/site` | the matcher in `proxy.ts` must keep excluding `site`, `_next`, `api/files` |
 | **no** password prompt at all | `HQ_PASSWORD` is not set (or not passed by Plesk) → the gate is opt-in; log line must say `auth on` |
 | Pages look unstyled after an update | stale build → `npm run build` again and restart |
