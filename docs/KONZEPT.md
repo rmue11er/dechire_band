@@ -416,6 +416,30 @@ The rebuilt dashboard answers three questions only:
 Plus a small shortcuts row (documents, studio, notes, website) and the band's base figures in the panel head.
 No counters that just count, no previews that duplicate a tool.
 
+### 7.5 Colour lab (`/palette`)
+
+A palette is a design decision, so the module tries to support the decision instead of offering a colour
+picker. All maths live in `lib/colorlab.ts` and work in **OKLCH** – the space where lightness, chroma and
+hue are perceptually even, which is exactly what words like “pastel”, “muted” or “deeper” refer to.
+
+- **Query parsing**: the search field understands hue families (sage, rust, teal, rose …), moods
+  (pastel, muted, dark, bright, neon, earthy, vintage), harmony words (complement, analog, triad, mono,
+  split) and named colours. A hit on a name is ranked first and marked *exact name match*.
+- **Hue restriction**: naming a hue (or asking for a harmony) narrows the candidate hues to a ±16° band
+  around it – otherwise “muted moss” would return muted roses because they score well. A multi-colour
+  harmony is returned round-robin, so both sides of a complement actually appear.
+- **Taste prior**: without a mood, named hues are pulled into a natural corridor (L 42–86, C 0.03–0.13)
+  and extreme chroma is damped, so “sage” offers sage and not acid green.
+- **Scoring** (`paletteFit`): hue relationship to the nearest palette colour (sibling 20–45°, counterpoint
+  ≥140°), lightness separation, and WCAG contrast against the darkest palette colour → 0–100 plus a
+  short human note.
+- **Ladder**: six OKLCH steps of the seed (paper, pastel, soft, base, deep, night) – the “give me versions
+  of this” button.
+- **Generator**: seed hue stays the primary, the harmony provides accent and signal; base/ink/dusk are
+  always dark and the paper always light, while the mood only moves lightness and chroma of the primary.
+- The module writes through the existing `PUT /api/palette` and `PATCH /api/profile` (`accentHex`), so a
+  found colour can be saved into the CI or set as the UI accent immediately.
+
 ## 8. Design system
 
 ### Colours

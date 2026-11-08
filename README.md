@@ -146,13 +146,30 @@ npm run typecheck    # tsc --noEmit
   file with the same layout – logo and sheet image are inlined as data URLs, the accent is copied as
   a CSS variable, so the exported file works offline and in the band's current colours.
 
-### 7. Brand sheet (`/brand`)
+### 7. Colour lab (`/palette`)
+The band's palette is not guessed any more – it is searched. Everything runs in **OKLCH**, so “pastel”,
+“muted” or “a sibling of our lavender” are numbers instead of vibes (`lib/colorlab.ts`).
+
+- **Guided search**: type what you mean – `pastel purple`, `muted moss`, `warm rust`,
+  `complement of lavender` – and the query is parsed into hue family + mood + harmony. Chips for
+  mood (pastel, muted, dark, bright, neon, earthy, vintage) and harmony (analogous, complementary,
+  split, triad, tetrad, mono), plus lightness/chroma sliders when you want to drive it yourself.
+- **Scoring**: every candidate is ranked against the palette you already have – hue relationship to the
+  nearest colour, lightness separation and contrast to the darkest tone. Each card shows the score bar
+  and a note (*sibling of Lavender*, *counterpoint to Moss*, *exact name match*).
+- **Tints & shades**: one click turns the seed into a paper→pastel→soft→base→deep→night ladder.
+- **Generate a set**: builds night, ink, dusk, primary, accent, bone and signal from the seed.
+- **Working palette** with role dropdowns, live preview (headline, button, chip, contrast readout) and a
+  “set as UI accent” action on every swatch. Nothing is stored until you save – the module writes to the
+  same `palette` table and `profile.accent_hex` as the settings page.
+
+### 8. Brand sheet (`/brand`)
 - One page CI guide generated from the live profile and palette: logo on night and bone,
   all colours with hex and role, the four typefaces with specimens, do/don’t rules.
 - Export as **PNG (2×)**, as **SVG** (self-contained, fonts embedded) or print it as PDF.
 - Change a colour in the settings and the sheet follows – no separate design file to maintain.
 
-### 8. Instagram & performance (`/planner`, Settings)
+### 9. Instagram & performance (`/planner`, Settings)
 - Publishing and insights through the **Meta Graph API** (single image and carousel), insights sync
   writes reach/likes/comments/saves/shares per post, the dashboard shows totals, average reach and
   the best weekday from your own numbers.
@@ -167,7 +184,7 @@ npm run typecheck    # tsc --noEmit
   per post. Stories are skipped with a hint towards the ZIP export.
 - Manual numbers can be entered per post as well (reach, likes, comments, saves, shares).
 
-### 9. Public website (`/site`) + configuration (`/website`)
+### 10. Public website (`/site`) + configuration (`/website`)
 - **A one-pager that sounds like a person, not a press kit.** Full-screen hero with the band name rising
   letter by letter, a slow photo drift, film grain and scanlines, an outlined ghost of the name behind it, and
   the four names in the corner.
@@ -296,6 +313,7 @@ app/
   (hq)/calendar/page.tsx   Milestone calendar
   (hq)/studio/page.tsx     Design studio (gallery + templates)
   (hq)/studio/[id]/page.tsx Design editor
+  (hq)/palette/page.tsx    Colour lab (guided palette search, harmonies, generator)
   (hq)/media/page.tsx      Media library
   (hq)/notes/page.tsx      Notes
   (hq)/docs/page.tsx       Documents (rider, contracts, orga)
@@ -308,7 +326,7 @@ app/
 proxy.ts                   Optional HTTP Basic Auth gate (active when HQ_PASSWORD is set)
 server.js                  Startable Node server for Passenger / systemd
 components/                InstagramMock, PostEditor, PostPerformance, SnippetMenu, MediaPicker,
-                           NoteEditor, DocEditor, CommandPalette, UI primitives, icons
+                           NoteEditor, DocEditor, EmojiPicker, CommandPalette, UI primitives, icons
 components/site/           Reveal, SiteAtmosphere (film layer of the public page)
 components/studio/         Canvas renderer, editor, tool panel, inspector, gallery,
                            FontBrowser (Google Fonts search) + useCustomFonts store
@@ -319,6 +337,7 @@ lib/
   site.ts                  Public site settings, blocks, crew and media corner data
   siteEmbed.ts             Teaser links → YouTube/Vimeo/Instagram/video embeds
   fonts.ts                 Google Fonts search, one-time download, @font-face CSS
+  colorlab.ts              OKLCH colour maths: search, scoring, harmonies, generator, naming
   design.ts                Design model, shapes, fonts, textures, templates
   docTemplates.ts          Rider, contract, itinerary, press & stage-plot templates
   instagram.ts             Meta Graph API client (publish, insights, token refresh, sandbox)
@@ -327,8 +346,8 @@ lib/
   kinds.ts                 Document & milestone type labels
   exporters.ts             Caption/metadata/README/HTML export
   zip.ts, api.ts, format.ts, toast.ts, types.ts
-styles/                    base, dashboard, planner, media, notes, settings, studio, calendar, docs,
-                           brand, command, website, site, fonts
+styles/                    base, dashboard, planner, media, notes, settings, studio, palette,
+                           calendar, docs, brand, command, website, site, fonts
 data/                      band.db + uploads (git-ignored, created on first start)
 docs/KONZEPT.md            Product and architecture plan
 docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + nginx, cron, backups
