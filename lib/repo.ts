@@ -4,6 +4,7 @@ import type {
   ChecklistItem,
   Design,
   InstagramConnection,
+  MediaFolder,
   MediaGroup,
   MediaItem,
   Milestone,
@@ -28,15 +29,18 @@ const parseList = (value: any, fallback: string[] = []): string[] => {
 };
 
 const MEDIA_SELECT = `
-  SELECT m.*, g.name AS group_name, g.kind AS group_kind,
+  SELECT m.*, g.name AS group_name, g.kind AS group_kind, f.name AS folder_name,
     (SELECT COUNT(*) FROM post_media pm WHERE pm.media_id = m.id) AS used_in
   FROM media m
-  LEFT JOIN media_groups g ON g.id = m.group_id`;
+  LEFT JOIN media_groups g ON g.id = m.group_id
+  LEFT JOIN media_folders f ON f.id = m.folder_id`;
 
 export function mapMedia(row: any): MediaItem {
   return {
     id: Number(row.id),
     groupId: row.group_id == null ? null : Number(row.group_id),
+    folderId: row.folder_id == null ? null : Number(row.folder_id),
+    folderName: row.folder_name ?? null,
     groupName: row.group_name ?? null,
     groupKind: row.group_kind ?? null,
     variantLabel: row.variant_label ?? '',
@@ -76,13 +80,15 @@ export function createMedia(input: {
   alt?: string;
   tags?: string[];
   groupId?: number | null;
+  folderId?: number | null;
   variantLabel?: string;
 }) {
   const result = execute(
-    `INSERT INTO media (group_id, variant_label, title, filename, original_name, mime, size, width, height, alt, tags, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO media (group_id, folder_id, variant_label, title, filename, original_name, mime, size, width, height, alt, tags, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.groupId ?? null,
+      input.folderId ?? null,
       input.variantLabel ?? '',
       input.title,
       input.filename,
@@ -107,6 +113,7 @@ export function updateMedia(
     alt?: string;
     tags?: string[];
     groupId?: number | null;
+    folderId?: number | null;
   }
 ) {
   const sets: string[] = [];
@@ -130,6 +137,10 @@ export function updateMedia(
   if (patch.groupId !== undefined) {
     sets.push('group_id = ?');
     params.push(patch.groupId ?? null);
+  }
+  if (patch.folderId !== undefined) {
+    sets.push('folder_id = ?');
+    params.push(patch.folderId ?? null);
   }
   if (!sets.length) return;
   params.push(id);
@@ -229,6 +240,103 @@ export function updateGroup(id: number, patch: { name?: string; kind?: string; d
 
 export function deleteGroup(id: number) {
   execute('DELETE FROM media_groups WHERE id = ?', [id]);
+}
+
+/* ---------------------------------------------------------------- folders */
+
+/** Flat list in tree order (depth + parent), counts included. */
+export function listFolders(): MediaFolder[] {
+  const rows = queryAll<any>('SELECT * FROM media_folders ORDER BY name COLLATE NOCASE ASC');
+  const files = queryAll<any>('SELECT folder_id, COUNT(*) AS c FROM media GROUP BY folder_id');
+  const direct = new Map<number | null, number>();
+  files.forEach((row) => {
+    direct.set(row.folder_id == null ? null : Number(row.folder_id), Number(row.c));
+  });
+
+  const nodes = rows.map((row) => ({
+    id: Number(row.id),
+    parentId: row.parent_id == null ? null : Number(row.parent_id),
+    name: row.name,
+    createdAt: row.created_at,
+    count: direct.get(Number(row.id)) ?? 0,
+    total: 0,
+    depth: 0,
+  }));
+
+  const byParent = new Map<number | null, typeof nodes>();
+  nodes.forEach((node) => {
+    const list = byParent.get(node.parentId) ?? [];
+    list.push(node);
+    byParent.set(node.parentId, list);
+  });
+
+  const ordered: MediaFolder[] = [];
+  const walk = (parentId: number | null, depth: number) => {
+    (byParent.get(parentId) ?? []).forEach((node) => {
+      node.depth = depth;
+      ordered.push(node);
+      walk(node.id, depth + 1);
+    });
+  };
+  walk(null, 0);
+
+  // roll totals up from the leaves
+  [...ordered].reverse().forEach((node) => {
+    node.total += node.count;
+    const parent = ordered.find((entry) => entry.id === node.parentId);
+    if (parent) parent.total += node.total;
+  });
+
+  return ordered;
+}
+
+export function createFolder(name: string, parentId: number | null = null) {
+  const result = execute('INSERT INTO media_folders (parent_id, name, created_at) VALUES (?, ?, ?)', [
+    parentId,
+    name,
+    new Date().toISOString(),
+  ]);
+  return Number(result.lastInsertRowid);
+}
+
+/** Refuses moves that would put a folder inside itself. */
+export function updateFolder(id: number, patch: { name?: string; parentId?: number | null }) {
+  const sets: string[] = [];
+  const params: any[] = [];
+  if (patch.name !== undefined) {
+    sets.push('name = ?');
+    params.push(patch.name);
+  }
+  if (patch.parentId !== undefined) {
+    const target = patch.parentId;
+    let cursor = target;
+    const folders = listFolders();
+    while (cursor != null) {
+      if (cursor === id) return false;
+      cursor = folders.find((folder) => folder.id === cursor)?.parentId ?? null;
+    }
+    sets.push('parent_id = ?');
+    params.push(target ?? null);
+  }
+  if (!sets.length) return true;
+  params.push(id);
+  execute(`UPDATE media_folders SET ${sets.join(', ')} WHERE id = ?`, params);
+  return true;
+}
+
+/** Deletes a folder: children move up one level, files land in the parent. */
+export function deleteFolder(id: number) {
+  const row = queryOne<{ parent_id: number | null }>('SELECT parent_id FROM media_folders WHERE id = ?', [id]);
+  if (!row) return;
+  execute('UPDATE media_folders SET parent_id = ? WHERE parent_id = ?', [row.parent_id ?? null, id]);
+  execute('UPDATE media SET folder_id = ? WHERE folder_id = ?', [row.parent_id ?? null, id]);
+  execute('DELETE FROM media_folders WHERE id = ?', [id]);
+}
+
+export function moveMedia(ids: number[], folderId: number | null) {
+  if (!ids.length) return;
+  const placeholders = ids.map(() => '?').join(', ');
+  execute(`UPDATE media SET folder_id = ? WHERE id IN (${placeholders})`, [folderId ?? null, ...ids]);
 }
 
 /* ------------------------------------------------------------------ posts */

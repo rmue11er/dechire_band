@@ -142,6 +142,20 @@ Asset group "DECHIRE Wordmark"
 - Editing happens in the detail dialog; deleting removes the DB row **and** the file.
 - Logos are shown with `object-fit: contain` in previews, photos with `cover` – nothing gets cropped by accident.
 
+### 4.3 Folders
+
+Groups answer “which versions belong together”, folders answer “where does this live”. Both stay independent:
+an asset can sit in `Live 2026 / Cologne` *and* be part of the logo group.
+
+- `media_folders(id, parent_id, name, created_at)` with `ON DELETE CASCADE` for the tree, `media.folder_id` added
+  through `ensureColumn` so old databases migrate in place.
+- `listFolders()` returns a flat list in tree order with `depth`, `count` (direct files) and `total`
+  (rolled up from the leaves) – the rail renders it with `padding-left: 10 + depth * 14`.
+- Deleting a folder is non-destructive: subfolders and files move one level up (`deleteFolder`).
+  Moving a folder into its own subtree is refused (`updateFolder` walks the parents, API answers 409).
+- Moving files: `POST /api/media/move { ids, folderId }` – one request serves single drags and multi-select,
+  `folderId: null` means *Unfiled*. Uploads carry `folderId` in the multipart form.
+
 ---
 
 ## 5. Tool 3 – Notes

@@ -5,6 +5,8 @@ export type MediaKind = 'logo' | 'photo' | 'artwork' | 'merch' | 'video' | 'othe
 export interface MediaItem {
   id: number;
   groupId: number | null;
+  folderId: number | null;
+  folderName: string | null;
   groupName: string | null;
   groupKind: string | null;
   variantLabel: string;
@@ -30,6 +32,19 @@ export interface MediaGroup {
   count: number;
   previewUrl: string | null;
   previews: string[];
+}
+
+/** A real folder in the media library – folders can nest. */
+export interface MediaFolder {
+  id: number;
+  parentId: number | null;
+  name: string;
+  createdAt: string;
+  /** files directly inside */
+  count: number;
+  /** files in this folder and everything below it */
+  total: number;
+  depth: number;
 }
 
 export interface Post {

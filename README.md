@@ -142,6 +142,12 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   **draft post** with one click (PNG → media → draft). Plus *3 sizes* as a ZIP for feed and story in one go.
 
 ### 3. Media library (`/media`)
+- **Folders** (`media_folders`, nestable): a rail on the left holds *All files*, *Unfiled* and the folder tree with
+  rolled-up counts. Create, rename and delete folders; deleting one moves its files and subfolders one level up.
+  A folder cannot be moved into itself.
+- **Drag & drop** an asset onto a folder (rail row or folder card) to move it; dropping onto *All files* files it
+  back to *Unfiled*. Uploads land in the folder you have open. Any file can also be re-filed from its detail dialog
+  (`Folder` select, indented tree).
 - Upload via button or **drag & drop** onto the window, images and videos.
 - **Asset groups = versions**: a logo exists as “White/transparent”, “Lavender”, “Sticker 1080×1080”,
   “Social avatar” and so on. Every version downloads on its own (`?download=1`) or via “download version” in the group dialog.

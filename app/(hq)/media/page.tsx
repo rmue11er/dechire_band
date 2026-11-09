@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
+  IconChevronRight,
   IconCopy,
   IconDownload,
   IconFolder,
   IconImage,
   IconLayers,
+  IconPencil,
   IconPlus,
   IconSearch,
   IconTrash,
@@ -18,7 +20,7 @@ import { MediaThumb } from '@/components/MediaThumb';
 import { EmptyState, Field, Modal, PageHead, Segmented, Spinner } from '@/components/ui';
 import { formatDate, formatBytes } from '@/lib/format';
 import { toast } from '@/lib/toast';
-import type { MediaGroup, MediaItem } from '@/lib/types';
+import type { MediaFolder, MediaGroup, MediaItem } from '@/lib/types';
 
 type Filter = 'all' | 'image' | 'video' | 'logo';
 
@@ -34,6 +36,14 @@ const KIND_LABEL: Record<string, string> = {
 export default function MediaPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [groups, setGroups] = useState<MediaGroup[]>([]);
+  const [folders, setFolders] = useState<MediaFolder[]>([]);
+  /** 'all' = everything, 'unfiled' = no folder, otherwise a folder id */
+  const [place, setPlace] = useState<'all' | 'unfiled' | number>('all');
+  const [folderModal, setFolderModal] = useState<{ id?: number; parentId: number | null; name: string } | null>(
+    null
+  );
+  const [dragId, setDragId] = useState<number | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'files' | 'groups'>('files');
   const [filter, setFilter] = useState<Filter>('all');
@@ -44,7 +54,7 @@ export default function MediaPage() {
   const [activeGroup, setActiveGroup] = useState<MediaGroup | null>(null);
   const [groupModal, setGroupModal] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: '', kind: 'artwork' });
-  const [edit, setEdit] = useState({ title: '', variantLabel: '', alt: '', tags: '', groupId: '' });
+  const [edit, setEdit] = useState({ title: '', variantLabel: '', alt: '', tags: '', groupId: '', folderId: '' });
   const [saving, setSaving] = useState(false);
   const [usage, setUsage] = useState<{ id: number; status: string; caption: string; scheduledAt: string | null; publishedAt: string | null }[]>([]);
   const [replacing, setReplacing] = useState(false);
@@ -56,6 +66,7 @@ export default function MediaPage() {
     const data = await response.json();
     setMedia(data.media ?? []);
     setGroups(data.groups ?? []);
+    setFolders(data.folders ?? []);
     setLoading(false);
   }, []);
 
@@ -71,6 +82,7 @@ export default function MediaPage() {
         alt: activeMedia.alt,
         tags: activeMedia.tags.join(', '),
         groupId: activeMedia.groupId ? String(activeMedia.groupId) : '',
+        folderId: activeMedia.folderId ? String(activeMedia.folderId) : '',
       });
       fetch(`/api/media/${activeMedia.id}`)
         .then((response) => response.json())
@@ -108,6 +120,7 @@ export default function MediaPage() {
     setUploading(true);
     const form = new FormData();
     list.forEach((file) => form.append('files', file));
+    if (typeof place === 'number') form.append('folderId', String(place));
     try {
       const response = await fetch('/api/media', { method: 'POST', body: form });
       const data = await response.json();
@@ -138,6 +151,7 @@ export default function MediaPage() {
             .map((tag) => tag.trim().replace(/^#/, ''))
             .filter(Boolean),
           groupId: edit.groupId ? Number(edit.groupId) : null,
+          folderId: edit.folderId ? Number(edit.folderId) : null,
         }),
       });
       const data = await response.json();
@@ -196,12 +210,99 @@ export default function MediaPage() {
     }
   };
 
-  const filtered = media.filter((item) => {
+  const saveFolder = async () => {
+    if (!folderModal) return;
+    const name = folderModal.name.trim();
+    if (!name) {
+      toast('Folder name is required', 'error');
+      return;
+    }
+    try {
+      const response = folderModal.id
+        ? await fetch(`/api/media/folders/${folderModal.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, parentId: folderModal.parentId }),
+          })
+        : await fetch('/api/media/folders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, parentId: folderModal.parentId }),
+          });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Could not save the folder');
+      setFolders(data.folders ?? []);
+      setFolderModal(null);
+      toast(folderModal.id ? 'Folder renamed' : 'Folder created');
+    } catch (error: any) {
+      toast(error.message ?? 'Could not save the folder', 'error');
+    }
+  };
+
+  const removeFolder = async (folder: MediaFolder) => {
+    if (!window.confirm(`Delete the folder “${folder.name}”? Files move one level up.`)) return;
+    try {
+      const response = await fetch(`/api/media/folders/${folder.id}`, { method: 'DELETE' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Could not delete the folder');
+      setFolders(data.folders ?? []);
+      setPlace(folder.parentId ?? 'all');
+      await load();
+      toast('Folder deleted');
+    } catch (error: any) {
+      toast(error.message ?? 'Could not delete the folder', 'error');
+    }
+  };
+
+  const moveTo = async (folderId: number | null, ids?: number[]) => {
+    const list = ids ?? (dragId ? [dragId] : []);
+    setDragId(null);
+    setDropTarget(null);
+    if (!list.length) return;
+    try {
+      const response = await fetch('/api/media/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: list, folderId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Could not move the files');
+      setMedia(data.media ?? []);
+      setFolders((await (await fetch('/api/media/folders')).json()).folders ?? []);
+      toast(list.length === 1 ? 'File moved' : `${list.length} files moved`);
+    } catch (error: any) {
+      toast(error.message ?? 'Could not move the files', 'error');
+    }
+  };
+
+  const currentFolder = typeof place === 'number' ? folders.find((folder) => folder.id === place) ?? null : null;
+  const childFolders = currentFolder ? folders.filter((folder) => folder.parentId === currentFolder.id) : [];
+  const scoped =
+    place === 'all' ? media : media.filter((item) => (place === 'unfiled' ? item.folderId == null : item.folderId === place));
+
+  const crumbs: MediaFolder[] = [];
+  if (currentFolder) {
+    let cursor: MediaFolder | null = currentFolder;
+    while (cursor) {
+      crumbs.unshift(cursor);
+      const parentId = cursor.parentId;
+      cursor = parentId == null ? null : folders.find((folder) => folder.id === parentId) ?? null;
+    }
+  }
+
+  const filtered = scoped.filter((item) => {
     if (filter === 'image' && !item.mime.startsWith('image/')) return false;
     if (filter === 'video' && !item.mime.startsWith('video/')) return false;
     if (filter === 'logo' && item.groupKind !== 'logo' && !item.tags.includes('logo')) return false;
     if (!query.trim()) return true;
-    const haystack = [item.title, item.variantLabel, item.groupName, item.originalName, item.tags.join(' ')]
+    const haystack = [
+      item.title,
+      item.variantLabel,
+      item.groupName,
+      item.folderName,
+      item.originalName,
+      item.tags.join(' '),
+    ]
       .filter(Boolean)
       .join(' ')
       .toLowerCase();
@@ -233,9 +334,17 @@ export default function MediaPage() {
             Assets<span className="slash">/</span>Archive
           </>
         }
-        sub="Every logo, every photo, every version in one place. Group variants so the right file is always ready."
+        sub="Every logo, every photo, every version in one place. Sort them into folders, group the variants."
         actions={
           <>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setFolderModal({ parentId: currentFolder?.id ?? null, name: '' })}
+            >
+              <IconFolder size={15} />
+              New folder
+            </button>
             <button type="button" className="btn btn-ghost" onClick={() => setGroupModal(true)}>
               <IconFolder size={15} />
               Asset group
@@ -287,7 +396,153 @@ export default function MediaPage() {
         />
       </div>
 
-      {view === 'groups' ? (
+      <div className="media-shell">
+        <aside className="folder-rail">
+          <div className="folder-rail-head">
+            <span>Folders</span>
+            <button
+              type="button"
+              className="btn btn-icon"
+              title="New folder"
+              onClick={() => setFolderModal({ parentId: currentFolder?.id ?? null, name: '' })}
+            >
+              <IconPlus size={13} />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className={`folder-row root ${place === 'all' ? 'on' : ''}`}
+            onClick={() => setPlace('all')}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDropTarget('all');
+            }}
+            onDragLeave={() => setDropTarget(null)}
+            onDrop={(event) => {
+              event.preventDefault();
+              moveTo(null);
+            }}
+          >
+            <IconLayers size={14} />
+            <span className="truncate">All files</span>
+            <em>{media.length}</em>
+          </button>
+
+          <button
+            type="button"
+            className={`folder-row root ${place === 'unfiled' ? 'on' : ''} ${dropTarget === 'unfiled' ? 'drop' : ''}`}
+            onClick={() => setPlace('unfiled')}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDropTarget('unfiled');
+            }}
+            onDragLeave={() => setDropTarget(null)}
+            onDrop={(event) => {
+              event.preventDefault();
+              moveTo(null);
+            }}
+          >
+            <IconFolder size={14} />
+            <span className="truncate">Unfiled</span>
+            <em>{media.filter((item) => item.folderId == null).length}</em>
+          </button>
+
+          {folders.length ? <span className="folder-divider" /> : null}
+
+          {folders.map((folder) => (
+            <button
+              key={`${folder.id}-${dragId ?? 'none'}`}
+              type="button"
+              className={`folder-row ${place === folder.id ? 'on' : ''} ${
+                dropTarget === `folder-${folder.id}` ? 'drop' : ''
+              }`}
+              style={{ paddingLeft: 10 + folder.depth * 14 }}
+              onClick={() => setPlace(folder.id)}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDropTarget(`folder-${folder.id}`);
+              }}
+              onDragLeave={() => setDropTarget(null)}
+              onDrop={(event) => {
+                event.preventDefault();
+                moveTo(folder.id);
+              }}
+            >
+              <IconFolder size={13} />
+              <span className="truncate">{folder.name}</span>
+              <em>{folder.total}</em>
+            </button>
+          ))}
+
+          {folders.length === 0 ? <p className="folder-empty">No folders yet – create one to sort the archive.</p> : null}
+        </aside>
+
+        <div className="media-content">
+          {currentFolder ? (
+            <div className="folder-bar">
+              <div className="folder-crumbs">
+                <button type="button" onClick={() => setPlace('all')}>
+                  All files
+                </button>
+                {crumbs.map((crumb, index) => (
+                  <span key={crumb.id}>
+                    <IconChevronRight size={11} />
+                    <button
+                      type="button"
+                      className={index === crumbs.length - 1 ? 'current' : ''}
+                      onClick={() => setPlace(crumb.id)}
+                    >
+                      {crumb.name}
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="folder-actions">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => setFolderModal({ parentId: currentFolder.id, name: '' })}
+                >
+                  <IconPlus size={13} /> Subfolder
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-icon"
+                  title="Rename folder"
+                  onClick={() =>
+                    setFolderModal({ id: currentFolder.id, parentId: currentFolder.parentId, name: currentFolder.name })
+                  }
+                >
+                  <IconPencil size={13} />
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-icon"
+                  title="Delete folder"
+                  onClick={() => removeFolder(currentFolder)}
+                >
+                  <IconTrash size={13} />
+                </button>
+              </div>
+            </div>
+          ) : place === 'unfiled' ? (
+            <div className="folder-bar">
+              <div className="folder-crumbs">
+                <button type="button" onClick={() => setPlace('all')}>
+                  All files
+                </button>
+                <span>
+                  <IconChevronRight size={11} />
+                  <button type="button" className="current">
+                    Unfiled
+                  </button>
+                </span>
+              </div>
+            </div>
+          ) : null}
+
+          {view === 'groups' ? (
         groups.length === 0 ? (
           <div className="panel">
             <EmptyState
@@ -340,18 +595,61 @@ export default function MediaPage() {
             ))}
           </div>
         )
-      ) : filtered.length === 0 ? (
+      ) : filtered.length === 0 && childFolders.length === 0 ? (
         <div className="panel">
           <EmptyState
             icon={<IconImage size={24} />}
-            title="No files found"
-            hint="Drag files into this window or use the upload button."
+            title={place === 'all' ? 'No files found' : 'This folder is empty'}
+            hint="Drag files into this window, drop them onto a folder or use the upload button."
           />
         </div>
       ) : (
-        <div className="asset-grid">
-          {filtered.map((item) => (
-            <article key={item.id} className="asset-card">
+        <>
+          {childFolders.length ? (
+            <div className="folder-grid">
+              {childFolders.map((folder) => (
+                <button
+                  key={folder.id}
+                  type="button"
+                  className={`folder-card ${dropTarget === `folder-${folder.id}` ? 'drop' : ''}`}
+                  onClick={() => setPlace(folder.id)}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setDropTarget(`folder-${folder.id}`);
+                  }}
+                  onDragLeave={() => setDropTarget(null)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    moveTo(folder.id);
+                  }}
+                >
+                  <IconFolder size={22} />
+                  <strong className="truncate">{folder.name}</strong>
+                  <span className="mono">
+                    {folder.total} {folder.total === 1 ? 'file' : 'files'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {filtered.length ? (
+            <div className="asset-grid">
+              {filtered.map((item) => (
+                <article
+                  key={item.id}
+                  className={`asset-card ${dragId === item.id ? 'dragging' : ''}`}
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', String(item.id));
+                    setDragId(item.id);
+                  }}
+                  onDragEnd={() => {
+                    setDragId(null);
+                    setDropTarget(null);
+                  }}
+                >
               <button type="button" className="asset-thumb" onClick={() => setActiveMedia(item)}>
                 <MediaThumb
                   media={item}
@@ -363,7 +661,7 @@ export default function MediaPage() {
                 <div className="asset-title truncate" title={item.title}>
                   {item.title}
                 </div>
-                <div className="asset-sub truncate">{item.groupName ?? 'Ungrouped'}</div>
+                <div className="asset-sub truncate">{item.folderName ?? item.groupName ?? 'Unfiled'}</div>
                 <div className="asset-meta">
                   <span className="mono">
                     {item.width && item.height ? `${item.width}×${item.height}` : item.mime.split('/')[1]}
@@ -395,9 +693,13 @@ export default function MediaPage() {
                 </button>
               </div>
             </article>
-          ))}
+                ))}
+              </div>
+            ) : null}
+          </>
+        )}
         </div>
-      )}
+      </div>
 
       {dragOver ? (
         <div className="drop-overlay">
@@ -473,6 +775,20 @@ export default function MediaPage() {
                   {groups.map((group) => (
                     <option key={group.id} value={group.id}>
                       {group.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Folder">
+                <select
+                  className="select"
+                  value={edit.folderId}
+                  onChange={(event) => setEdit({ ...edit, folderId: event.target.value })}
+                >
+                  <option value="">Unfiled</option>
+                  {folders.map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                      {'\u00a0\u00a0'.repeat(folder.depth) + folder.name}
                     </option>
                   ))}
                 </select>
@@ -628,6 +944,48 @@ export default function MediaPage() {
               <option value="merch">Merch</option>
               <option value="other">Other</option>
             </select>
+          </Field>
+        </div>
+      </Modal>
+
+      {/* New / rename folder */}
+      <Modal
+        open={!!folderModal}
+        onClose={() => setFolderModal(null)}
+        title={folderModal?.id ? 'Rename folder' : 'New folder'}
+        subtitle={
+          folderModal?.id
+            ? 'Renaming keeps every file where it is.'
+            : folderModal?.parentId
+              ? 'The folder is created inside the one you have open.'
+              : 'Folders can nest – drag files onto them to move them.'
+        }
+        size="small"
+        footer={
+          <>
+            <button type="button" className="btn btn-ghost" onClick={() => setFolderModal(null)}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn-primary" onClick={saveFolder}>
+              {folderModal?.id ? 'Save' : 'Create folder'}
+            </button>
+          </>
+        }
+      >
+        <div className="form-grid">
+          <Field label="Name">
+            <input
+              className="input"
+              placeholder="e.g. Live 2026, Releases, Logos"
+              autoFocus
+              value={folderModal?.name ?? ''}
+              onChange={(event) =>
+                setFolderModal((current) => (current ? { ...current, name: event.target.value } : current))
+              }
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') saveFolder();
+              }}
+            />
           </Field>
         </div>
       </Modal>

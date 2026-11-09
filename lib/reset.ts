@@ -32,6 +32,7 @@ export function resetToDemo() {
     DELETE FROM post_media;
     DELETE FROM posts;
     DELETE FROM media;
+    DELETE FROM media_folders;
     DELETE FROM media_groups;
     DELETE FROM notes;
     DELETE FROM designs;
@@ -75,6 +76,7 @@ export function removeDemoData() {
     DELETE FROM post_media;
     DELETE FROM posts;
     DELETE FROM media;
+    DELETE FROM media_folders;
     DELETE FROM media_groups;
     DELETE FROM notes;
     DELETE FROM milestones;

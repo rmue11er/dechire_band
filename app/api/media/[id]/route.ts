@@ -29,6 +29,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
   if (typeof body.alt === 'string') patch.alt = body.alt;
   if (Array.isArray(body.tags)) patch.tags = body.tags.map(String);
   if (body.groupId !== undefined) patch.groupId = body.groupId ? Number(body.groupId) : null;
+  if (body.folderId !== undefined) patch.folderId = body.folderId ? Number(body.folderId) : null;
 
   updateMedia(mediaId, patch);
   return ok({ media: getMedia(mediaId) });

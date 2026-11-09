@@ -17,9 +17,18 @@ CREATE TABLE IF NOT EXISTS media_groups (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS media_folders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  parent_id INTEGER,
+  name TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (parent_id) REFERENCES media_folders(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS media (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   group_id INTEGER,
+  folder_id INTEGER,
   variant_label TEXT NOT NULL DEFAULT '',
   title TEXT NOT NULL,
   filename TEXT NOT NULL UNIQUE,
@@ -354,6 +363,7 @@ function createConnection(): DatabaseSync {
   ensureColumn(db, 'posts', 'ig_last_attempt', 'TEXT');
   ensureColumn(db, 'connections', 'auto_publish', 'INTEGER NOT NULL DEFAULT 0');
   ensureColumn(db, 'connections', 'last_run_at', 'TEXT');
+  ensureColumn(db, 'media', 'folder_id', 'INTEGER');
   ensureColumn(db, 'milestones', "checklist", "TEXT NOT NULL DEFAULT '[]'");
   for (const [column, definition] of [
     ['intro_title', "TEXT NOT NULL DEFAULT ''"],
