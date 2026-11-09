@@ -141,10 +141,18 @@ npm run typecheck    # tsc --noEmit
   so screen, print and HTML export stay identical. Without an image the masthead stays plain black.
 - **Emoji picker** in the toolbar: band, mood, orga, road and faces – plus your last ten picks (stored
   locally). Inserts at the cursor position.
+- **Images**: the picture button opens the media library (or uploads straight into it) and drops the chosen
+  picture into the text. Click an image and a small Image bar appears: size 20–100 % and placement
+  `left / center / right / full`. Left and right float, so text wraps around the picture – exactly the way a
+  rider or a stage plot reads best. Size and placement live in `data-width` / `data-align`, which means they
+  survive autosave, the HTML export and the PDF print.
+- **Icons**: 124 hand-picked **Font Awesome Free (Solid)** icons – band, mood, on the road, orga, promo,
+  marks – searchable, with recents. They are inserted as **inline SVG** (not a webfont), take the accent
+  colour and stay self-contained in the exported HTML. Licence: icons CC BY 4.0, fonts OFL 1.1, code MIT.
 - Autosave (900 ms), draft/final status, tags, search and type filter.
 - Export as **print-ready PDF** (print stylesheet, only the sheet on paper) or as a standalone HTML
-  file with the same layout – logo and sheet image are inlined as data URLs, the accent is copied as
-  a CSS variable, so the exported file works offline and in the band's current colours.
+  file with the same layout – logo, sheet image **and every picture in the text** are inlined as data URLs,
+  the accent is copied as a CSS variable, so the exported file works offline and in the band's current colours.
 
 ### 7. Colour lab (`/palette`)
 The band's palette is not guessed any more – it is searched. Everything runs in **OKLCH**, so “pastel”,
@@ -339,7 +347,9 @@ app/
 proxy.ts                   Login gate: /login + signed session cookie (active when HQ_PASSWORD is set)
 server.js                  Startable Node server for Passenger / systemd
 components/                InstagramMock, PostEditor, PostPerformance, SnippetMenu, MediaPicker,
-                           NoteEditor, DocEditor, EmojiPicker, CommandPalette, UI primitives, icons
+                           NoteEditor, DocEditor, docNodes (image + icon nodes), EmojiPicker,
+                           IconPicker, CommandPalette, UI primitives, icons
+lib/docIcons.ts            Curated Font Awesome Free (Solid) set – inline SVG for documents
 components/site/           Reveal, SiteAtmosphere (film layer of the public page)
 components/studio/         Canvas renderer, editor, tool panel, inspector, gallery,
                            FontBrowser (Google Fonts search) + useCustomFonts store

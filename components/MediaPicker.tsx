@@ -17,6 +17,7 @@ export default function MediaPicker({
   onConfirm,
   onUploaded,
   multiple = false,
+  imagesOnly = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -25,6 +26,7 @@ export default function MediaPicker({
   onConfirm: (ids: number[]) => void;
   onUploaded?: (items: MediaItem[]) => void;
   multiple?: boolean;
+  imagesOnly?: boolean;
 }) {
   const [selection, setSelection] = useState<number[]>(selectedIds);
   const [query, setQuery] = useState('');
@@ -42,6 +44,7 @@ export default function MediaPicker({
   }, [open]);
 
   const filtered = media.filter((item) => {
+    if (imagesOnly && !item.mime.startsWith('image/')) return false;
     if (filter === 'image' && !item.mime.startsWith('image/')) return false;
     if (filter === 'video' && !item.mime.startsWith('video/')) return false;
     if (filter === 'logo' && item.groupKind !== 'logo' && !item.tags.includes('logo')) return false;
@@ -89,7 +92,13 @@ export default function MediaPicker({
       open={open}
       onClose={onClose}
       title="Select media"
-      subtitle={multiple ? 'Selection order = carousel order' : 'One media item for this post'}
+      subtitle={
+        multiple
+          ? 'Selection order = carousel order'
+          : imagesOnly
+            ? 'One image for this document'
+            : 'One media item for this post'
+      }
       footer={
         <>
           <span className="small muted" style={{ marginRight: 'auto' }}>
@@ -124,12 +133,12 @@ export default function MediaPicker({
         </div>
         <Segmented
           value={filter}
-          onChange={(value) => setFilter(value)}
+          onChange={(value) => setFilter(value as Filter)}
           options={[
             { value: 'all', label: 'All' },
             { value: 'image', label: 'Images' },
             { value: 'logo', label: 'Logos' },
-            { value: 'video', label: 'Video' },
+            ...(imagesOnly ? [] : [{ value: 'video', label: 'Video' }]),
           ]}
         />
         <button type="button" className="btn btn-sm" onClick={() => inputRef.current?.click()} disabled={uploading}>
@@ -141,7 +150,7 @@ export default function MediaPicker({
           type="file"
           hidden
           multiple
-          accept="image/*,video/*"
+          accept={imagesOnly ? 'image/*' : 'image/*,video/*'}
           onChange={(event) => handleUpload(event.target.files)}
         />
       </div>

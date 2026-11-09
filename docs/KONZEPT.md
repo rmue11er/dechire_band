@@ -310,6 +310,17 @@ small things that otherwise get lost.
 - **Emoji picker** (`components/EmojiPicker.tsx`) in the toolbar: five hand-picked groups (band, mood,
   orga, road, faces) plus the last ten picks from `localStorage`, inserted at the cursor via
   `editor.chain().focus().insertContent(emoji)`.
+- **Images in the text** (`components/docNodes.ts` → `DocImage`): `@tiptap/extension-image` extended with two
+  attributes that only exist so the layout survives export – `width` (20–100 %) and `align`
+  (`left | center | right | full`), rendered as `data-width` / `data-align` plus an inline `width:…%`.
+  The image bar appears as soon as an image is selected (slider + four placement buttons); `left`/`right`
+  float, so the text wraps. Picking happens in the media library (`MediaPicker` in `imagesOnly` mode, upload
+  included). On export every `<img>` in the content is inlined as a data URL, like logo and sheet image.
+- **Icons** (`lib/docIcons.ts`, `components/IconPicker.tsx`, `DocIcon` in `components/docNodes.ts`): a curated
+  set of 124 **Font Awesome Free (Solid)** icons in six groups, searchable, with recents in `localStorage`.
+  They are inserted as **inline SVG** (path data straight from the package, `viewBox` per icon) instead of a
+  webfont, for three reasons: the sheet inherits the accent colour via `currentColor`, the HTML export stays
+  self-contained, and printing needs no extra request. Licence: icons CC BY 4.0, fonts OFL 1.1, code MIT.
 - **Sheet image** (maintainable, not a fixture): `profile.doc_media_id` + `profile.doc_mark_strength`
   (0–60 %, default 30 %). Settings → *Document sheet* picks any asset from the media library, sets the
   strength with a slider and shows a mini preview of the masthead. On the sheet the photo sits **behind the

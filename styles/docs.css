@@ -756,6 +756,128 @@
   background: rgb(var(--accent-rgb) / 0.16);
 }
 
+/* icon picker (toolbar) --------------------------------------------------- */
+
+.icon-pop {
+  width: 348px;
+  max-height: 400px;
+}
+
+.icon-search {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.icon-search .input {
+  width: 100%;
+  font-size: 12px;
+  padding: 5px 8px;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  height: 28px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: rgb(var(--accent-rgb) / 0.16);
+  color: var(--text);
+}
+
+/* images + inline icons in the sheet -------------------------------------- */
+
+.doc-page .doc-content img.doc-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 18px auto;
+  border-radius: 3px;
+  box-shadow: 0 12px 26px -18px rgba(0, 0, 0, 0.8);
+}
+
+.doc-page .doc-content img.doc-img[data-align='left'] {
+  float: left;
+  margin: 4px 20px 14px 0;
+}
+
+.doc-page .doc-content img.doc-img[data-align='right'] {
+  float: right;
+  margin: 4px 0 14px 20px;
+}
+
+.doc-page .doc-content img.doc-img[data-align='full'] {
+  width: 100% !important;
+  margin: 22px 0;
+}
+
+.doc-page .doc-content img.doc-img.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.doc-page .doc-content::after {
+  content: '';
+  display: block;
+  clear: both;
+}
+
+.doc-page .doc-content .doc-icon,
+.doc-page .doc-content .doc-icon * {
+  color: var(--accent-deep);
+}
+
+.doc-page .doc-content .doc-icon {
+  display: inline-block;
+  vertical-align: -0.12em;
+  line-height: 0;
+}
+
+.doc-page .doc-content .doc-icon svg {
+  width: var(--ico, 16px);
+  height: var(--ico, 16px);
+  fill: currentColor;
+  vertical-align: inherit;
+}
+
+.doc-img-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line);
+  background: rgb(var(--accent-rgb) / 0.05);
+}
+
+.doc-img-width {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.doc-img-width input[type='range'] {
+  width: 110px;
+  accent-color: var(--accent);
+}
+
+.doc-img-tools .tool-text.on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.14);
+}
+
 /* template picker --------------------------------------------------------- */
 
 .template-grid {

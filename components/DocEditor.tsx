@@ -24,6 +24,7 @@ import {
   IconDownload,
   IconExternal,
   IconItalic,
+  IconImage,
   IconLink,
   IconList,
   IconListOrdered,
@@ -38,12 +39,15 @@ import {
   IconUndo,
 } from '@/components/icons';
 import EmojiPicker from '@/components/EmojiPicker';
+import IconPicker from '@/components/IconPicker';
+import MediaPicker from '@/components/MediaPicker';
+import { DocIcon, DocImage, type ImageAlign } from '@/components/docNodes';
 import { Segmented } from '@/components/ui';
 import { usePalette } from '@/components/PaletteProvider';
 import { DOC_KINDS, docKindLabel } from '@/lib/kinds';
 import { timeAgo } from '@/lib/format';
 import { toast } from '@/lib/toast';
-import type { BandDocument, DocumentKind, Profile } from '@/lib/types';
+import type { BandDocument, DocumentKind, MediaItem, Profile } from '@/lib/types';
 
 type Status = 'idle' | 'dirty' | 'saving' | 'saved';
 
@@ -76,6 +80,8 @@ export default function DocEditor({
   const contentRef = useRef({ html: doc.content, text: doc.plainText });
   const palette = usePalette();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [mediaOpen, setMediaOpen] = useState(false);
   const ciPrimary = palette.find((color) => color.role === 'primary')?.hex ?? '#6b54a6';
   const band = profile?.bandName ?? 'DECHIRE';
 
@@ -84,6 +90,13 @@ export default function DocEditor({
       .then((response) => response.json())
       .then((data) => setProfile(data.profile ?? null))
       .catch(() => setProfile(null));
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/media')
+      .then((response) => response.json())
+      .then((data) => setMedia(data.media ?? []))
+      .catch(() => setMedia([]));
   }, []);
 
   const markDirty = useCallback(() => {
@@ -107,6 +120,8 @@ export default function DocEditor({
       TableRow,
       TableHeader,
       TableCell,
+      DocImage.configure({ inline: false, allowBase64: false }),
+      DocIcon,
     ],
     content: doc.content || '<p></p>',
     immediatelyRender: false,
@@ -212,8 +227,36 @@ export default function DocEditor({
     }
   };
 
+  const insertImage = (item: MediaItem) => {
+    if (!editor) return;
+    const position = editor.state.selection.from;
+    editor
+      .chain()
+      .focus()
+      .setImage({ src: item.url, alt: item.alt || item.title, title: item.title })
+      .run();
+    // select the node we just dropped so the size/position tools show up
+    if (editor.state.doc.nodeAt(position)?.type.name === 'image') {
+      editor.chain().setNodeSelection(position).run();
+    }
+  };
+
+  /** The export leaves `/api/files/…` behind – so every image is inlined as data URL. */
+  const inlineImages = async (html: string) => {
+    const sources = [...html.matchAll(/<img[^>]+src="([^"]+)"/g)]
+      .map((match) => match[1])
+      .filter((src) => src && !src.startsWith('data:'));
+    if (!sources.length) return html;
+    const unique = [...new Set(sources)];
+    const resolved = await Promise.all(unique.map(async (src) => [src, await toDataUrl(src)] as const));
+    const map = new Map(resolved);
+    return html.replace(/(<img[^>]*?src=")([^"]+)(")/g, (whole, head, src, tail) =>
+      map.has(src) ? `${head}${map.get(src)}${tail}` : whole
+    );
+  };
+
   const downloadHtml = async () => {
-    const body = contentRef.current.html;
+    const body = await inlineImages(contentRef.current.html);
     const bandName = band;
     const kindLabel = DOC_KINDS.find((item) => item.value === kind)?.label ?? 'Document';
     const logo = profile?.avatarUrl ? await toDataUrl(profile.avatarUrl) : '';
@@ -282,7 +325,13 @@ export default function DocEditor({
   .body th * { color: #f4f1ea; }
   .body tbody tr:nth-child(even) td { background: rgb(16 13 22 / .035); }
   .body table p { margin: 0; }
-  .body ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+  .body img.doc-img { display: block; height: auto; margin: 18px auto; border-radius: 3px; box-shadow: 0 12px 26px -18px rgba(0, 0, 0, .8); page-break-inside: avoid; }
+  .body img.doc-img[data-align="left"] { float: left; margin: 4px 20px 14px 0; }
+  .body img.doc-img[data-align="right"] { float: right; margin: 4px 0 14px 20px; }
+  .body img.doc-img[data-align="full"] { width: 100% !important; margin: 22px 0; }
+  .body::after { content: ''; display: block; clear: both; }
+  .body .doc-icon { display: inline-block; vertical-align: -.12em; line-height: 0; color: var(--accent-deep); }
+  .body .doc-icon svg { width: var(--ico, 16px); height: var(--ico, 16px); fill: currentColor; }  .body ul[data-type="taskList"] { list-style: none; padding-left: 0; }
   .body ul[data-type="taskList"] li { display: flex; gap: 8px; align-items: flex-start; }
   .body ul[data-type="taskList"] input { accent-color: var(--accent-deep); }
   .foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 40px; padding-top: 12px; border-top: 1px solid rgb(16 13 22 / .18); font-family: ${mono}; font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase; color: rgb(16 13 22 / .5); }
@@ -499,8 +548,44 @@ export default function DocEditor({
           </>
         ) : null}
         <span className="tool-sep" />
+        {tool(false, () => setMediaOpen(true), <IconImage size={15} />, 'Insert image')}
+        <IconPicker
+          onPick={(name) =>
+            editor.chain().focus().insertContent({ type: 'docIcon', attrs: { name, size: 16 } }).run()
+          }
+        />
         <EmojiPicker onPick={(emoji) => editor.chain().focus().insertContent(emoji).run()} />
       </div>
+
+      {editor.isActive('image') ? (
+        <div className="doc-img-tools">
+          <span className="mono small muted">Image</span>
+          <label className="doc-img-width">
+            <input
+              type="range"
+              min={20}
+              max={100}
+              step={5}
+              value={Number(editor.getAttributes('image').width) || 70}
+              onChange={(event) =>
+                editor.chain().updateAttributes('image', { width: Number(event.target.value) }).run()
+              }
+            />
+            <span className="mono small muted">{Number(editor.getAttributes('image').width) || 70}%</span>
+          </label>
+          <span className="tool-sep" />
+          {(['left', 'center', 'right', 'full'] as ImageAlign[]).map((align) => (
+            <button
+              key={align}
+              type="button"
+              className={`tool-text ${editor.getAttributes('image').align === align ? 'on' : ''}`}
+              onClick={() => editor.chain().updateAttributes('image', { align }).run()}
+            >
+              {align}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div
         className="doc-page"
@@ -555,6 +640,20 @@ export default function DocEditor({
           </footer>
         </div>
       </div>
+
+      <MediaPicker
+        open={mediaOpen}
+        onClose={() => setMediaOpen(false)}
+        media={media}
+        selectedIds={[]}
+        imagesOnly
+        onConfirm={(ids) => {
+          const item = media.find((entry) => entry.id === ids[0]);
+          if (item) insertImage(item);
+          setMediaOpen(false);
+        }}
+        onUploaded={(items) => setMedia((current) => [...items, ...current])}
+      />
     </div>
   );
 }
