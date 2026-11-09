@@ -173,7 +173,17 @@ export interface TrashEntry {
   deletedAt: string;
 }
 
-export type DocumentKind = 'rider' | 'contract' | 'press' | 'itinerary' | 'orga' | 'other';
+export type DocumentKind = 'rider' | 'contract' | 'press' | 'lyrics' | 'itinerary' | 'orga' | 'other';
+
+/** An audio file (demo, voice memo, rough mix) attached to a document. */
+export interface DocumentAudio {
+  id: number;
+  mediaId: number;
+  label: string;
+  position: number;
+  createdAt: string;
+  media: MediaItem;
+}
 
 export interface BandDocument {
   id: number;
@@ -183,6 +193,7 @@ export interface BandDocument {
   content: string;
   plainText: string;
   tags: string[];
+  audio: DocumentAudio[];
   createdAt: string;
   updatedAt: string;
 }
@@ -402,9 +413,10 @@ export interface SiteData {
 
 export type ReleaseType = 'single' | 'ep' | 'album' | 'video';
 export type ReleaseStatus = 'planning' | 'active' | 'released' | 'archived';
-export type ReleasePhaseId = 'tease' | 'announce' | 'countdown' | 'release' | 'sustain';
+export type ReleasePhaseId = 'production' | 'tease' | 'announce' | 'countdown' | 'release' | 'sustain';
 
 export type TaskModule = 'planner' | 'studio' | 'media' | 'docs' | 'press' | 'website' | 'orga';
+export type AssetKind = 'image' | 'video' | 'audio';
 
 export interface ReleaseTask {
   id: number;
@@ -421,6 +433,16 @@ export interface ReleaseTask {
   done: boolean;
   postId: number | null;
   documentId: number | null;
+  /** Media attached to this step (cover, video, canvas loop, master …). */
+  mediaId: number | null;
+  /** Which kind of media the step expects – drives the picker filter. */
+  mediaKind: AssetKind | '';
+  designId: number | null;
+  /** Internal note, not part of the researched detail text. */
+  notes: string;
+  /** Source URL backing the instruction (Spotify for Artists, YouTube Help …). */
+  reference: string;
+  media?: MediaItem | null;
   createdAt: string;
 }
 
@@ -434,6 +456,11 @@ export interface Release {
   presaveUrl: string;
   coverMediaId: number | null;
   coverUrl: string | null;
+  /** The finished master – makes the release playable at the top of the page. */
+  audioMediaId: number | null;
+  audioUrl: string | null;
+  videoMediaId: number | null;
+  videoUrl: string | null;
   notes: string;
   createdAt: string;
   updatedAt: string;

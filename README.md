@@ -173,9 +173,24 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 
 ### 6. Documents (`/docs`)
 - Word-style editor for the paperwork: **technical rider, booking confirmations, itineraries,
-  press texts, stage plot notes** – with headings, lists, checklists, quotes, tables and links.
+  press texts, stage plot notes, lyrics** – with headings, lists, checklists, quotes, tables and links.
 - Templates for every document type, drawn up in the band’s own wording (line-up, channel list,
   monitoring, backline, hospitality).
+- **Lyrics**: one sheet per song (title = song title, tags for album/era). The lyric sheet has its own
+  tighter line rhythm and **real song parts** instead of plain headings: every verse, chorus, bridge … is a
+  block with a numbered label, its own colour-coded spine (chorus = accent, pre-chorus/bridge = second
+  accent, intro/outro dotted, breakdown/solo black) and an optional repeat tag (`×2`, half-time …).
+- **Part bar**: one click inserts the next part at the cursor and numbers it (`Verse 1`, `Chorus 2` …).
+  Click into a part and a second bar appears: change the type, rename it, tag it, jump out with **End part**
+  or dissolve it with **Unwrap**. Old sheets built from headings get a **Convert headings** button.
+- **Structure map**: above the sheet a setlist-style rail lists every part in order with its repeat tag.
+  Click a part to jump to it, use the arrows to swap neighbouring parts. Printed/exported sheets keep the
+  same labels, spines and repeat tags – the labels are attributes, not text, so they never end up in a
+  copy-paste of the lyrics.
+- **Demos inside the document** (`document_audio`): attach any MP3/WAV/M4A from the media library
+  (upload included). Tracks get a name, a size, a play button and can be detached again. Playback runs in a
+  **docked player** at the bottom right, so it keeps playing while you scroll through the lyrics; it moves
+  to the next demo on its own. The printed sheet lists the demos, the HTML export embeds them.
 - Tables are real tables: insert, add/remove rows and columns, delete.
 - **CI layout**: every document is rendered as a branded sheet – not a business letter. Dark masthead with
   logo, wordmark in the display face, tagline, a rotated FINAL/DRAFT **stamp** in the accent colour and a mono
@@ -197,8 +212,9 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   colour and stay self-contained in the exported HTML. Licence: icons CC BY 4.0, fonts OFL 1.1, code MIT.
 - Autosave (900 ms), draft/final status, tags, search and type filter.
 - Export as **print-ready PDF** (print stylesheet, only the sheet on paper) or as a standalone HTML
-  file with the same layout – logo, sheet image **and every picture in the text** are inlined as data URLs,
-  the accent is copied as a CSS variable, so the exported file works offline and in the band's current colours.
+  file with the same layout – logo, sheet image, **every picture in the text** and demos up to 24 MB are
+  inlined as data URLs, the accent is copied as a CSS variable, so the exported file works offline and in
+  the band's current colours.
 
 ### 7. Colour lab (`/palette`)
 The band's palette is not guessed any more – it is searched. Everything runs in **OKLCH**, so “pastel”,
@@ -350,24 +366,36 @@ documents, dashboard and the brand sheet all follow the two colours you pick.
 The module that plans a release with you instead of just storing a date. You enter title, format and
 release day – everything else is derived from it.
 
-- **Five phases**, all relative to the release date: *Tease* (T‑28…T‑15), *Ankündigung* (T‑14…T‑8),
-  *Countdown* (T‑7…T‑1), *Release-Tag* (T0), *Nachbrenner* (T+1…T+21). Every phase has its own brief and
-  its own progress.
-- **27 steps** from the playbook (`lib/release.ts`): asset checks, press text, teaser clip, announcement
-  with pre-save, press & playlist pitches, cover reveal, audio snippet, tracklist, link check, out-now,
-  lyric post, live version, community post, outlook. Each step carries the offset it should happen at, the
-  module it belongs to and a sentence on *why* – not just a checkbox.
-- **Drafts with one click**: every planner step creates a real draft in the post planner, with a caption
-  written for that step (title, date, band filled in) and the recommended slot (18:00 on the due date).
-  The step then links straight to the post.
-- **Moving the release re-times the whole wave** – all due dates are recalculated from the offsets.
-- **Calendar integration**: *Termine in den Kalender* writes announcement, pitch deadline, release and
-  follow-up wave into the milestone calendar (idempotent – running it twice creates nothing new).
-- **Readiness score**: overall percentage, open critical steps (announcement, pre-save, pitches, out-now),
-  per-phase bars and the next four steps.
-- **Spielregeln** on the side: nine rules of thumb from real release campaigns (Friday releases, announce
-  3–4 weeks out, pitch 7–14 days ahead, post in the morning, one motif in three formats, craft over
-  posters, second wave at day 7 and 21 …) – defaults to argue with, not laws.
+- **Six phases**, all relative to the release date: *Produktion* (T‑56…T‑29), *Tease* (T‑28…T‑15),
+  *Ankündigung* (T‑14…T‑8), *Countdown* (T‑7…T‑1), *Release-Tag* (T0), *Nachbrenner* (T+1…T+21).
+- **44 researched steps** from the playbook (`lib/release.ts`): master delivery, cover art, metadata &
+  splits, GEMA, distributor, video treatment/storyboard/shoot/edit, press, pre-save, Spotify pitch,
+  Musixmatch lyrics, Canvas, release day, content ID, shorts, reporting. Each step carries its offset,
+  the module it belongs to, a sentence on *why* and — where a platform rule is quoted — a **source link**
+  (Spotify for Artists, YouTube Help, Instagram, GEMA, IFPI). The sidebar lists all 13 sources.
+- **Every step is editable**: add your own (title, phase, due date, module, note, source, critical flag,
+  optional media slot), edit any playbook step for this release, delete steps, and restore missing playbook
+  steps with one click. Moving the release re-times all due dates from the offsets.
+- **The result at the top**: as soon as a cover and a master are attached, the release renders as a
+  playable single card — cover, title, custom audio player with seek/time, asset status (cover, master,
+  video, pre-save) and the task progress. Missing pieces are one click away (media picker filtered to
+  image / audio / video). Attaching the cover/master at the top fills the matching step too — and the
+  other way round.
+- **Steps are coupled to the modules**: planner steps create real drafts with a tailored caption
+  (`{{title}}`, `{{band}}`, `{{date}}`, `{{presave}}`) at 18:00 on the due date; media steps attach an
+  image/video/audio; document steps attach a press text, rider or **lyrics sheet** (deep link into
+  `/docs?doc=…`); studio steps attach a design (deep link into `/studio/…`).
+- **Music video plan included**: treatment, storyboard & shot list, shoot day, rights & credits, edit —
+  with the real delivery specs (16:9 1920 × 1080, MP4/H.264 + AAC‑LC, separate 9:16 cutdowns, Canvas
+  3–8 s, Reels ≥ 720 px/30 fps, Content ID via distributor).
+- **Calendar integration**: *Kalender* writes announcement, pitch deadline, release and follow-up wave
+  into the milestone calendar (idempotent – running it twice creates nothing new).
+- **Readiness score** in the hero: overall percentage, open critical steps (announcement, pre-save,
+  pitches, out-now), per-phase bars and the next four steps.
+- **Spielregeln** with sources: Friday 00:01 local (Global Release Day), pitch ≥ 7 days before release
+  (Release Radar), cover 1:1/3000 px/sRGB, master FLAC/WAV 44.1 kHz+/24-bit, Canvas 3–8 s, lyrics via
+  Musixmatch, Reels specs, Content ID needs rights — and the honest note that pitching never guarantees
+  playlist placement. Steps in a short lead time are flagged: a full new release wants ~8 weeks.
 
 ### 12. Press kit (`/brand` → *Press kit .zip*)
 One click builds a ZIP for promoters, blogs and playlist editors:

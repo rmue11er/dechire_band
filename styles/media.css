@@ -161,6 +161,20 @@
   background: repeating-linear-gradient(45deg, #14111d, #14111d 8px, #191526 8px, #191526 16px);
 }
 
+/* audio files render as a music tile, not a broken image */
+.media-audio-tile {
+  color: var(--accent-2);
+  background: repeating-linear-gradient(135deg, #14111d, #14111d 10px, #191522 10px, #191522 20px);
+  overflow: hidden;
+}
+
+.media-audio-ext {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  color: var(--muted-2);
+}
+
 /* ------------------------------------------------------------ Gruppen */
 
 .group-grid {

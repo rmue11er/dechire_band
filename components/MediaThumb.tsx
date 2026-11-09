@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from 'react';
 import type { MediaItem } from '@/lib/types';
-import { IconFilm, IconPlay } from '@/components/icons';
+import { IconFilm, IconMusic, IconPlay } from '@/components/icons';
 
 export function MediaThumb({
   media,
@@ -19,6 +19,26 @@ export function MediaThumb({
     return <div className={`media-placeholder ${className ?? ''}`} style={style} />;
   }
   const isVideo = media.mime.startsWith('video/');
+  if (media.mime.startsWith('audio/')) {
+    const ext = (media.originalName.split('.').pop() || 'audio').toUpperCase();
+    return (
+      <span
+        className={`media-audio-tile ${className ?? ''}`}
+        style={{
+          ...style,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 4,
+        }}
+        title={media.title}
+      >
+        <IconMusic size={20} />
+        <span className="media-audio-ext">{ext}</span>
+      </span>
+    );
+  }
   return (
     <>
       {isVideo ? (
@@ -52,6 +72,14 @@ export function MediaTypeBadge({ media }: { media?: MediaItem | null }) {
       <span className="media-type-badge">
         <IconFilm size={12} />
         Video
+      </span>
+    );
+  }
+  if (media.mime.startsWith('audio/')) {
+    return (
+      <span className="media-type-badge">
+        <IconMusic size={12} />
+        Audio
       </span>
     );
   }

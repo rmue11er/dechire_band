@@ -1,5 +1,6 @@
 import { fail, ok, toInt } from '@/lib/api';
 import {
+  attachDocumentAudio,
   createDocument,
   createMilestone,
   createNote,
@@ -49,8 +50,15 @@ export async function POST(_request: Request, { params }: Ctx) {
       case 'document': {
         const document = createDocument(payload);
         if (!document) throw new Error('Could not restore the document');
+        // Audio files survive in the media library – put the attachments back.
+        if (Array.isArray(payload.audio)) {
+          for (const track of payload.audio) {
+            attachDocumentAudio(document.id, Number(track?.mediaId), String(track?.label ?? ''));
+          }
+        }
+        const restored = getDocument(document.id) ?? document;
         deleteTrashEntry(entry.id);
-        return ok({ kind: 'document', item: document });
+        return ok({ kind: 'document', item: restored });
       }
       case 'milestone': {
         const milestone = createMilestone(payload);

@@ -18,6 +18,8 @@ export default function MediaPicker({
   onUploaded,
   multiple = false,
   imagesOnly = false,
+  audioOnly = false,
+  kind,
 }: {
   open: boolean;
   onClose: () => void;
@@ -27,6 +29,9 @@ export default function MediaPicker({
   onUploaded?: (items: MediaItem[]) => void;
   multiple?: boolean;
   imagesOnly?: boolean;
+  audioOnly?: boolean;
+  /** Restrict the picker to one media type (release cover, master, video …). */
+  kind?: 'image' | 'video' | 'audio';
 }) {
   const [selection, setSelection] = useState<number[]>(selectedIds);
   const [query, setQuery] = useState('');
@@ -43,11 +48,16 @@ export default function MediaPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  const only = kind ?? (audioOnly ? 'audio' : imagesOnly ? 'image' : null);
+
   const filtered = media.filter((item) => {
-    if (imagesOnly && !item.mime.startsWith('image/')) return false;
-    if (filter === 'image' && !item.mime.startsWith('image/')) return false;
-    if (filter === 'video' && !item.mime.startsWith('video/')) return false;
-    if (filter === 'logo' && item.groupKind !== 'logo' && !item.tags.includes('logo')) return false;
+    if (only) {
+      if (!item.mime.startsWith(`${only}/`)) return false;
+    } else {
+      if (filter === 'image' && !item.mime.startsWith('image/')) return false;
+      if (filter === 'video' && !item.mime.startsWith('video/')) return false;
+      if (filter === 'logo' && item.groupKind !== 'logo' && !item.tags.includes('logo')) return false;
+    }
     if (!query.trim()) return true;
     const haystack = [item.title, item.variantLabel, item.groupName, item.tags.join(' '), item.originalName]
       .filter(Boolean)
@@ -91,13 +101,21 @@ export default function MediaPicker({
     <Modal
       open={open}
       onClose={onClose}
-      title="Select media"
+      title={
+        only === 'audio' ? 'Select audio' : only === 'video' ? 'Select video' : only === 'image' ? 'Select image' : 'Select media'
+      }
       subtitle={
-        multiple
-          ? 'Selection order = carousel order'
-          : imagesOnly
-            ? 'One image for this document'
-            : 'One media item for this post'
+        only === 'audio'
+          ? 'The finished master – plays at the top of the release.'
+          : only === 'video'
+            ? 'Music video, Canvas loop or cutdown footage.'
+            : multiple
+              ? 'Selection order = carousel order'
+              : imagesOnly
+                ? 'One image for this document'
+                : only === 'image'
+                  ? 'Cover artwork, press photo or teaser still.'
+                  : 'One media item for this post'
       }
       footer={
         <>
@@ -131,16 +149,18 @@ export default function MediaPicker({
             onChange={(event) => setQuery(event.target.value)}
           />
         </div>
-        <Segmented
-          value={filter}
-          onChange={(value) => setFilter(value as Filter)}
-          options={[
-            { value: 'all', label: 'All' },
-            { value: 'image', label: 'Images' },
-            { value: 'logo', label: 'Logos' },
-            ...(imagesOnly ? [] : [{ value: 'video', label: 'Video' }]),
-          ]}
-        />
+        {only ? null : (
+          <Segmented
+            value={filter}
+            onChange={(value) => setFilter(value as Filter)}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'image', label: 'Images' },
+              { value: 'logo', label: 'Logos' },
+              { value: 'video', label: 'Video' },
+            ]}
+          />
+        )}
         <button type="button" className="btn btn-sm" onClick={() => inputRef.current?.click()} disabled={uploading}>
           <IconUpload size={14} />
           {uploading ? 'Uploading …' : 'Upload'}
@@ -150,7 +170,15 @@ export default function MediaPicker({
           type="file"
           hidden
           multiple
-          accept={imagesOnly ? 'image/*' : 'image/*,video/*'}
+          accept={
+            only === 'audio'
+              ? 'audio/*,.mp3,.m4a,.wav,.aac,.ogg,.flac'
+              : only === 'video'
+                ? 'video/*'
+                : only === 'image'
+                  ? 'image/*'
+                  : 'image/*,video/*,audio/*'
+          }
           onChange={(event) => handleUpload(event.target.files)}
         />
       </div>
@@ -160,8 +188,14 @@ export default function MediaPicker({
           <div className="empty-icon">
             <IconPlus size={22} />
           </div>
-          <h3>No media found</h3>
-          <p>Upload files or adjust the filter.</p>
+          <h3>{only === 'audio' ? 'No audio found' : only === 'video' ? 'No video found' : 'No media found'}</h3>
+          <p>
+            {only === 'audio'
+              ? 'Upload an MP3, WAV or FLAC – or pick one from the library.'
+              : only === 'video'
+                ? 'Upload an MP4/MOV – or pick one from the library.'
+                : 'Upload files or adjust the filter.'}
+          </p>
         </div>
       ) : (
         <div className="picker-grid">

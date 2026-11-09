@@ -1,5 +1,5 @@
 import { fail, ok, readJson, toInt } from '@/lib/api';
-import { deleteRelease, getRelease, listReleaseTasks, updateRelease } from '@/lib/repo';
+import { deleteRelease, getRelease, listReleaseTasks, updateRelease, updateReleaseTask } from '@/lib/repo';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -33,9 +33,28 @@ export async function PATCH(request: Request, { params }: Ctx) {
   if (body.coverMediaId !== undefined) {
     patch.coverMediaId = body.coverMediaId ? Number(body.coverMediaId) : null;
   }
+  if (body.audioMediaId !== undefined) {
+    patch.audioMediaId = body.audioMediaId ? Number(body.audioMediaId) : null;
+  }
+  if (body.videoMediaId !== undefined) {
+    patch.videoMediaId = body.videoMediaId ? Number(body.videoMediaId) : null;
+  }
   if (typeof body.notes === 'string') patch.notes = body.notes;
 
   updateRelease(releaseId, patch);
+
+  // Setting the cover/master/video at the top also fills the matching step.
+  for (const [field, key, mediaKind] of [
+    ['coverMediaId', 'cover-art', 'image'],
+    ['audioMediaId', 'master-final', 'audio'],
+    ['videoMediaId', 'video-edit', 'video'],
+  ] as const) {
+    const mediaId = body[field];
+    if (mediaId === undefined || !mediaId) continue;
+    const task = listReleaseTasks(releaseId).find((entry) => entry.key === key);
+    if (task) updateReleaseTask(task.id, { mediaId: Number(mediaId), mediaKind });
+  }
+
   return ok({ release: getRelease(releaseId), tasks: listReleaseTasks(releaseId) });
 }
 

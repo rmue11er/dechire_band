@@ -238,6 +238,13 @@ export const IconPlay = (p: IconProps) => (
   </Svg>
 );
 
+export const IconPause = (p: IconProps) => (
+  <Svg {...p} strokeWidth={0} fill="currentColor">
+    <rect x="7" y="5" width="3.6" height="14" rx="0.8" />
+    <rect x="13.4" y="5" width="3.6" height="14" rx="0.8" />
+  </Svg>
+);
+
 export const IconFilm = (p: IconProps) => (
   <Svg {...p}>
     <rect x="3" y="4" width="18" height="16" rx="2" />

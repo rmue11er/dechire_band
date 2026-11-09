@@ -3,6 +3,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import Image from '@tiptap/extension-image';
 import { iconDef } from '@/lib/docIcons';
+import { partLabel } from '@/lib/kinds';
 
 export type ImageAlign = 'left' | 'center' | 'right' | 'full';
 
@@ -119,6 +120,78 @@ declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     docIcon: {
       insertDocIcon: (attrs: { name?: string; size?: number }) => ReturnType;
+    };
+  }
+}
+
+/**
+ * A real song part (intro, verse, chorus, bridge …) as a block container.
+ * The visible label lives in `data-*` attributes instead of the text, so it
+ * stays out of the copy, survives the HTML export and prints with the sheet.
+ */
+export const DocSection = Node.create({
+  name: 'docSection',
+  group: 'block',
+  content: 'block+',
+  defining: true,
+  isolating: true,
+
+  addAttributes() {
+    return {
+      kind: {
+        default: 'verse',
+        parseHTML: (element) => element.getAttribute('data-part') ?? 'verse',
+        renderHTML: () => ({}),
+      },
+      label: {
+        default: '',
+        parseHTML: (element) => element.getAttribute('data-label') ?? '',
+        renderHTML: () => ({}),
+      },
+      tag: {
+        default: '',
+        parseHTML: (element) => element.getAttribute('data-tag') ?? '',
+        renderHTML: () => ({}),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: 'section[data-part]' }];
+  },
+
+  renderHTML({ node }) {
+    const kind = String(node.attrs.kind || 'verse');
+    return [
+      'section',
+      {
+        class: 'doc-section',
+        'data-part': kind,
+        'data-label': String(node.attrs.label || partLabel(kind)),
+        'data-tag': String(node.attrs.tag || ''),
+      },
+      0,
+    ];
+  },
+
+  addCommands() {
+    return {
+      insertDocSection:
+        (attrs: { kind?: string; label?: string; tag?: string } = {}) =>
+        ({ commands }) =>
+          commands.insertContent({
+            type: this.name,
+            attrs,
+            content: [{ type: 'paragraph' }],
+          }),
+    } as never;
+  },
+});
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    docSection: {
+      insertDocSection: (attrs?: { kind?: string; label?: string; tag?: string }) => ReturnType;
     };
   }
 }

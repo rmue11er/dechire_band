@@ -878,6 +878,643 @@
   background: rgb(var(--accent-rgb) / 0.14);
 }
 
+/* demos – attached audio ----------------------------------------------- */
+
+.doc-audio {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 20px 12px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.doc-audio-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.doc-audio-head > svg {
+  color: var(--accent-2);
+}
+
+.doc-audio-title {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.doc-audio-count {
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--muted);
+}
+
+.doc-audio-hint {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+
+.doc-audio-attach {
+  margin-left: auto;
+}
+
+.doc-audio-tracks {
+  display: grid;
+  gap: 4px;
+}
+
+.doc-audio-track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 5px 3px 3px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: #0b0b11;
+}
+
+.doc-audio-track.on {
+  border-color: rgb(var(--accent-rgb) / 0.45);
+  background: var(--accent-soft);
+}
+
+.doc-audio-play,
+.doc-audio-remove,
+.doc-audio-dock-play,
+.doc-audio-dock-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+}
+
+.doc-audio-play {
+  width: 24px;
+  height: 24px;
+}
+
+.doc-audio-remove {
+  width: 22px;
+  height: 22px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted-2);
+}
+
+.doc-audio-play:hover,
+.doc-audio-dock-play:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.doc-audio-remove:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.doc-audio-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+
+.doc-audio-label:focus {
+  outline: none;
+  box-shadow: inset 0 -1px 0 var(--accent);
+}
+
+.doc-audio-size {
+  flex: none;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--muted-2);
+}
+
+/* the player stays docked while the lyrics scroll */
+.doc-audio-dock {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(390px, calc(100vw - 36px));
+  padding: 9px 11px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.4);
+  border-radius: 3px;
+  background: #08080d;
+  box-shadow: 0 26px 60px -26px rgba(0, 0, 0, 0.92);
+}
+
+.doc-audio-dock-play {
+  width: 30px;
+  height: 30px;
+  border-color: rgb(var(--accent-rgb) / 0.4);
+}
+
+.doc-audio-dock-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.doc-audio-dock-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.doc-audio-dock-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.doc-audio-dock-time {
+  flex: none;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--muted-2);
+}
+
+.doc-audio-seek {
+  width: 100%;
+  height: 12px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.doc-audio-dock-close {
+  width: 22px;
+  height: 22px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted-2);
+}
+
+.doc-audio-dock-close:hover {
+  color: var(--text);
+}
+
+/* lyric section bar ------------------------------------------------------- */
+
+.doc-lyric-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 20px;
+  border-bottom: 1px solid var(--line);
+  background: rgb(var(--accent-rgb) / 0.045);
+}
+
+.doc-lyric-label {
+  margin-right: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+.doc-lyric-hint {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--muted-2);
+}
+
+/* part chips get a small colour dot per role */
+.doc-part-chip::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--muted);
+  vertical-align: 1px;
+}
+
+.doc-part-chip[data-part='chorus']::before {
+  background: var(--accent);
+}
+
+.doc-part-chip[data-part='prechorus']::before,
+.doc-part-chip[data-part='bridge']::before {
+  background: var(--accent-2);
+}
+
+.doc-part-chip[data-part='intro']::before,
+.doc-part-chip[data-part='outro']::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--muted);
+}
+
+.doc-part-chip[data-part='breakdown']::before,
+.doc-part-chip[data-part='solo']::before {
+  background: var(--text);
+}
+
+.doc-convert {
+  color: var(--accent-2);
+  border-color: rgb(var(--accent-rgb) / 0.45);
+}
+
+/* tools for the part the cursor is in ------------------------------------ */
+
+.doc-part-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--line);
+  background: rgb(var(--accent-rgb) / 0.05);
+}
+
+.doc-part-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.doc-part-tools[data-part='chorus'] .doc-part-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.18);
+}
+
+.doc-part-tools[data-part='prechorus'] .doc-part-dot,
+.doc-part-tools[data-part='bridge'] .doc-part-dot {
+  background: var(--accent-2);
+  box-shadow: 0 0 0 3px rgb(var(--accent-2-rgb) / 0.16);
+}
+
+.doc-part-tools[data-part='breakdown'] .doc-part-dot,
+.doc-part-tools[data-part='solo'] .doc-part-dot {
+  background: var(--text);
+}
+
+.doc-part-tools[data-part='intro'] .doc-part-dot,
+.doc-part-tools[data-part='outro'] .doc-part-dot {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--muted);
+}
+
+.doc-part-title {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.doc-part-select {
+  flex: none;
+  width: auto;
+  min-width: 120px;
+  height: auto;
+  padding: 5px 8px;
+  font-size: 11.5px;
+}
+
+.doc-part-name {
+  flex: none;
+  width: 160px;
+  height: auto;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.doc-part-tag {
+  flex: none;
+  width: 140px;
+  height: auto;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.doc-part-tools .tool-text.on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.14);
+}
+
+/* song map --------------------------------------------------------------- */
+
+.doc-map {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px 10px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.012);
+  overflow-x: auto;
+}
+
+.doc-map-caption {
+  flex: none;
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.doc-map-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 15px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.doc-map-part {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  flex: none;
+  border: 1px solid var(--line);
+  border-left-width: 2px;
+  border-radius: 2px;
+  background: #0b0b11;
+}
+
+.doc-map-part + .doc-map-part::before {
+  content: '→';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted-2);
+}
+
+.doc-map-part[data-part='chorus'] {
+  border-left-color: var(--accent);
+}
+
+.doc-map-part[data-part='prechorus'],
+.doc-map-part[data-part='bridge'] {
+  border-left-color: var(--accent-2);
+}
+
+.doc-map-part[data-part='breakdown'],
+.doc-map-part[data-part='solo'] {
+  border-left-color: var(--text);
+}
+
+.doc-map-part[data-part='intro'],
+.doc-map-part[data-part='outro'] {
+  border-left-color: var(--line-strong);
+}
+
+.doc-map-part.on {
+  border-color: rgb(var(--accent-rgb) / 0.5);
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.doc-map-jump {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px 5px 7px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.doc-map-jump:hover .doc-map-kind {
+  color: var(--accent);
+}
+
+.doc-map-index {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: var(--muted-2);
+}
+
+.doc-map-kind {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.doc-map-tag {
+  padding: 1px 4px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.4);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.doc-map-move {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--line);
+}
+
+.doc-map-move button {
+  flex: 1 1 auto;
+  padding: 2px 5px;
+  border: 0;
+  background: transparent;
+  color: var(--muted-2);
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.doc-map-move button + button {
+  border-top: 1px solid var(--line);
+}
+
+.doc-map-move button:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.doc-map-move button:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.doc-map-count {
+  flex: none;
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+/* lyric sheet ------------------------------------------------------------- */
+
+.doc-page.lyrics .doc-content {
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.doc-page.lyrics .prose p {
+  margin: 0 0 3px;
+}
+
+.doc-page.lyrics .prose h2 {
+  margin: 32px 0 10px;
+  letter-spacing: 0.18em;
+}
+
+.doc-page.lyrics .prose h2:first-child {
+  margin-top: 0;
+}
+
+/* the real song parts ----------------------------------------------------- */
+
+.doc-page .doc-section {
+  position: relative;
+  margin: 30px 0 0;
+  padding: 12px 0 2px 18px;
+  border-left: 2px solid rgb(16 13 22 / 0.22);
+}
+
+.doc-page .doc-section::before {
+  content: attr(data-label);
+  display: block;
+  margin: 0 0 7px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgb(16 13 22 / 0.55);
+}
+
+.doc-page .doc-section[data-tag]:not([data-tag=''])::after {
+  content: attr(data-tag);
+  position: absolute;
+  top: 10px;
+  right: 0;
+  padding: 1px 6px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.45);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: var(--accent-deep);
+}
+
+.doc-page .doc-section[data-part='chorus'] {
+  border-left-color: var(--accent);
+  border-left-width: 3px;
+  background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.1), transparent 62%);
+}
+
+.doc-page .doc-section[data-part='chorus']::before {
+  color: var(--accent-deep);
+}
+
+.doc-page .doc-section[data-part='prechorus'],
+.doc-page .doc-section[data-part='bridge'] {
+  border-left-color: var(--accent-2);
+}
+
+.doc-page .doc-section[data-part='prechorus']::before,
+.doc-page .doc-section[data-part='bridge']::before {
+  color: var(--accent-2);
+}
+
+.doc-page .doc-section[data-part='bridge'] {
+  border-left-style: dashed;
+}
+
+.doc-page .doc-section[data-part='intro'],
+.doc-page .doc-section[data-part='outro'] {
+  border-left-style: dotted;
+  border-left-color: rgb(16 13 22 / 0.34);
+}
+
+.doc-page .doc-section[data-part='breakdown'],
+.doc-page .doc-section[data-part='solo'] {
+  border-left-color: #100d16;
+}
+
+.doc-page .doc-section > *:first-child {
+  margin-top: 0;
+}
+
+.doc-page .doc-section:last-child {
+  margin-bottom: 6px;
+}
+
+.doc-sheet-demos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 9px;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(16 13 22 / 0.52);
+}
+
+.doc-sheet-demos-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent-deep);
+}
+
+.doc-sheet-demo {
+  padding: 2px 7px;
+  border: 1px solid rgb(16 13 22 / 0.2);
+  border-radius: 2px;
+  background: rgb(16 13 22 / 0.04);
+  color: #2b2438;
+}
+
+.doc-item-audio {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+}
+
+.doc-item-meta .mono {
+  margin-left: auto;
+}
+
 /* template picker --------------------------------------------------------- */
 
 .template-grid {
@@ -971,6 +1608,11 @@
   .doc-head,
   .doc-fields,
   .doc-toolbar,
+  .doc-audio,
+  .doc-audio-dock,
+  .doc-lyric-bar,
+  .doc-part-tools,
+  .doc-map,
   .toast-host,
   .modal-backdrop {
     display: none !important;

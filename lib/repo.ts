@@ -4,6 +4,7 @@ import type {
   BandDocument,
   ChecklistItem,
   Design,
+  DocumentAudio,
   InstagramConnection,
   MediaFolder,
   MediaGroup,
@@ -925,6 +926,55 @@ export function deleteMilestone(id: number) {
 
 /* -------------------------------------------------------------- documents */
 
+function mapDocumentAudio(row: any): DocumentAudio | null {
+  const media = getMedia(Number(row.media_id));
+  if (!media) return null;
+  return {
+    id: Number(row.id),
+    mediaId: media.id,
+    label: row.label ?? '',
+    position: Number(row.position ?? 0),
+    createdAt: row.created_at,
+    media,
+  };
+}
+
+export function listDocumentAudio(documentId: number): DocumentAudio[] {
+  return queryAll<any>(
+    'SELECT * FROM document_audio WHERE document_id = ? ORDER BY position, id',
+    [documentId]
+  )
+    .map(mapDocumentAudio)
+    .filter((entry): entry is DocumentAudio => !!entry);
+}
+
+export function attachDocumentAudio(documentId: number, mediaId: number, label = '') {
+  const media = getMedia(mediaId);
+  if (!media) return null;
+  const next = queryOne<any>(
+    'SELECT COALESCE(MAX(position), -1) + 1 AS position FROM document_audio WHERE document_id = ?',
+    [documentId]
+  );
+  const result = execute(
+    'INSERT INTO document_audio (document_id, media_id, label, position, created_at) VALUES (?, ?, ?, ?, ?)',
+    [documentId, mediaId, label.slice(0, 120), Number(next?.position ?? 0), new Date().toISOString()]
+  );
+  const row = queryOne<any>('SELECT * FROM document_audio WHERE id = ?', [Number(result.lastInsertRowid)]);
+  return row ? mapDocumentAudio(row) : null;
+}
+
+export function updateDocumentAudio(id: number, patch: { label?: string }) {
+  if (patch.label !== undefined) {
+    execute('UPDATE document_audio SET label = ? WHERE id = ?', [String(patch.label).slice(0, 120), id]);
+  }
+  const row = queryOne<any>('SELECT * FROM document_audio WHERE id = ?', [id]);
+  return row ? mapDocumentAudio(row) : null;
+}
+
+export function deleteDocumentAudio(id: number) {
+  execute('DELETE FROM document_audio WHERE id = ?', [id]);
+}
+
 function mapDocument(row: any): BandDocument {
   return {
     id: Number(row.id),
@@ -934,6 +984,7 @@ function mapDocument(row: any): BandDocument {
     content: row.content ?? '',
     plainText: row.plain_text ?? '',
     tags: parseList(row.tags),
+    audio: listDocumentAudio(Number(row.id)),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -1005,6 +1056,7 @@ export function deleteDocument(id: number) {
       content: document.content,
       plainText: document.plainText,
       tags: document.tags,
+      audio: document.audio.map((entry) => ({ mediaId: entry.mediaId, label: entry.label })),
     });
   }
   execute('DELETE FROM documents WHERE id = ?', [id]);
@@ -1313,11 +1365,16 @@ export function getStats(): Stats {
 /* --------------------------------------------------------------- releases */
 
 const RELEASE_SELECT = `
-  SELECT r.*, m.filename AS cover_filename,
+  SELECT r.*,
+    cm.filename AS cover_filename,
+    am.filename AS audio_filename,
+    vm.filename AS video_filename,
     (SELECT COUNT(*) FROM release_tasks t WHERE t.release_id = r.id) AS task_total,
     (SELECT COUNT(*) FROM release_tasks t WHERE t.release_id = r.id AND t.done = 1) AS task_done
   FROM releases r
-  LEFT JOIN media m ON m.id = r.cover_media_id`;
+  LEFT JOIN media cm ON cm.id = r.cover_media_id
+  LEFT JOIN media am ON am.id = r.audio_media_id
+  LEFT JOIN media vm ON vm.id = r.video_media_id`;
 
 export function mapRelease(row: any): Release {
   return {
@@ -1330,6 +1387,10 @@ export function mapRelease(row: any): Release {
     presaveUrl: row.presave_url ?? '',
     coverMediaId: row.cover_media_id == null ? null : Number(row.cover_media_id),
     coverUrl: row.cover_filename ? `/api/files/${row.cover_filename}` : null,
+    audioMediaId: row.audio_media_id == null ? null : Number(row.audio_media_id),
+    audioUrl: row.audio_filename ? `/api/files/${row.audio_filename}` : null,
+    videoMediaId: row.video_media_id == null ? null : Number(row.video_media_id),
+    videoUrl: row.video_filename ? `/api/files/${row.video_filename}` : null,
     notes: row.notes ?? '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -1353,6 +1414,12 @@ const mapTask = (row: any): ReleaseTask => ({
   done: Boolean(row.done),
   postId: row.post_id == null ? null : Number(row.post_id),
   documentId: row.document_id == null ? null : Number(row.document_id),
+  mediaId: row.media_id == null ? null : Number(row.media_id),
+  mediaKind: row.media_kind ?? '',
+  designId: row.design_id == null ? null : Number(row.design_id),
+  notes: row.notes ?? '',
+  reference: row.reference ?? '',
+  media: row.media_id == null ? null : getMedia(Number(row.media_id)),
   createdAt: row.created_at,
 });
 
@@ -1405,13 +1472,23 @@ export function createRelease(input: {
     ]
   );
   const id = Number(result.lastInsertRowid);
+  insertBuiltTasks(id, buildTasks(input.releaseDate), now);
+  return id;
+}
+
+/** Inserts playbook tasks – shared by new releases and "add missing steps". */
+function insertBuiltTasks(
+  releaseId: number,
+  tasks: ReturnType<typeof buildTasks>,
+  now = new Date().toISOString()
+) {
   const insertTask = db.prepare(
-    `INSERT INTO release_tasks (release_id, phase, key, label, detail, module, offset_days, due_date, channel, critical, done, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`
+    `INSERT INTO release_tasks (release_id, phase, key, label, detail, module, offset_days, due_date, channel, critical, done, media_kind, notes, reference, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
   );
-  buildTasks(input.releaseDate).forEach((task) => {
+  tasks.forEach((task) => {
     insertTask.run(
-      id,
+      releaseId,
       task.phase,
       task.key,
       task.label,
@@ -1421,10 +1498,12 @@ export function createRelease(input: {
       task.dueDate,
       task.channel,
       task.critical ? 1 : 0,
+      task.mediaKind ?? '',
+      task.notes ?? '',
+      task.reference ?? '',
       now
     );
   });
-  return id;
 }
 
 export function updateRelease(
@@ -1437,6 +1516,8 @@ export function updateRelease(
     announceDate?: string | null;
     presaveUrl?: string;
     coverMediaId?: number | null;
+    audioMediaId?: number | null;
+    videoMediaId?: number | null;
     notes?: string;
   }
 ) {
@@ -1450,6 +1531,8 @@ export function updateRelease(
     announceDate: 'announce_date',
     presaveUrl: 'presave_url',
     coverMediaId: 'cover_media_id',
+    audioMediaId: 'audio_media_id',
+    videoMediaId: 'video_media_id',
     notes: 'notes',
   };
   Object.entries(map).forEach(([key, column]) => {
@@ -1480,25 +1563,121 @@ export function deleteRelease(id: number) {
   execute('DELETE FROM releases WHERE id = ?', [id]);
 }
 
+export function createReleaseTask(
+  releaseId: number,
+  input: {
+    label: string;
+    detail?: string;
+    phase?: ReleaseTask['phase'];
+    module?: ReleaseTask['module'];
+    dueDate: string;
+    offsetDays?: number;
+    channel?: string;
+    critical?: boolean;
+    notes?: string;
+    reference?: string;
+    mediaKind?: string;
+  }
+) {
+  const result = execute(
+    `INSERT INTO release_tasks (release_id, phase, key, label, detail, module, offset_days, due_date, channel, critical, done, media_kind, notes, reference, created_at)
+     VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
+    [
+      releaseId,
+      input.phase ?? 'tease',
+      input.label.slice(0, 180),
+      input.detail ?? '',
+      input.module ?? 'orga',
+      input.offsetDays ?? 0,
+      input.dueDate,
+      input.channel ?? '',
+      input.critical ? 1 : 0,
+      input.mediaKind ?? '',
+      input.notes ?? '',
+      input.reference ?? '',
+      new Date().toISOString(),
+    ]
+  );
+  return getReleaseTask(Number(result.lastInsertRowid));
+}
+
 export function updateReleaseTask(
   id: number,
-  patch: { done?: boolean; postId?: number | null; documentId?: number | null }
+  patch: {
+    done?: boolean;
+    postId?: number | null;
+    documentId?: number | null;
+    mediaId?: number | null;
+    designId?: number | null;
+    label?: string;
+    detail?: string;
+    phase?: string;
+    module?: string;
+    dueDate?: string;
+    offsetDays?: number;
+    channel?: string;
+    critical?: boolean;
+    notes?: string;
+    reference?: string;
+    mediaKind?: string;
+  }
 ) {
   const sets: string[] = [];
   const params: any[] = [];
+  const direct: Record<string, string> = {
+    label: 'label',
+    detail: 'detail',
+    phase: 'phase',
+    module: 'module',
+    dueDate: 'due_date',
+    offsetDays: 'offset_days',
+    channel: 'channel',
+    notes: 'notes',
+    reference: 'reference',
+    mediaKind: 'media_kind',
+  };
+  for (const [key, column] of Object.entries(direct)) {
+    const value = (patch as any)[key];
+    if (value !== undefined) {
+      sets.push(`${column} = ?`);
+      params.push(value);
+    }
+  }
+  if (patch.critical !== undefined) {
+    sets.push('critical = ?');
+    params.push(patch.critical ? 1 : 0);
+  }
   if (patch.done !== undefined) {
     sets.push('done = ?');
     params.push(patch.done ? 1 : 0);
   }
-  if (patch.postId !== undefined) {
-    sets.push('post_id = ?');
-    params.push(patch.postId ?? null);
-  }
-  if (patch.documentId !== undefined) {
-    sets.push('document_id = ?');
-    params.push(patch.documentId ?? null);
+  for (const [key, column] of [
+    ['postId', 'post_id'],
+    ['documentId', 'document_id'],
+    ['mediaId', 'media_id'],
+    ['designId', 'design_id'],
+  ] as const) {
+    const value = patch[key];
+    if (value !== undefined) {
+      sets.push(`${column} = ?`);
+      params.push(value ?? null);
+    }
   }
   if (!sets.length) return;
   params.push(id);
   execute(`UPDATE release_tasks SET ${sets.join(', ')} WHERE id = ?`, params);
+}
+
+export function deleteReleaseTask(id: number) {
+  execute('DELETE FROM release_tasks WHERE id = ?', [id]);
+}
+
+/** Adds playbook steps that are missing – custom tasks and done steps stay. */
+export function restorePlaybook(releaseId: number) {
+  const release = getRelease(releaseId);
+  if (!release) return 0;
+  const existing = new Set(listReleaseTasks(releaseId).map((task) => task.key).filter(Boolean));
+  const missing = buildTasks(release.releaseDate).filter((task) => !existing.has(task.key));
+  if (missing.length) insertBuiltTasks(releaseId, missing);
+  return missing.length;
 }

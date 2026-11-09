@@ -20,6 +20,27 @@ const MIME_EXT: Record<string, string> = {
   'video/mp4': '.mp4',
   'video/quicktime': '.mov',
   'video/webm': '.webm',
+  'audio/mpeg': '.mp3',
+  'audio/mp3': '.mp3',
+  'audio/mp4': '.m4a',
+  'audio/x-m4a': '.m4a',
+  'audio/aac': '.aac',
+  'audio/wav': '.wav',
+  'audio/x-wav': '.wav',
+  'audio/ogg': '.ogg',
+  'audio/flac': '.flac',
+  'audio/webm': '.weba',
+};
+
+/** Browsers sometimes hand over `application/octet-stream` – the extension knows better. */
+const EXT_MIME: Record<string, string> = {
+  '.mp3': 'audio/mpeg',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.flac': 'audio/flac',
+  '.weba': 'audio/webm',
 };
 
 function isFile(value: any): value is File {
@@ -65,6 +86,10 @@ export async function POST(request: Request) {
     }
     const buffer = Buffer.from(await file.arrayBuffer());
     const ext = path.extname(file.name).toLowerCase() || MIME_EXT[file.type] || '';
+    const mime =
+      file.type && file.type !== 'application/octet-stream'
+        ? file.type
+        : EXT_MIME[ext] ?? 'application/octet-stream';
     const base = slugify(path.basename(file.name, path.extname(file.name))) || 'datei';
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${base}${ext}`;
     fs.writeFileSync(path.join(UPLOAD_DIR, filename), buffer);
@@ -83,7 +108,7 @@ export async function POST(request: Request) {
       title: incoming.length === 1 && titleField ? titleField : base.replace(/-/g, ' '),
       filename,
       originalName: file.name,
-      mime: file.type || 'application/octet-stream',
+      mime,
       size: file.size,
       width,
       height,

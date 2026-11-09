@@ -37,6 +37,7 @@ export function resetToDemo() {
     DELETE FROM notes;
     DELETE FROM designs;
     DELETE FROM milestones;
+    DELETE FROM document_audio;
     DELETE FROM documents;
     DELETE FROM snippets;
     DELETE FROM post_metrics;
@@ -80,6 +81,7 @@ export function removeDemoData() {
     DELETE FROM media_groups;
     DELETE FROM notes;
     DELETE FROM milestones;
+    DELETE FROM document_audio;
     DELETE FROM documents;
     DELETE FROM snippets;
     DELETE FROM post_metrics;

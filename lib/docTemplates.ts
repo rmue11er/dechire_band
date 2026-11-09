@@ -191,6 +191,42 @@ ${table(
 `.trim(),
   },
   {
+    id: 'lyrics',
+    title: 'New song',
+    kind: 'lyrics',
+    label: 'Song lyrics',
+    hint: 'One song per sheet – sections, lines and a demo you can play while reading',
+    content: `
+<p><strong>Album</strong> — · <strong>Tempo</strong> — BPM · <strong>Key</strong> — · <strong>Tuning</strong> — · <strong>Status</strong> — demo</p>
+<section data-part="intro" data-label="Intro" data-tag="">
+<p>One bar of feedback, then the first line comes in alone.</p>
+</section>
+<section data-part="verse" data-label="Verse 1" data-tag="">
+<p>We move the furniture against the wall</p>
+<p>and let the room decide what it wants to be.</p>
+</section>
+<section data-part="prechorus" data-label="Pre-Chorus 1" data-tag="">
+<p>Count it in, count it in.</p>
+</section>
+<section data-part="chorus" data-label="Chorus 1" data-tag="">
+<p>Say the thing you never said out loud</p>
+<p>say it once, then say it again.</p>
+</section>
+<section data-part="verse" data-label="Verse 2" data-tag="">
+<p>—</p>
+</section>
+<section data-part="bridge" data-label="Bridge" data-tag="">
+<p>Half tempo, spoken until the last line.</p>
+</section>
+<section data-part="chorus" data-label="Chorus 2" data-tag="×2">
+<p>Say it once, then say it again.</p>
+</section>
+<section data-part="outro" data-label="Outro" data-tag="">
+<p>Let it fall apart.</p>
+</section>
+`.trim(),
+  },
+  {
     id: 'blank',
     title: 'Untitled document',
     kind: 'other',

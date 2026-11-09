@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS releases (
   announce_date TEXT,
   presave_url TEXT NOT NULL DEFAULT '',
   cover_media_id INTEGER,
+  audio_media_id INTEGER,
+  video_media_id INTEGER,
   notes TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -54,6 +56,11 @@ CREATE TABLE IF NOT EXISTS release_tasks (
   done INTEGER NOT NULL DEFAULT 0,
   post_id INTEGER,
   document_id INTEGER,
+  media_id INTEGER,
+  media_kind TEXT NOT NULL DEFAULT '',
+  design_id INTEGER,
+  notes TEXT NOT NULL DEFAULT '',
+  reference TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL,
   FOREIGN KEY (release_id) REFERENCES releases(id) ON DELETE CASCADE
 );
@@ -170,6 +177,17 @@ CREATE TABLE IF NOT EXISTS documents (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS document_audio (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  document_id INTEGER NOT NULL,
+  media_id INTEGER NOT NULL,
+  label TEXT NOT NULL DEFAULT '',
+  position INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS snippets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   kind TEXT NOT NULL DEFAULT 'caption',
@@ -271,6 +289,7 @@ CREATE INDEX IF NOT EXISTS idx_post_media_post ON post_media(post_id);
 CREATE INDEX IF NOT EXISTS idx_posts_position ON posts(position);
 CREATE INDEX IF NOT EXISTS idx_milestones_date ON milestones(date);
 CREATE INDEX IF NOT EXISTS idx_documents_kind ON documents(kind);
+CREATE INDEX IF NOT EXISTS idx_document_audio_document ON document_audio(document_id);
 CREATE INDEX IF NOT EXISTS idx_post_metrics_post ON post_metrics(post_id);
 CREATE INDEX IF NOT EXISTS idx_snippets_kind ON snippets(kind);
 `;
@@ -379,6 +398,8 @@ function seedIfEmpty(db: DatabaseSync) {
 function createConnection(): DatabaseSync {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
   const db = new DatabaseSync(path.join(DATA_DIR, 'band.db'));
+  // Build workers and request handlers open the same file; wait instead of failing.
+  db.exec('PRAGMA busy_timeout = 5000;');
   const mode = db.prepare('PRAGMA journal_mode').get() as { journal_mode?: string } | undefined;
   if (String(mode?.journal_mode ?? '').toLowerCase() !== 'wal') {
     db.exec('PRAGMA journal_mode = WAL;');
@@ -398,6 +419,13 @@ function createConnection(): DatabaseSync {
   ensureColumn(db, 'connections', 'last_run_at', 'TEXT');
   ensureColumn(db, 'media', 'folder_id', 'INTEGER');
   ensureColumn(db, 'milestones', "checklist", "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn(db, 'releases', 'audio_media_id', 'INTEGER');
+  ensureColumn(db, 'releases', 'video_media_id', 'INTEGER');
+  ensureColumn(db, 'release_tasks', 'media_id', 'INTEGER');
+  ensureColumn(db, 'release_tasks', "media_kind", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, 'release_tasks', 'design_id', 'INTEGER');
+  ensureColumn(db, 'release_tasks', "notes", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, 'release_tasks', "reference", "TEXT NOT NULL DEFAULT ''");
   for (const [column, definition] of [
     ['intro_title', "TEXT NOT NULL DEFAULT ''"],
     ['intro_signature', "TEXT NOT NULL DEFAULT ''"],

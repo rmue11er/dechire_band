@@ -25,6 +25,7 @@ export async function GET(request: Request, { params }: Ctx) {
     const headers: Record<string, string> = {
       'Content-Type': row.mime || 'application/octet-stream',
       'Cache-Control': 'public, max-age=31536000, immutable',
+      'Accept-Ranges': 'bytes',
     };
     if (new URL(request.url).searchParams.get('download')) {
       const ascii = row.original_name.replace(/[^\x20-\x7E]/g, '_');
@@ -32,6 +33,20 @@ export async function GET(request: Request, { params }: Ctx) {
         row.original_name
       )}`;
     }
+
+    // Range requests let the audio player seek inside a demo instead of reloading it.
+    const range = request.headers.get('range');
+    const match = range?.match(/^bytes=(\d*)-(\d*)$/);
+    if (match && data.length) {
+      const start = match[1] ? Number(match[1]) : Math.max(0, data.length - Number(match[2] || 0));
+      const end = match[2] && match[1] ? Math.min(Number(match[2]), data.length - 1) : data.length - 1;
+      if (start <= end && start < data.length) {
+        headers['Content-Range'] = `bytes ${start}-${end}/${data.length}`;
+        headers['Content-Length'] = String(end - start + 1);
+        return new Response(new Uint8Array(data.subarray(start, end + 1)), { status: 206, headers });
+      }
+    }
+
     return new Response(new Uint8Array(data), { headers });
   } catch {
     return new Response('Not found', { status: 404 });

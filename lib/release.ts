@@ -1,4 +1,99 @@
-import type { Release, ReleasePhaseId, ReleaseTask, ReleaseType, TaskModule } from './types';
+import type { AssetKind, Release, ReleasePhaseId, ReleaseTask, ReleaseType, TaskModule } from './types';
+
+/**
+ * Sources behind the playbook. Every step that quotes a number or a platform
+ * rule points at one of these – so the defaults can be checked, not believed.
+ */
+export interface ReleaseSource {
+  id: string;
+  label: string;
+  url: string;
+  note: string;
+}
+
+export const RELEASE_SOURCES: ReleaseSource[] = [
+  {
+    id: 'spotify-pitch',
+    label: 'Spotify for Artists – Playlist-Pitch',
+    url: 'https://support.spotify.com/us/artists/article/pitching-music-to-playlists/',
+    note: 'Pitch mindestens 7 Tage vor Release (Release Radar), ein Song pro Pitch, ein Video-Pitch separat, Platzierung nicht garantiert.',
+  },
+  {
+    id: 'spotify-cover',
+    label: 'Spotify – Cover-Art-Anforderungen',
+    url: 'https://support.spotify.com/us/artists/article/cover-art-requirements/',
+    note: 'TIFF/PNG/JPG verlustfrei, 640–10.000 px, 1:1, sRGB/24 Bit, nicht hochskalieren, keine eingebetteten Profile.',
+  },
+  {
+    id: 'spotify-audio',
+    label: 'Spotify – Audioformate',
+    url: 'https://support.spotify.com/us/artists/article/audio-file-formats/',
+    note: 'FLAC bevorzugt, WAV erlaubt; 44,1 kHz+, 24 Bit nativ (16 Bit nur wenn kein höherer Master), Stereo, kein Downsampling.',
+  },
+  {
+    id: 'spotify-metadata',
+    label: 'Spotify – Metadaten-Richtlinien',
+    url: 'https://support.spotify.com/us/artists/article/metadata-formatting-guidelines/',
+    note: 'Rollen auf Track- und Release-Ebene, Live-Datum mindestens 7 Tage vorher, kein Künstlername im Titel, Explicit-Flag statt „E“ im Titel.',
+  },
+  {
+    id: 'spotify-lyrics',
+    label: 'Spotify – Lyrics über Musixmatch',
+    url: 'https://support.spotify.com/us/artists/article/managing-your-lyrics-on-spotify/',
+    note: 'Kostenloses Musixmatch-Pro, Abschnitte mit #VERSE/#CHORUS taggen, kein „x2“, Zeilen synchronisieren – Änderungen brauchen einige Tage.',
+  },
+  {
+    id: 'spotify-canvas',
+    label: 'Spotify – Canvas-Guidelines',
+    url: 'https://support.spotify.com/us/artists/article/canvas-guidelines/',
+    note: '3–8 Sekunden, 9:16, 720–1080 px hoch, MP4 oder JPG, kein Gesang/Sprechen, keine hektischen Schnitte.',
+  },
+  {
+    id: 'release-day',
+    label: 'Global Release Day (IFPI)',
+    url: 'https://en.wikipedia.org/wiki/Global_Release_Day',
+    note: 'Seit 2015 ist Freitag der weltweite Releasetag; Stores stellen um 00:01 Ortszeit frei.',
+  },
+  {
+    id: 'youtube-resolution',
+    label: 'YouTube – Auflösung & Seitenverhältnisse',
+    url: 'https://support.google.com/youtube/answer/6375112',
+    note: '16:9 → 1920×1080 (oder höher); 9:16 wird unterstützt. Keine schwarzen Balken ins Bild brennen.',
+  },
+  {
+    id: 'youtube-encoding',
+    label: 'YouTube – Upload-Encoding',
+    url: 'https://support.google.com/youtube/answer/1722171',
+    note: 'Empfohlen: MP4-Container, H.264, AAC-LC.',
+  },
+  {
+    id: 'youtube-content-id',
+    label: 'YouTube – Content ID',
+    url: 'https://support.google.com/youtube/answer/2797370',
+    note: 'Automatische Erkennung geschützter Inhalte; Zugang nur für Rechteinhaber mit den entsprechenden Voraussetzungen.',
+  },
+  {
+    id: 'reels',
+    label: 'Instagram – Reels-Größen',
+    url: 'https://help.instagram.com/1038071743007909',
+    note: 'Seitenverhältnis 1,91:1 bis 9:16, mindestens 720 px, mindestens 30 fps.',
+  },
+  {
+    id: 'gema',
+    label: 'GEMA – Mitgliedschaft & Werke',
+    url: 'https://www.gema.de/en/music-creators/become-a-member',
+    note: 'Werke anmelden und Aufführungen/Streams vergüten lassen. Das Urheberrecht entsteht automatisch, die Anmeldung sichert die Vergütung.',
+  },
+  {
+    id: 'isrc',
+    label: 'IFPI – ISRC',
+    url: 'https://www.ifpi.org/isrc/',
+    note: 'International Standard Recording Code pro Aufnahme; wird in der Regel vom Distributor vergeben.',
+  },
+];
+
+export const sourceById = (id: string) => RELEASE_SOURCES.find((source) => source.id === id) ?? null;
+export const sourceByUrl = (url: string) => RELEASE_SOURCES.find((source) => source.url === url) ?? null;
 
 /**
  * The release wave.
@@ -19,6 +114,13 @@ export const PHASES: {
   to: number;
   blurb: string;
 }[] = [
+  {
+    id: 'production',
+    label: 'Produktion',
+    from: -56,
+    to: -29,
+    blurb: 'Master, Cover, Metadaten, Rechte, Videodreh. Was hier fehlt, lässt sich später nicht mehr nachholen.',
+  },
   {
     id: 'tease',
     label: 'Tease',
@@ -56,8 +158,13 @@ export const PHASES: {
   },
 ];
 
-export const phaseFor = (offset: number): ReleasePhaseId =>
-  PHASES.find((phase) => offset >= phase.from && offset <= phase.to)?.id ?? 'sustain';
+export const phaseFor = (offset: number): ReleasePhaseId => {
+  const first = PHASES[0];
+  const last = PHASES[PHASES.length - 1];
+  if (offset <= first.from) return first.id;
+  if (offset >= last.to) return last.id;
+  return PHASES.find((phase) => offset >= phase.from && offset <= phase.to)?.id ?? last.id;
+};
 
 export const phaseMeta = (id: ReleasePhaseId) => PHASES.find((phase) => phase.id === id) ?? PHASES[0];
 
@@ -73,18 +180,132 @@ export interface TaskTemplate {
   /** caption draft for planner tasks – {{title}}, {{band}}, {{date}}, {{presave}} */
   caption?: string;
   type?: 'photo' | 'story' | 'reel' | 'carousel';
+  /** media slot for this step – drives the picker filter */
+  mediaKind?: AssetKind;
+  /** source that backs the instruction (see RELEASE_SOURCES) */
+  reference?: string;
 }
 
 export const TASK_TEMPLATES: TaskTemplate[] = [
+  /* --------------------------------------------------------- production */
+  {
+    key: 'master-final',
+    phase: 'production',
+    offset: -49,
+    module: 'media',
+    mediaKind: 'audio',
+    critical: true,
+    reference: 'spotify-audio',
+    label: 'Finalen Master liefern',
+    detail:
+      'FLAC bevorzugt, WAV erlaubt: 44,1 kHz oder höher, 24 Bit (16 Bit nur, wenn es keinen höheren Master gibt), Stereo – nicht selbst downsamplen. Datei hier anhängen: Sie wird automatisch zum abspielbaren Master oben.',
+  },
+  {
+    key: 'cover-art',
+    phase: 'production',
+    offset: -45,
+    module: 'media',
+    mediaKind: 'image',
+    critical: true,
+    reference: 'spotify-cover',
+    label: 'Cover in 3000 × 3000 anlegen',
+    detail:
+      '1:1, sRGB, 24 Bit, verlustfreies PNG/TIFF/JPG; erlaubt sind 640–10.000 px, empfohlen 3000 × 3000. Nicht hochskalieren, keine eingebetteten Farbprofile. Hier anhängen – wird automatisch das Release-Cover.',
+  },
+  {
+    key: 'metadata-sheet',
+    phase: 'production',
+    offset: -42,
+    module: 'docs',
+    reference: 'spotify-metadata',
+    label: 'Metadaten & Splits festhalten',
+    detail:
+      'Titel-Schreibweise, alle Rollen auf Track- und Release-Ebene (Performer, Komponist, Lyriker, Produzent), Explicit-Flag, ISRC/UPC vom Distributor und schriftliche Splits. Künstlernamen gehören nicht in den Titel. Als Dokument anhängen.',
+  },
+  {
+    key: 'rights-gema',
+    phase: 'production',
+    offset: -40,
+    module: 'docs',
+    reference: 'gema',
+    label: 'Werk anmelden (GEMA) & Rechte klären',
+    detail:
+      'GEMA-Mitgliedschaft und Werkanmeldung für Musik und Text, Splits mit allen Beteiligten schriftlich. Das Urheberrecht entsteht automatisch – die Anmeldung sichert die Vergütung.',
+  },
+  {
+    key: 'distributor-delivery',
+    phase: 'production',
+    offset: -35,
+    module: 'orga',
+    critical: true,
+    reference: 'spotify-metadata',
+    label: 'Release beim Distributor einreichen',
+    detail:
+      'Titel, ISRC/UPC, Freitags-Live-Datum, Länder, Explicit. Spotify empfiehlt ein Live-Datum mindestens 7 Tage in der Zukunft; die Zustellung über den Distributor dauert ein paar Tage – plane 3–4 Wochen.',
+  },
+  {
+    key: 'video-treatment',
+    phase: 'production',
+    offset: -38,
+    module: 'docs',
+    reference: 'youtube-resolution',
+    label: 'Musikvideo: Treatment schreiben',
+    detail:
+      'Eine Seite: Konzept, Bildsprache passend zum Cover, Location, Cast, Referenzen. 16:9 als Master denken und 9:16-Cutdowns von Anfang an mitplanen. Treatment hier als Dokument anhängen.',
+  },
+  {
+    key: 'video-storyboard',
+    phase: 'production',
+    offset: -34,
+    module: 'studio',
+    reference: 'youtube-resolution',
+    label: 'Musikvideo: Storyboard & Shotlist',
+    detail:
+      'Einstellungen, Brennweiten, Locations, Tagesplan. Master in 16:9 (1920 × 1080), zusätzliche vertikale Takes für Reels/Shorts einplanen. Board als Bild oder Studio-Design anhängen.',
+  },
+  {
+    key: 'video-shoot',
+    phase: 'production',
+    offset: -31,
+    module: 'media',
+    mediaKind: 'video',
+    label: 'Musikvideo: Drehtag',
+    detail:
+      'Shotlist abarbeiten, 16:9 sauber ohne eingebrannte Balken, zusätzlich 9:16-Versionen drehen. Karten doppelt sichern, Freigaben für Cast und Locations einsammeln.',
+  },
+  {
+    key: 'video-clearance',
+    phase: 'production',
+    offset: -30,
+    module: 'docs',
+    reference: 'youtube-content-id',
+    label: 'Musikvideo: Rechte & Credits',
+    detail:
+      'Musikrechte, Location- und Archivfreigaben, Credits für Regie, Kamera und Schnitt. Content ID läuft über den Distributor – YouTube vergibt es nur an Rechteinhaber mit den nötigen Voraussetzungen.',
+  },
+  {
+    key: 'video-edit',
+    phase: 'production',
+    offset: -29,
+    module: 'media',
+    mediaKind: 'video',
+    critical: true,
+    reference: 'youtube-encoding',
+    label: 'Musikvideo: Schnitt & Export',
+    detail:
+      'Schnitt, Grading, Ton. Export als MP4/H.264 mit AAC-LC: 16:9-Master plus 9:16-Cutdowns. Finale Datei hier anhängen – sie wird automatisch das Release-Video oben.',
+  },
+
   /* ------------------------------------------------------------- tease */
   {
     key: 'assets-check',
     phase: 'tease',
     offset: -26,
-    module: 'media',
-    label: 'Cover & Pressefotos prüfen',
+    module: 'studio',
+    reference: 'spotify-cover',
+    label: 'Promo-Formate aus dem Cover bauen',
     detail:
-      'Cover in 3000 × 3000 (Playlists brauchen das), Pressefoto in 1:1, 4:5 und 9:16. Was fehlt, jetzt shooten – nicht in der Release-Woche.',
+      '1:1 fürs Profilraster, 4:5 für den Feed, 9:16 für Stories – vom 3000-px-Master ableiten, nie hochskalieren. Im Studio als „3 sizes“ exportieren und als Design anhängen.',
   },
   {
     key: 'press-text',
@@ -119,8 +340,10 @@ export const TASK_TEMPLATES: TaskTemplate[] = [
     phase: 'tease',
     offset: -16,
     module: 'orga',
+    reference: 'spotify-pitch',
     label: 'Playlist- und Presse-Liste aufbauen',
-    detail: 'Redaktionen und Kuratoren sammeln, mit Ansprechpartner und letztem Kontakt. Ohne Liste wird der Pitch ein Rundruf.',
+    detail:
+      'Redaktionen und Kuratoren sammeln, mit Ansprechpartner und letztem Kontakt. Ohne Liste wird der Pitch ein Rundruf. Denk daran: Ein Pitch ist eine Bitte, keine Platzgarantie.',
   },
   {
     key: 'tease-feed',
@@ -158,6 +381,16 @@ export const TASK_TEMPLATES: TaskTemplate[] = [
     detail: 'Ein Link für alle Plattformen (Distributor oder Link-Hub). Auf dem Handy testen, nicht am Laptop.',
   },
   {
+    key: 'musixmatch-verify',
+    phase: 'announce',
+    offset: -12,
+    module: 'orga',
+    reference: 'spotify-lyrics',
+    label: 'Musixmatch-Künstlerprofil verifizieren',
+    detail:
+      'Musixmatch Pro (kostenlos) mit Spotify verbinden und das Künstlerprofil verifizieren – die Prüfung dauert ein paar Werktage. Danach kannst du Lyrics eintragen und synchronisieren.',
+  },
+  {
     key: 'website-block',
     phase: 'announce',
     offset: -12,
@@ -178,11 +411,13 @@ export const TASK_TEMPLATES: TaskTemplate[] = [
   {
     key: 'playlist-pitch',
     phase: 'announce',
-    offset: -9,
+    offset: -10,
     module: 'orga',
     critical: true,
-    label: 'Playlist-Pitches abschicken',
-    detail: 'Redaktionen planen Wochen im Voraus. Wer am Releasetag pitchen will, ist zu spät.',
+    reference: 'spotify-pitch',
+    label: 'Spotify-Pitch abschicken (≥ 7 Tage vorher)',
+    detail:
+      'Über Spotify for Artists unter Music → Upcoming pitchen. Mindestens 7 Tage vor Release, damit du im Release Radar deiner Follower landest; nur ein Song pro Pitch, ein Video pitchst du separat. Früher ist besser – Redaktionen planen Wochen im Voraus.',
   },
   {
     key: 'cover-reveal',
@@ -212,8 +447,10 @@ export const TASK_TEMPLATES: TaskTemplate[] = [
     module: 'planner',
     channel: 'reel',
     type: 'reel',
+    reference: 'reels',
     label: 'Audio-Ausschnitt (Hook, 15 s)',
-    detail: 'Der Hook, nicht das Intro. Untertitel, weil fast alle ohne Ton schauen.',
+    detail:
+      'Der Hook, nicht das Intro. 9:16, mindestens 720 px und 30 fps, Untertitel – fast alle schauen ohne Ton.',
     caption: '15 Sekunden, die alles erklären.\n\n{{title}} — {{date}}',
   },
   {
@@ -237,6 +474,17 @@ export const TASK_TEMPLATES: TaskTemplate[] = [
     label: 'Trackliste / Credits',
     detail: 'Wer hat was gemacht. Menschen teilen Beiträge, in denen sie vorkommen.',
     caption: '{{title}}, komplett.\n\nAufgenommen, gemischt und gestritten von uns.\n\n{{date}}.',
+  },
+  {
+    key: 'canvas',
+    phase: 'countdown',
+    offset: -4,
+    module: 'media',
+    mediaKind: 'video',
+    reference: 'spotify-canvas',
+    label: 'Spotify Canvas bauen (3–8 s)',
+    detail:
+      '9:16, 720–1080 px hoch, MP4 oder JPG, 3–8 Sekunden. Kein Gesang/Sprechen, keine hektischen Schnitte – der Loop läuft stumm hinter dem Player. In Spotify for Artists auswählen.',
   },
   {
     key: 'links-check',
@@ -267,9 +515,10 @@ export const TASK_TEMPLATES: TaskTemplate[] = [
     channel: 'feed',
     type: 'photo',
     critical: true,
+    reference: 'release-day',
     label: 'Out-Now-Post (vormittags)',
     detail:
-      'Nicht um 0 Uhr posten – da schläft das Publikum. Zehn Uhr Ortszeit, wenn die erste Welle der Playlists schon läuft.',
+      'Die Stores stellen freitags um 00:01 Ortszeit frei (Global Release Day). Den Post trotzdem erst am Vormittag setzen – um 0 Uhr schläft das Publikum.',
     caption: '{{title}} ist da.\n\nÜberall, wo es Musik gibt. Link in der Bio.\n\nDanke an alle, die bis hierhin zugehört haben.\n\n{{band}}',
   },
   {
@@ -282,6 +531,37 @@ export const TASK_TEMPLATES: TaskTemplate[] = [
     label: 'Story-Serie: Cover, Link, Danke',
     detail: 'Drei bis fünf Frames: Cover, Link-Sticker, ein Gesicht, ein Danke. Mehr nicht.',
     caption: 'Jetzt draußen. Link hier.',
+  },
+  {
+    key: 'lyrics-publish',
+    phase: 'release',
+    offset: 0,
+    module: 'docs',
+    reference: 'spotify-lyrics',
+    label: 'Lyrics bei Musixmatch veröffentlichen',
+    detail:
+      'Lyrics in Musixmatch Pro eintragen: Abschnitte mit #VERSE/#CHORUS taggen, „×2“ ausschreiben (nicht als Multiplikator), Zeilen synchronisieren. Änderungen brauchen ein paar Tage bis zu Spotify. Lyrics-Dokument hier anhängen.',
+  },
+  {
+    key: 'video-premiere',
+    phase: 'release',
+    offset: 0,
+    module: 'media',
+    mediaKind: 'video',
+    reference: 'youtube-resolution',
+    label: 'Musikvideo veröffentlichen / Premiere',
+    detail:
+      '16:9, 1920 × 1080 oder höher, keine eingebrannten Balken; Premiere in YouTube Studio planen. Das Video danach separat in Spotify for Artists pitchen – nur innerhalb von 7 Tagen nach Release möglich.',
+  },
+  {
+    key: 'content-id',
+    phase: 'release',
+    offset: 0,
+    module: 'orga',
+    reference: 'youtube-content-id',
+    label: 'Content ID über den Distributor aktivieren',
+    detail:
+      'Prüfen, ob der Distributor YouTube Content ID anbietet und die Rechte exklusiv bei euch liegen. YouTube vergibt Content ID nur an Rechteinhaber mit den nötigen Voraussetzungen.',
   },
   {
     key: 'thanks-text',
@@ -333,6 +613,29 @@ export const TASK_TEMPLATES: TaskTemplate[] = [
     detail: 'Einmal freundlich nachfassen. Nicht zweimal. Wer geantwortet hat, bekommt den nächsten Song zuerst.',
   },
   {
+    key: 'video-shorts',
+    phase: 'sustain',
+    offset: 3,
+    module: 'planner',
+    channel: 'reel',
+    type: 'reel',
+    reference: 'reels',
+    label: 'Video-Cutdowns für Reels & Shorts',
+    detail:
+      'Zwei bis drei 9:16-Ausschnitte aus dem Musikvideo: mindestens 720 px, 30 fps, Hook in den ersten zwei Sekunden. Credits als Text im Bild.',
+    caption: 'Ausschnitt aus „{{title}}“. Der ganze Clip ist draußen.',
+  },
+  {
+    key: 'reporting',
+    phase: 'sustain',
+    offset: 14,
+    module: 'orga',
+    reference: 'spotify-pitch',
+    label: 'Auswertung: was hat getragen?',
+    detail:
+      'Spotify for Artists → Playlists und Stats prüfen, Instagram-Insights notieren, Saves und Streams vergleichen. Drei Sätze für den nächsten Release schreiben – nicht nur Zahlen.',
+  },
+  {
     key: 'community-post',
     phase: 'sustain',
     offset: 14,
@@ -359,13 +662,16 @@ export interface WaveRule {
   tag: 'Timing' | 'Format' | 'Inhalt';
   title: string;
   body: string;
+  /** optional source id from RELEASE_SOURCES */
+  source?: string;
 }
 
 export const WAVE_RULES: WaveRule[] = [
   {
     tag: 'Timing',
-    title: 'Freitag ist Release-Tag',
-    body: 'Neue Musik erscheint weltweit freitags, weil dort die Playlists rotieren. Ein anderer Wochentag kostet Sichtbarkeit – außer du hast einen Grund.',
+    title: 'Freitag, 00:01 Ortszeit',
+    body: 'Seit 2015 ist Freitag der weltweite Releasetag (IFPI). Die Stores stellen die Musik um 00:01 Ortszeit frei; der Post dazu läuft am Vormittag.',
+    source: 'release-day',
   },
   {
     tag: 'Timing',
@@ -374,8 +680,9 @@ export const WAVE_RULES: WaveRule[] = [
   },
   {
     tag: 'Timing',
-    title: 'Pitches 7–14 Tage vorher',
-    body: 'Redaktionen und Playlist-Kuratoren planen in Wochen. Am Releasetag zu pitchen heißt: für die nächste Ausgabe.',
+    title: 'Pitch mindestens 7 Tage vorher',
+    body: 'Spotify nimmt Pitches ab 7 Tagen vor Release an – nur dann landest du im Release Radar deiner Follower. Redaktionen planen früher, 3–4 Wochen sind besser. Pitching garantiert keinen Platz.',
+    source: 'spotify-pitch',
   },
   {
     tag: 'Timing',
@@ -389,8 +696,27 @@ export const WAVE_RULES: WaveRule[] = [
   },
   {
     tag: 'Format',
-    title: 'Cover in 3000 × 3000',
-    body: 'Playlists und Stores ziehen das Artwork in groß. Ein 1080er-Cover wird überall unscharf hochskaliert.',
+    title: 'Cover 1:1, 3000 px, sRGB',
+    body: 'Spotify verlangt verlustfreie TIFF/PNG/JPG, 640–10.000 px, 1:1, sRGB/24 Bit. 3000 × 3000 ist der sichere Master – nicht hochskalieren.',
+    source: 'spotify-cover',
+  },
+  {
+    tag: 'Format',
+    title: 'Master unverändert liefern',
+    body: 'FLAC bevorzugt, WAV erlaubt: 44,1 kHz+, 24 Bit nativ, Stereo. Nicht downsamplen – Spotify konvertiert selbst.',
+    source: 'spotify-audio',
+  },
+  {
+    tag: 'Format',
+    title: 'Video 1080p, 16:9 – plus 9:16',
+    body: 'YouTube empfiehlt 1920 × 1080 bei 16:9, MP4/H.264 mit AAC-LC. Vertikale Fassungen separat schneiden statt Balken ins Bild zu brennen.',
+    source: 'youtube-resolution',
+  },
+  {
+    tag: 'Format',
+    title: 'Canvas: 3–8 Sekunden',
+    body: 'Spotify-Canvas ist 9:16, 720–1080 px hoch, MP4/JPG – ohne Gesang, ohne hektische Schnitte.',
+    source: 'spotify-canvas',
   },
   {
     tag: 'Inhalt',
@@ -401,6 +727,24 @@ export const WAVE_RULES: WaveRule[] = [
     tag: 'Inhalt',
     title: 'Stories tragen Reichweite, Feed trägt Bindung',
     body: 'In der Release-Woche täglich Story, zwei bis drei Feed-Posts. Nicht umgekehrt.',
+  },
+  {
+    tag: 'Inhalt',
+    title: 'Lyrics mit Abschnitts-Tags',
+    body: 'Spotify-Lyrics laufen über Musixmatch: #VERSE/#CHORUS taggen, „×2“ ausschreiben, Zeilen synchronisieren. Änderungen brauchen ein paar Tage.',
+    source: 'spotify-lyrics',
+  },
+  {
+    tag: 'Inhalt',
+    title: 'Reels: 720 px, 30 fps, 9:16',
+    body: 'Instagram akzeptiert 1,91:1 bis 9:16, mindestens 720 px und 30 fps. Hochformat ist die Normalform, nicht der Sonderfall.',
+    source: 'reels',
+  },
+  {
+    tag: 'Inhalt',
+    title: 'Video-Rechte klären',
+    body: 'Content ID erkennt Musik automatisch, ist aber nur für Rechteinhaber mit den nötigen Voraussetzungen verfügbar. Für Bands läuft das über den Distributor.',
+    source: 'youtube-content-id',
   },
   {
     tag: 'Inhalt',
@@ -425,7 +769,12 @@ export function daysUntil(dateIso: string) {
   return Math.round((target - now) / 86_400_000);
 }
 
-export function buildTasks(releaseDate: string): Omit<ReleaseTask, 'id' | 'createdAt' | 'done' | 'postId' | 'documentId'>[] {
+export function buildTasks(
+  releaseDate: string
+): Omit<
+  ReleaseTask,
+  'id' | 'createdAt' | 'done' | 'postId' | 'documentId' | 'designId' | 'mediaId'
+>[] {
   return TASK_TEMPLATES.map((template) => ({
     releaseId: 0,
     phase: template.phase,
@@ -437,6 +786,9 @@ export function buildTasks(releaseDate: string): Omit<ReleaseTask, 'id' | 'creat
     dueDate: shift(releaseDate, template.offset),
     channel: template.channel ?? '',
     critical: Boolean(template.critical),
+    mediaKind: template.mediaKind ?? '',
+    notes: '',
+    reference: template.reference ? sourceById(template.reference)?.url ?? template.reference : '',
   }));
 }
 

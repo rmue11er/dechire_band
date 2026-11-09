@@ -22,6 +22,7 @@ import {
   IconCheck,
   IconCode,
   IconDownload,
+  IconMusic,
   IconExternal,
   IconItalic,
   IconImage,
@@ -38,16 +39,25 @@ import {
   IconUnderline,
   IconUndo,
 } from '@/components/icons';
+import DocAudio from '@/components/DocAudio';
 import EmojiPicker from '@/components/EmojiPicker';
 import IconPicker from '@/components/IconPicker';
 import MediaPicker from '@/components/MediaPicker';
-import { DocIcon, DocImage, type ImageAlign } from '@/components/docNodes';
+import { DocIcon, DocImage, DocSection, type ImageAlign } from '@/components/docNodes';
 import { Segmented } from '@/components/ui';
 import { usePalette } from '@/components/PaletteProvider';
-import { DOC_KINDS, docKindLabel } from '@/lib/kinds';
+import {
+  DOC_KINDS,
+  LYRIC_PARTS,
+  docKindLabel,
+  guessPartKind,
+  isNumberedPart,
+  partLabel,
+  type PartKind,
+} from '@/lib/kinds';
 import { timeAgo } from '@/lib/format';
 import { toast } from '@/lib/toast';
-import type { BandDocument, DocumentKind, MediaItem, Profile } from '@/lib/types';
+import type { BandDocument, DocumentAudio, DocumentKind, MediaItem, Profile } from '@/lib/types';
 
 type Status = 'idle' | 'dirty' | 'saving' | 'saved';
 
@@ -82,6 +92,8 @@ export default function DocEditor({
   const [profile, setProfile] = useState<Profile | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [mediaOpen, setMediaOpen] = useState(false);
+  const [audio, setAudio] = useState<DocumentAudio[]>(doc.audio ?? []);
+  const [audioOpen, setAudioOpen] = useState(false);
   const ciPrimary = palette.find((color) => color.role === 'primary')?.hex ?? '#6b54a6';
   const band = profile?.bandName ?? 'DECHIRE';
 
@@ -122,6 +134,7 @@ export default function DocEditor({
       TableCell,
       DocImage.configure({ inline: false, allowBase64: false }),
       DocIcon,
+      DocSection,
     ],
     content: doc.content || '<p></p>',
     immediatelyRender: false,
@@ -142,6 +155,7 @@ export default function DocEditor({
     setTags(doc.tags.join(', '));
     setSaveState('idle');
     setSavedAt(doc.updatedAt);
+    setAudio(doc.audio ?? []);
     contentRef.current = { html: doc.content, text: doc.plainText };
     dirtyRef.current = false;
     if (editor) {
@@ -241,6 +255,230 @@ export default function DocEditor({
     }
   };
 
+  const refreshAudio = async () => {
+    try {
+      const response = await fetch(`/api/documents/${doc.id}/audio`);
+      const data = await response.json();
+      if (response.ok) setAudio(data.audio ?? []);
+    } catch {
+      /* keep what we have */
+    }
+  };
+
+  const attachAudio = async (item: MediaItem) => {
+    try {
+      const response = await fetch(`/api/documents/${doc.id}/audio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mediaId: item.id, label: item.title }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Could not attach the audio file');
+      setAudio(data.audio ?? []);
+      toast(`${item.title} attached`);
+    } catch (error: any) {
+      toast(error.message ?? 'Could not attach the audio file', 'error');
+    }
+  };
+
+  const detachAudio = async (id: number) => {
+    setAudio((current) => current.filter((track) => track.id !== id));
+    const response = await fetch(`/api/document-audio/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      toast('Could not detach the audio file', 'error');
+      refreshAudio();
+    }
+  };
+
+  const renameAudio = async (id: number, label: string) => {
+    setAudio((current) => current.map((track) => (track.id === id ? { ...track, label } : track)));
+    const response = await fetch(`/api/document-audio/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label }),
+    });
+    if (!response.ok) {
+      toast('Could not rename the demo', 'error');
+      refreshAudio();
+    }
+  };
+
+  /* ---------------------------------------------------------- song parts */
+
+  /** Top-level parts of the sheet, in reading order. */
+  const collectParts = () => {
+    if (!editor) return [] as { pos: number; size: number; kind: string; label: string; tag: string }[];
+    const parts: { pos: number; size: number; kind: string; label: string; tag: string }[] = [];
+    editor.state.doc.forEach((node, offset) => {
+      if (node.type.name !== 'docSection') return;
+      const kind = String(node.attrs.kind || 'verse');
+      parts.push({
+        pos: offset,
+        size: node.nodeSize,
+        kind,
+        label: String(node.attrs.label || partLabel(kind)),
+        tag: String(node.attrs.tag || ''),
+      });
+    });
+    return parts;
+  };
+
+  const countParts = (kind: string, excludePos?: number) =>
+    collectParts().filter((part) => part.kind === kind && part.pos !== excludePos).length;
+
+  const autoPartLabel = (kind: PartKind, excludePos?: number) => {
+    const base = partLabel(kind);
+    const used = countParts(kind, excludePos);
+    return isNumberedPart(kind) || used > 0 ? `${base} ${used + 1}` : base;
+  };
+
+  const sectionDepthAtCursor = () => {
+    if (!editor) return 0;
+    const { $from } = editor.state.selection;
+    for (let depth = $from.depth; depth > 0; depth -= 1) {
+      if ($from.node(depth).type.name === 'docSection') return depth;
+    }
+    return 0;
+  };
+
+  const insertPart = (kind: PartKind) => {
+    if (!editor) return;
+    const { $from } = editor.state.selection;
+    // A part always lands after the block the cursor sits in – a section found
+    // there is a top-level block itself, so this is also "after the part".
+    const pos = $from.depth > 0 ? $from.after(1) : $from.pos;
+    editor
+      .chain()
+      .insertContentAt(pos, {
+        type: 'docSection',
+        attrs: { kind, label: autoPartLabel(kind), tag: '' },
+        content: [{ type: 'paragraph' }],
+      })
+      .run();
+    editor.chain().focus().setTextSelection(pos + 2).scrollIntoView().run();
+  };
+
+  const changePartKind = (kind: PartKind) => {
+    if (!editor) return;
+    const attrs = editor.getAttributes('docSection');
+    const previousKind = String(attrs.kind || 'verse');
+    const label = String(attrs.label || partLabel(previousKind));
+    const previousBase = partLabel(previousKind);
+    const autoLabel = !label || label === previousBase || label.startsWith(`${previousBase} `);
+    const depth = sectionDepthAtCursor();
+    const pos = depth ? editor.state.selection.$from.before(depth) : undefined;
+    editor
+      .chain()
+      .updateAttributes('docSection', {
+        kind,
+        label: autoLabel ? autoPartLabel(kind, pos) : label,
+      })
+      .run();
+  };
+
+  const setPartAttr = (attrs: Record<string, string>) => {
+    if (!editor) return;
+    editor.chain().updateAttributes('docSection', attrs).run();
+  };
+
+  const endPart = () => {
+    if (!editor) return;
+    const depth = sectionDepthAtCursor();
+    if (!depth) return;
+    const pos = editor.state.selection.$from.after(depth);
+    editor.chain().insertContentAt(pos, { type: 'paragraph' }).run();
+    editor.chain().focus().setTextSelection(pos + 1).scrollIntoView().run();
+  };
+
+  const unwrapPart = () => {
+    if (!editor) return;
+    const depth = sectionDepthAtCursor();
+    if (!depth) return;
+    const { $from } = editor.state.selection;
+    const node = $from.node(depth);
+    const start = $from.before(depth);
+    const content = node.content.toJSON();
+    editor
+      .chain()
+      .insertContentAt(
+        { from: start, to: start + node.nodeSize },
+        content.length ? content : [{ type: 'paragraph' }]
+      )
+      .run();
+    editor.chain().focus().setTextSelection(start + 1).scrollIntoView().run();
+  };
+
+  const jumpToPart = (pos: number) => {
+    editor?.chain().focus().setTextSelection(pos + 2).scrollIntoView().run();
+  };
+
+  /** Swap two neighbouring parts – only when nothing sits between them. */
+  const movePart = (index: number, direction: -1 | 1) => {
+    if (!editor) return;
+    const parts = collectParts();
+    const current = parts[index];
+    const neighbour = parts[index + direction];
+    if (!current || !neighbour) return;
+    const adjacent =
+      direction < 0
+        ? neighbour.pos + neighbour.size === current.pos
+        : current.pos + current.size === neighbour.pos;
+    if (!adjacent) {
+      toast('Parts need to sit directly next to each other to swap', 'error');
+      return;
+    }
+    const currentNode = editor.state.doc.nodeAt(current.pos);
+    const neighbourNode = editor.state.doc.nodeAt(neighbour.pos);
+    if (!currentNode || !neighbourNode) return;
+    const from = Math.min(current.pos, neighbour.pos);
+    const to = Math.max(current.pos + current.size, neighbour.pos + neighbour.size);
+    const ordered = direction < 0 ? [currentNode, neighbourNode] : [neighbourNode, currentNode];
+    editor.view.dispatch(editor.state.tr.replaceWith(from, to, ordered));
+  };
+
+  const countTopHeadings = () => {
+    if (!editor) return 0;
+    let count = 0;
+    editor.state.doc.forEach((node) => {
+      if (node.type.name === 'heading' && Number(node.attrs.level) >= 2) count += 1;
+    });
+    return count;
+  };
+
+  /** Older lyric sheets used plain headings – turn them into real parts. */
+  const convertHeadings = () => {
+    if (!editor) return;
+    const json = editor.getJSON() as any;
+    const nodes: any[] = [];
+    let section: any = null;
+    for (const node of json.content ?? []) {
+      if (node.type === 'heading' && Number(node.attrs?.level ?? 2) >= 2) {
+        const text = (node.content ?? [])
+          .map((child: any) => child.text ?? '')
+          .join('')
+          .trim();
+        const kind = guessPartKind(text);
+        section = {
+          type: 'docSection',
+          attrs: { kind, label: text || partLabel(kind), tag: '' },
+          content: [],
+        };
+        nodes.push(section);
+      } else if (section) {
+        section.content.push(node);
+      } else {
+        nodes.push(node);
+      }
+    }
+    for (const node of nodes) {
+      if (node.type === 'docSection' && !node.content.length) {
+        node.content.push({ type: 'paragraph' });
+      }
+    }
+    editor.commands.setContent({ type: 'doc', content: nodes });
+    toast('Headings turned into parts');
+  };
+
   /** The export leaves `/api/files/…` behind – so every image is inlined as data URL. */
   const inlineImages = async (html: string) => {
     const sources = [...html.matchAll(/<img[^>]+src="([^"]+)"/g)]
@@ -255,8 +493,34 @@ export default function DocEditor({
     );
   };
 
+  /** Small demos travel inside the HTML file, big ones keep their library URL. */
+  const inlineAudio = async (tracks: DocumentAudio[]) => {
+    const budget = 24 * 1024 * 1024;
+    let used = 0;
+    const items: { label: string; src: string }[] = [];
+    for (const track of tracks) {
+      const src =
+        used + track.media.size <= budget
+          ? await toDataUrl(track.media.url)
+          : new URL(track.media.url, window.location.href).href;
+      if (src.startsWith('data:')) used += track.media.size;
+      items.push({ label: track.label || 'Demo', src });
+    }
+    return items;
+  };
+
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
   const downloadHtml = async () => {
-    const body = await inlineImages(contentRef.current.html);
+    const [body, demos] = await Promise.all([
+      inlineImages(contentRef.current.html),
+      inlineAudio(audio),
+    ]);
     const bandName = band;
     const kindLabel = DOC_KINDS.find((item) => item.value === kind)?.label ?? 'Document';
     const logo = profile?.avatarUrl ? await toDataUrl(profile.avatarUrl) : '';
@@ -310,6 +574,22 @@ export default function DocEditor({
   .body h1 { font-family: ${display}; font-weight: 400; font-size: 22px; letter-spacing: .01em; text-transform: uppercase; }
   .body h3 { margin: 20px 0 6px; font-size: 14px; color: #14101c; }
   .body p { margin: 0 0 11px; }
+  .sheet.lyrics .body { font-size: 15px; line-height: 1.85; }
+  .sheet.lyrics .body p { margin: 0 0 3px; }
+  .doc-section { position: relative; margin: 28px 0 0; padding: 12px 0 2px 17px; border-left: 2px solid rgb(16 13 22 / .22); }
+  .doc-section::before { content: attr(data-label); display: block; margin: 0 0 7px; font-family: ${mono}; font-size: 8.5px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: rgb(16 13 22 / .55); }
+  .doc-section[data-tag]:not([data-tag=''])::after { content: attr(data-tag); position: absolute; top: 10px; right: 0; padding: 1px 6px; border: 1px solid rgb(var(--accent-rgb) / .45); border-radius: 2px; font-family: ${mono}; font-size: 8px; letter-spacing: .12em; color: var(--accent-deep); }
+  .doc-section[data-part='chorus'] { border-left-color: var(--accent); border-left-width: 3px; background: linear-gradient(90deg, rgb(var(--accent-rgb) / .09), transparent 62%); }
+  .doc-section[data-part='chorus']::before { color: var(--accent-deep); }
+  .doc-section[data-part='prechorus'],
+  .doc-section[data-part='bridge'] { border-left-color: var(--accent-2); }
+  .doc-section[data-part='prechorus']::before,
+  .doc-section[data-part='bridge']::before { color: var(--accent-2); }
+  .doc-section[data-part='bridge'] { border-left-style: dashed; }
+  .doc-section[data-part='intro'],
+  .doc-section[data-part='outro'] { border-left-style: dotted; border-left-color: rgb(16 13 22 / .34); }
+  .doc-section[data-part='breakdown'],
+  .doc-section[data-part='solo'] { border-left-color: #100d16; }
   .body strong { color: #0d0a12; }
   .body a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 2px; }
   .body ul, .body ol { padding-left: 20px; }
@@ -334,13 +614,18 @@ export default function DocEditor({
   .body .doc-icon svg { width: var(--ico, 16px); height: var(--ico, 16px); fill: currentColor; }  .body ul[data-type="taskList"] { list-style: none; padding-left: 0; }
   .body ul[data-type="taskList"] li { display: flex; gap: 8px; align-items: flex-start; }
   .body ul[data-type="taskList"] input { accent-color: var(--accent-deep); }
+  .demos { display: grid; gap: 10px; margin: 30px 0 0; padding-top: 16px; border-top: 1px dashed rgb(16 13 22 / .26); }
+  .demos-title { font-family: ${mono}; font-size: 8.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent-deep); }
+  .demos figure { margin: 0; }
+  .demos figcaption { margin-bottom: 5px; font-size: 11.5px; font-weight: 700; color: #14101c; }
+  .demos audio { width: 100%; height: 36px; filter: grayscale(1) contrast(.9); }
   .foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 40px; padding-top: 12px; border-top: 1px solid rgb(16 13 22 / .18); font-family: ${mono}; font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase; color: rgb(16 13 22 / .5); }
   .foot span:first-child::before { content: ''; display: inline-block; width: 5px; height: 5px; margin-right: 8px; background: var(--accent-2); vertical-align: 1px; }
   @media print { body { padding: 0; background: #fff; } .sheet { max-width: none; box-shadow: none; } }
 </style>
 </head>
 <body>
-<div class="sheet">
+<div class="sheet${kind === 'lyrics' ? ' lyrics' : ''}">
   <header class="mast">
     ${mark ? `<img class="photo" src="${mark}" alt="">` : ''}
     <span class="veil"></span>
@@ -366,6 +651,16 @@ export default function DocEditor({
     <h1>${title || 'Document'}</h1>
     <span class="rule"></span>
     ${body}
+    ${
+      demos.length
+        ? `<div class="demos"><span class="demos-title">Demo</span>${demos
+            .map(
+              (track) =>
+                `<figure><figcaption>${escapeHtml(track.label)}</figcaption><audio controls preload="metadata" src="${track.src}"></audio></figure>`
+            )
+            .join('')}</div>`
+        : ''
+    }
     <div class="foot">
       <span>${bandName} /// Post-hardcore</span>
       <span>${profile?.website ?? ''}</span>
@@ -392,6 +687,15 @@ export default function DocEditor({
       </div>
     );
   }
+
+  const parts = collectParts();
+  const headingCount = countTopHeadings();
+  const selectionPos = editor.state.selection.from;
+  const inSection = editor.isActive('docSection');
+  const partAttrs = inSection ? editor.getAttributes('docSection') : null;
+  const activePartIndex = parts.findIndex(
+    (part) => selectionPos >= part.pos && selectionPos < part.pos + part.size
+  );
 
   const tool = (active: boolean, onClick: () => void, icon: React.ReactNode, label: string) => (
     <button
@@ -488,6 +792,13 @@ export default function DocEditor({
         </label>
       </div>
 
+      <DocAudio
+        tracks={audio}
+        onAttach={() => setAudioOpen(true)}
+        onRemove={detachAudio}
+        onRename={renameAudio}
+      />
+
       <div className="doc-toolbar">
         {tool(false, () => editor.chain().focus().undo().run(), <IconUndo size={15} />, 'Undo')}
         {tool(false, () => editor.chain().focus().redo().run(), <IconRedo size={15} />, 'Redo')}
@@ -557,6 +868,131 @@ export default function DocEditor({
         <EmojiPicker onPick={(emoji) => editor.chain().focus().insertContent(emoji).run()} />
       </div>
 
+      {inSection && partAttrs ? (
+        <div className="doc-part-tools" data-part={String(partAttrs.kind || 'verse')}>
+          <span className="doc-part-dot" aria-hidden="true" />
+          <span className="doc-part-title mono">Part</span>
+          <select
+            className="select doc-part-select"
+            value={String(partAttrs.kind || 'verse')}
+            onChange={(event) => changePartKind(event.target.value as PartKind)}
+            aria-label="Part type"
+          >
+            {LYRIC_PARTS.map((part) => (
+              <option key={part.value} value={part.value}>
+                {part.label}
+              </option>
+            ))}
+          </select>
+          <input
+            className="input doc-part-name"
+            value={String(partAttrs.label || '')}
+            placeholder="Label"
+            aria-label="Part label"
+            onChange={(event) => setPartAttr({ label: event.target.value })}
+          />
+          <input
+            className="input doc-part-tag"
+            value={String(partAttrs.tag || '')}
+            placeholder="×2 · half-time"
+            aria-label="Part note"
+            onChange={(event) => setPartAttr({ tag: event.target.value })}
+          />
+          <span className="tool-sep" />
+          {['×2', '×3'].map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              className={`tool-text ${String(partAttrs.tag || '') === tag ? 'on' : ''}`}
+              onClick={() => setPartAttr({ tag: String(partAttrs.tag || '') === tag ? '' : tag })}
+              title={`Mark as repeated ${tag}`}
+            >
+              {tag}
+            </button>
+          ))}
+          <span className="tool-sep" />
+          <button type="button" className="tool-text" onClick={endPart}>
+            End part
+          </button>
+          <button type="button" className="tool-text danger" onClick={unwrapPart}>
+            Unwrap
+          </button>
+        </div>
+      ) : null}
+
+      {kind === 'lyrics' || parts.length ? (
+        <div className="doc-lyric-bar">
+          <span className="doc-lyric-label">Part</span>
+          {LYRIC_PARTS.map((part) => (
+            <button
+              key={part.value}
+              type="button"
+              className="tool-text doc-part-chip"
+              data-part={part.value}
+              onClick={() => insertPart(part.value)}
+              title={`Insert ${part.label}`}
+            >
+              {part.label}
+            </button>
+          ))}
+          {kind === 'lyrics' && !parts.length && headingCount ? (
+            <button type="button" className="tool-text doc-convert" onClick={convertHeadings}>
+              Convert headings
+            </button>
+          ) : null}
+          <span className="doc-lyric-hint">One sheet per song – title = song title.</span>
+        </div>
+      ) : null}
+
+      {parts.length ? (
+        <div className="doc-map">
+          <span className="doc-map-caption mono">Structure</span>
+          <div className="doc-map-rail">
+            {parts.map((part, index) => (
+              <div
+                key={`${part.pos}-${index}`}
+                className={`doc-map-part ${index === activePartIndex ? 'on' : ''}`}
+                data-part={part.kind}
+              >
+                <button
+                  type="button"
+                  className="doc-map-jump"
+                  onClick={() => jumpToPart(part.pos)}
+                  title={`Jump to ${part.label}`}
+                >
+                  <span className="doc-map-index mono">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="doc-map-kind">{part.label}</span>
+                  {part.tag ? <span className="doc-map-tag">{part.tag}</span> : null}
+                </button>
+                <span className="doc-map-move">
+                  <button
+                    type="button"
+                    onClick={() => movePart(index, -1)}
+                    disabled={index === 0}
+                    title="Move part up"
+                    aria-label={`Move ${part.label} up`}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => movePart(index, 1)}
+                    disabled={index === parts.length - 1}
+                    title="Move part down"
+                    aria-label={`Move ${part.label} down`}
+                  >
+                    ↓
+                  </button>
+                </span>
+              </div>
+            ))}
+          </div>
+          <span className="doc-map-count mono">
+            {parts.length} {parts.length === 1 ? 'part' : 'parts'}
+          </span>
+        </div>
+      ) : null}
+
       {editor.isActive('image') ? (
         <div className="doc-img-tools">
           <span className="mono small muted">Image</span>
@@ -588,7 +1024,7 @@ export default function DocEditor({
       ) : null}
 
       <div
-        className="doc-page"
+        className={`doc-page ${kind === 'lyrics' ? 'lyrics' : ''}`.trim()}
         style={{ '--doc-mark': (profile?.docMarkStrength ?? 30) / 100 } as CSSProperties}
       >
         <header className="doc-sheet-mast">
@@ -630,6 +1066,18 @@ export default function DocEditor({
             </span>
             <h1 className="doc-sheet-title">{title || 'Untitled document'}</h1>
             <span className="doc-sheet-rule" aria-hidden="true" />
+            {audio.length ? (
+              <div className="doc-sheet-demos">
+                <span className="doc-sheet-demos-label">
+                  <IconMusic size={10} /> Demo
+                </span>
+                {audio.map((track) => (
+                  <span key={track.id} className="doc-sheet-demo">
+                    {track.label || 'Demo'}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <EditorContent editor={editor} />
@@ -651,6 +1099,20 @@ export default function DocEditor({
           const item = media.find((entry) => entry.id === ids[0]);
           if (item) insertImage(item);
           setMediaOpen(false);
+        }}
+        onUploaded={(items) => setMedia((current) => [...items, ...current])}
+      />
+
+      <MediaPicker
+        open={audioOpen}
+        onClose={() => setAudioOpen(false)}
+        media={media}
+        selectedIds={[]}
+        audioOnly
+        onConfirm={(ids) => {
+          const item = media.find((entry) => entry.id === ids[0]);
+          if (item) attachAudio(item);
+          setAudioOpen(false);
         }}
         onUploaded={(items) => setMedia((current) => [...items, ...current])}
       />

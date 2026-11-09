@@ -15,8 +15,11 @@ const TABLES = [
   'post_media',
   'notes',
   'designs',
+  'releases',
+  'release_tasks',
   'milestones',
   'documents',
+  'document_audio',
   'snippets',
   'post_metrics',
   'palette',
@@ -151,7 +154,10 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
       DELETE FROM media_groups;
       DELETE FROM notes;
       DELETE FROM designs;
+      DELETE FROM release_tasks;
+      DELETE FROM releases;
       DELETE FROM milestones;
+      DELETE FROM document_audio;
       DELETE FROM documents;
       DELETE FROM snippets;
       DELETE FROM connections;
@@ -169,8 +175,11 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
     insertAll('post_media', data.post_media);
     insertAll('notes', data.notes);
     insertAll('designs', data.designs);
+    insertAll('releases', data.releases);
+    insertAll('release_tasks', data.release_tasks);
     insertAll('milestones', data.milestones);
     insertAll('documents', data.documents);
+    insertAll('document_audio', data.document_audio);
     insertAll('snippets', data.snippets);
     insertAll('post_metrics', data.post_metrics);
     insertAll('palette', data.palette);

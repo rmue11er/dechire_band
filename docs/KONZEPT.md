@@ -343,7 +343,29 @@ small things that otherwise get lost.
 
 - TipTap again, but with the **table extension**: a technical rider without a channel list is useless.
 - Templates in `lib/docTemplates.ts`: technical rider (line-up, contacts, channel list, monitoring,
-  lighting, power, hospitality), booking confirmation, itinerary, press text, stage plot, blank.
+  lighting, power, hospitality), booking confirmation, itinerary, press text, song lyrics, stage plot, blank.
+- **Lyrics** are a document type of their own (`kind: 'lyrics'`): one sheet per song, tighter line
+  rhythm (`styles/docs.css` → `.doc-page.lyrics`).
+- **Song parts** are a real block node (`DocSection` in `components/docNodes.ts`):
+  `<section class="doc-section" data-part="chorus" data-label="Chorus 2" data-tag="×2">`. The label and
+  repeat tag are attributes rendered by CSS `::before`/`::after`, so they stay out of the lyric text and
+  survive `getHTML()`, print and the HTML export identically. Kinds, auto-numbering and the heading guesser
+  live in `lib/kinds.ts` (`LYRIC_PARTS`, `partLabel`, `isNumberedPart`, `guessPartKind`).
+- Editor chrome for parts: the **part bar** (`LYRIC_PARTS` chips, inserts after the current block and numbers
+  the next part), a **part tools bar** while the cursor is inside a part (type select with auto-relabel,
+  label/tag inputs, ×2/×3 toggles, End part, Unwrap), and a **structure map** (jump-to-part via
+  `setTextSelection(pos+2).scrollIntoView()`, neighbour swap via `tr.replaceWith` – only when the two parts
+  are adjacent). A **Convert headings** action (`guessPartKind`) rebuilds old h2-based sheets with
+  `setContent`, one undo step. The template in `lib/docTemplates.ts` ships the section markup directly.
+- **Audio attachments** (`document_audio` in `lib/db.ts`): `document_id`, `media_id`, `label`, `position`.
+  `POST /api/documents/:id/audio` attaches a file from the library (audio mime only),
+  `PATCH|DELETE /api/document-audio/:id` renames or detaches it. `lib/repo.ts` exposes
+  `listDocumentAudio` / `attachDocumentAudio` / `updateDocumentAudio` / `deleteDocumentAudio`;
+  `BandDocument.audio` carries the resolved media rows. `components/DocAudio.tsx` renders the track list in
+  the editor chrome and one shared `<audio>` element whose player is **fixed to the bottom right**, so demos
+  keep playing while the lyrics scroll; it advances to the next track on `ended`. `/api/files/…` now answers
+  **Range** requests (206) so seeking works. Deletes go into the bin payload and are re-attached on restore;
+  backups and both reset modes include the table; the HTML export embeds demos up to 24 MB as data URLs.
 - Same autosave pattern as notes (900 ms debounce, version counter, `⌘S`, dirty/saving/saved state).
 - Two exports, both without a server round-trip: **print → PDF** via a print stylesheet that hides
   navigation and renders the sheet black on white, and a **standalone HTML file** with inline styles
@@ -531,23 +553,42 @@ Input is intentionally tiny (title, format, release day); everything else is der
 
 ### 7.8.1 Model
 
-- `releases(id, title, type, status, release_date, announce_date, presave_url, cover_media_id, notes)`
+- `releases(id, title, type, status, release_date, announce_date, presave_url, cover_media_id,
+  audio_media_id, video_media_id, notes)` – the three asset ids make the release a *result*, not just a
+  plan: `RELEASE_SELECT` joins the media rows and `mapRelease` exposes `coverUrl` / `audioUrl` / `videoUrl`.
 - `release_tasks(id, release_id, phase, key, label, detail, module, offset_days, due_date, channel,
-  critical, done, post_id, document_id)`
-- Tasks are **generated once** from `TASK_TEMPLATES` (`lib/release.ts`, 27 steps) and then live their own
-  life: check off, link to a post, retime. Every task keeps the *offset* it was born with, so changing the
-  release date recalculates `due_date` for the whole wave (`updateRelease`).
+  critical, done, post_id, document_id, media_id, media_kind, design_id, notes, reference)`.
+- Tasks are **generated once** from `TASK_TEMPLATES` (`lib/release.ts`, 44 steps) and then live their own
+  life: check off, edit, delete, link to a post/document/design/media, retime. Every task keeps the
+  *offset* it was born with, so changing the release date recalculates `due_date` for the whole wave
+  (`updateRelease`). `GET`-side `buildTasks` converts the template source id into a real URL, so the UI can
+  link the evidence and the edit form shows an ordinary URL.
 - `phase` is stored, not derived, so a step can be moved between phases later without breaking the wave.
+- **CRUD**: `POST /api/releases/:id/tasks` (own step, `key = ''`), `PATCH/DELETE /api/release-tasks/:id`
+  (all fields, due date recomputes `offset_days`), `POST /api/releases/:id/playbook` re-adds missing
+  playbook keys and leaves custom/done steps alone.
+- **Asset coupling**: `PATCH /api/release-tasks/:id` calls `syncReleaseAsset()` – attaching media to
+  `cover-art`, `master-final` or `video-edit` sets the release cover/master/video. The reverse direction
+  lives in the release PATCH: choosing an asset at the top fills the matching step. Mime type is checked so
+  a video cannot become the cover.
+- **Evidence**: `RELEASE_SOURCES` holds 13 checked sources (Spotify for Artists pitching/cover/audio/
+  metadata/lyrics/Canvas, YouTube resolution/encoding/Content ID, Instagram Reels, GEMA, IFPI ISRC,
+  Global Release Day). `TASK_TEMPLATES[].reference` points at one; `WAVE_RULES[].source` does the same for
+  the rules panel. The page renders a “Belege” panel with all of them.
 
 ### 7.8.2 Phases and why they are shaped like this
 
 | Phase | Window | Job |
 | --- | --- | --- |
-| Tease | T‑28 … T‑15 | attention without information: assets, press text, teaser clip |
-| Ankündigung | T‑14 … T‑8 | make it official, pre-save live, press + playlist pitches out |
-| Countdown | T‑7 … T‑1 | closeness: audio hook, making-of, credits, link check |
-| Release-Tag | T0 | one loud post, stories, thanks |
-| Nachbrenner | T+1 … T+21 | lyrics, live version, community – the second wave |
+| Produktion | T‑56 … T‑29 | master, cover, metadata/splits, GEMA, distributor, music video |
+| Tease | T‑28 … T‑15 | attention without information: promo formats, press text, teaser clip |
+| Ankündigung | T‑14 … T‑8 | make it official, pre-save live, Musixmatch, press + Spotify pitch |
+| Countdown | T‑7 … T‑1 | closeness: audio hook, making-of, credits, Canvas, link check |
+| Release-Tag | T0 | out-now, stories, lyrics publish, video premiere, Content ID |
+| Nachbrenner | T+1 … T+21 | lyrics sync, video cutdowns, community, reporting – the second wave |
+
+The windows are recommendations, not platform rules. `phaseFor(-days)` picks the current phase; the
+hero warns when a release is less than the 8 weeks the production block assumes.
 
 ### 7.8.3 Integration instead of isolation
 
@@ -556,16 +597,28 @@ Input is intentionally tiny (title, format, release day); everything else is der
   the due date). The task stores `post_id` and links to the post afterwards.
 - Calendar: `POST /api/releases/:id/apply` writes announcement, pitch deadline, release and follow-up into
   the milestone calendar – de-duplicated by title + date, so pressing the button twice is harmless.
-- Studio / Media / Docs / Website: non-content steps link into the module that does the work.
+- Media: a task with `media_kind` gets a media slot (MediaPicker with `kind` filter). Lyrics/press steps
+  get a document select, studio steps a design select. Links go deep: `/docs?doc=<id>` opens that document
+  (the docs page reads the query param in `load()`), `/studio/<id>` opens the design, media links open the
+  file.
+- **Result card** (`components/ReleasePlayer.tsx`): `<audio>` with a custom play/seek/time bar, fed by
+  `release.audioUrl` (`/api/files/...`, Range-capable). Cover, asset chips (cover/master/video/pre-save),
+  task percentage and critical count sit in the same panel. With no master, the card becomes a one-click
+  prompt to pick one; the cover slot does the same for artwork.
+- **Music video**: the production block covers treatment, storyboard/shot list, shoot, rights/credits and
+  edit; the release block adds premiere and Content ID, the sustain block cutdowns. Specs are quoted from
+  YouTube (16:9 1920×1080, MP4/H.264 + AAC‑LC, no baked-in padding), Spotify Canvas (3–8 s, 9:16,
+  720–1080 px) and Instagram Reels (≥ 720 px, ≥ 30 fps).
 - Readiness: `waveStats()` gives percentage, per-phase bars, open *critical* steps and the next four dates.
 
 ### 7.8.4 The rules panel
 
-`WAVE_RULES` encodes nine defaults from release practice (Friday releases because playlists rotate then,
-announcement 3–4 weeks out, pitch 7–14 days ahead, post in the morning because midnight is silent, cover in
-3000 × 3000, one motif in three formats, craft over posters, stories carry reach / feed carries binding,
-second wave at day 7 and 21). They are shown next to the plan so the *why* is never lost – and marked as
-arguable defaults, not laws.
+`WAVE_RULES` mixes sourced platform rules and explicit experience values: Friday 00:01 local (Global
+Release Day/IFPI), pitch ≥ 7 days before release and no placement guarantee (Spotify for Artists), cover
+1:1/3000 px/sRGB, FLAC/WAV 44.1 kHz+/24-bit native, Canvas 3–8 s, Musixmatch lyrics (#VERSE/#CHORUS, no
+“×2”), Reels ≥ 720 px/30 fps, video 1080p without baked-in bars, Content ID only for rights holders (via
+distributor). Rules without a source are marked as experience, not law. Every sourced rule and task links
+its evidence; the “Belege” panel collects all 13 sources on the page.
 
 ### 7.9 Public site – sixth pass: depth, room tone, release band
 

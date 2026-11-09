@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { IconDocument, IconPlus, IconSearch } from '@/components/icons';
+import { IconDocument, IconMusic, IconPlus, IconSearch } from '@/components/icons';
 import DocEditor from '@/components/DocEditor';
 import { EmptyState, Modal, PageHead, Spinner } from '@/components/ui';
 import { DOC_TEMPLATES } from '@/lib/docTemplates';
@@ -25,7 +25,13 @@ export default function DocumentsPage() {
       const data = await response.json();
       const items: BandDocument[] = data.documents ?? [];
       setDocuments(items);
-      setSelectedId((current) => current ?? items[0]?.id ?? null);
+      // Deep link from the release planner: /docs?doc=12
+      const wanted = Number(new URLSearchParams(window.location.search).get('doc') ?? '');
+      setSelectedId((current) =>
+        Number.isFinite(wanted) && items.some((item) => item.id === wanted)
+          ? wanted
+          : current ?? items[0]?.id ?? null
+      );
     } catch {
       toast('Could not load the documents', 'error');
     } finally {
@@ -100,7 +106,7 @@ export default function DocumentsPage() {
             Files<span className="slash">/</span>Orga
           </>
         }
-        sub="Technical rider, booking confirmations, itineraries, press texts. Write it here, print it as PDF, send it to the promoter."
+        sub="Technical rider, booking confirmations, itineraries, press texts, lyrics. Write it here, print it as PDF, send it to the promoter – and play the demo while you read."
         actions={
           <button type="button" className="btn btn-primary" onClick={() => setNewOpen(true)}>
             <IconPlus size={15} /> New document
@@ -164,6 +170,11 @@ export default function DocumentsPage() {
                   </p>
                   <div className="doc-item-meta">
                     <span className="chip">{docKindLabel(document.kind)}</span>
+                    {document.audio?.length ? (
+                      <span className="doc-item-audio" title={`${document.audio.length} audio file(s)`}>
+                        <IconMusic size={10} /> {document.audio.length}
+                      </span>
+                    ) : null}
                     <span className="mono">{timeAgo(document.updatedAt)}</span>
                   </div>
                 </button>
