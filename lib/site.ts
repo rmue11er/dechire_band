@@ -1,6 +1,6 @@
 import { execute, queryAll, queryOne } from './db';
-import { getMedia, getProfile, listPosts } from './repo';
-import type { MediaItem, Post, SiteCrewMember, SiteData, SiteLink, SiteSettings } from './types';
+import { getMedia, getProfile, listPosts, listReleases } from './repo';
+import type { MediaItem, Post, SiteCrewMember, SiteData, SiteLink, SiteRelease, SiteSettings } from './types';
 
 /**
  * Public one-pager: everything a visitor sees comes from the `site` row plus the
@@ -181,6 +181,7 @@ function feedPosts(limit = 6): Post[] {
 export function getSiteData(): SiteData {
   const settings = getSiteSettings();
   const profile = getProfile();
+  const release = nearestRelease();
   const shots = settings.mediaIds
     .map((id) => getMedia(id))
     .filter((item): item is MediaItem => Boolean(item));
@@ -200,6 +201,30 @@ export function getSiteData(): SiteData {
     bandName: settings.bandName || profile.bandName,
     handle: profile.handle,
     avatarUrl: profile.avatarUrl,
+    release,
+  };
+}
+
+/** The release worth mentioning on the page: closest to today, future wins a tie. */
+function nearestRelease(): SiteRelease | null {
+  const day = 86_400_000;
+  const today = new Date(`${new Date().toISOString().slice(0, 10)}T12:00:00Z`).getTime();
+  const candidates = listReleases()
+    .map((release) => ({
+      release,
+      distance: Math.round((new Date(`${release.releaseDate}T12:00:00Z`).getTime() - today) / day),
+    }))
+    .filter((entry) => Math.abs(entry.distance) <= 120)
+    .sort((a, b) => Math.abs(a.distance) - Math.abs(b.distance) || b.distance - a.distance);
+
+  const best = candidates[0];
+  if (!best) return null;
+  return {
+    title: best.release.title,
+    date: best.release.releaseDate,
+    type: best.release.type,
+    coverUrl: best.release.coverUrl,
+    presaveUrl: best.release.presaveUrl,
   };
 }
 

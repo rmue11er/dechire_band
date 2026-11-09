@@ -377,6 +377,15 @@ export interface SiteSettings {
   updatedAt: string;
 }
 
+/** The release the public page should mention, if there is one. */
+export interface SiteRelease {
+  title: string;
+  date: string;
+  type: ReleaseType;
+  coverUrl: string | null;
+  presaveUrl: string;
+}
+
 /** Everything the public one-pager renders – one round trip, no client fetching. */
 export interface SiteData {
   settings: SiteSettings;
@@ -386,6 +395,7 @@ export interface SiteData {
   bandName: string;
   handle: string;
   avatarUrl: string | null;
+  release: SiteRelease | null;
 }
 
 /* ------------------------------------------------------- release wave */

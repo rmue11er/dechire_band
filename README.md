@@ -262,6 +262,17 @@ as a screen: no paper sheet, no stamps, no badges, no scanlines, no mono labels,
   tagline, labels, link list, footer note, meta description and the site's own accent colour.
 - It reuses the rest of the app: the photos come from the **media library**, the flyers are made of
   **published posts**, and the accent runs through the same token system as the UI.
+- **Room tone** (`components/site/SiteSound.tsx`): a quiet low drone plus tape hiss, synthesised with WebAudio –
+  no audio file, no autoplay, off by default. The button fades the room in over ~2 s and remembers the choice.
+- **Release band**: the release closest to today (from the release wave module) appears as a taped cover with
+  `out now` / `out 13 nov`, one line and a pre-save or listen link. The site stays alive without anyone
+  touching it on release day.
+- **Interlude**: one full-bleed photo between letter and feed, the tagline in large serif italic, hairline above,
+  slow zoom while it scrolls past (scroll-driven animation, only where supported).
+- **Editorial rhythm**: chapter marks `01 / 02 / 03` in the left margin, a serif drop cap on the letter,
+  `text-wrap: pretty`, hanging punctuation, taped prints that lift on hover.
+- **Depth**: the hero breathes (34 s scale) and sinks away as you scroll; reveals stay slow and short.
+  Everything in this list is skipped when `prefers-reduced-motion` is set.
 - **Reduced motion** is respected: the letter rise, the scroll arrow and the grain stop.
 
 ### Dashboard (`/`)

@@ -567,6 +567,27 @@ announcement 3–4 weeks out, pitch 7–14 days ahead, post in the morning becau
 second wave at day 7 and 21). They are shown next to the plan so the *why* is never lost – and marked as
 arguable defaults, not laws.
 
+### 7.9 Public site – sixth pass: depth, room tone, release band
+
+Feedback was "good, but not quite convincing – the visitor should fall into the world". The fifth pass was
+already warm black with taped prints; this pass adds *senses and rhythm*, not more decoration.
+
+- **Room tone** (`SiteSound.tsx`): two detuned sines (55 / 82.41 / 110.4 Hz) through a 260 Hz lowpass, plus
+  filtered white noise as tape hiss, all behind a gain that fades in over ~2 s. Runtime-synthesised, so no
+  audio asset; muted by default, only starts on a click, remembers the choice. Aesthetic reason: a page about
+  a band in a room should have the room in it.
+- **Release band**: `getSiteData()` now also returns the release closest to today (±120 days, future wins a
+  tie). Rendered as a taped cover, `out now` / `out 13 nov`, one factual line and a pre-save or listen link.
+  Ties the public page to the release wave module without a countdown gimmick.
+- **Interlude**: full-bleed photo between letter and feed, the tagline in large serif italic, hairline above,
+  scroll-driven `scale()` while it passes (`animation-timeline: view()`), which degrades to a static photo.
+- **Editorial rhythm**: chapter marks `01/02/03` in the left margin, serif drop cap on the first letter,
+  `text-wrap: pretty`, `hanging-punctuation`, tape that lifts on hover.
+- **Depth**: the hero photo breathes on a 34 s loop and `.sf-hero-core` sinks and fades against scroll
+  (`animation-timeline: scroll(root)`), so the page feels like it continues downward rather than scrolling.
+- Everything motion-related is wrapped in `prefers-reduced-motion: no-preference`; the sound toggle never
+  autoplays.
+
 ## 8. Design system
 
 ### Colours

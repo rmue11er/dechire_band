@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import Reveal from '@/components/site/Reveal';
 import SiteAtmosphere from '@/components/site/SiteAtmosphere';
+import SiteSound from '@/components/site/SiteSound';
 import { getSiteData } from '@/lib/site';
 import { manifestoParts, teaserEmbed } from '@/lib/siteEmbed';
 import type { MediaItem } from '@/lib/types';
@@ -55,7 +56,7 @@ function Taped({
 }
 
 export default function SitePage() {
-  const { settings, shots, feed, accentHex, bandName, handle } = getSiteData();
+  const { settings, shots, feed, accentHex, bandName, handle, release } = getSiteData();
   const accent = settings.accentHex || accentHex;
   const style = {
     '--site-accent': accent,
@@ -67,6 +68,20 @@ export default function SitePage() {
   const letter = settings.manifesto.filter((line) => line.trim().length > 0);
   const year = new Date().getFullYear();
   const noteShots = shots.slice(0, 3);
+
+  const releaseDays = release
+    ? Math.round(
+        (new Date(`${release.date}T12:00:00Z`).getTime() -
+          new Date(`${new Date().toISOString().slice(0, 10)}T12:00:00Z`).getTime()) /
+          86_400_000
+      )
+    : 0;
+  const releaseDate = release
+    ? new Date(`${release.date}T12:00:00Z`)
+        .toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+        .toLowerCase()
+    : '';
+  const interlude = shots[3] ?? (shots.length > 1 ? shots[1] : null);
 
   /* ------------------------------------------------------------ pre-launch */
   if (!settings.published) {
@@ -98,6 +113,7 @@ export default function SitePage() {
   return (
     <div className={`site ${settings.grain ? '' : 'no-grain'}`} style={style}>
       <SiteAtmosphere />
+      <SiteSound />
 
       {/* ------------------------------------------------------------- hero */}
       {settings.showHero ? (
@@ -154,9 +170,49 @@ export default function SitePage() {
         </header>
       ) : null}
 
+      {/* ---------------------------------------------------------- release */}
+      {release ? (
+        <section className="sf-release">
+          <div className="site-wrap sf-release-inner">
+            <Reveal className="sf-release-cover" delay={40}>
+              <span className="sf-tape" aria-hidden="true" />
+              {release.coverUrl ? (
+                <img src={release.coverUrl} alt={release.title} loading="lazy" />
+              ) : (
+                <span className="sf-release-blank">{release.title.slice(0, 1)}</span>
+              )}
+            </Reveal>
+
+            <Reveal className="sf-release-text" delay={120}>
+              <span className="sf-label">
+                {releaseDays <= 0 ? 'out now' : `out ${releaseDate}`}
+              </span>
+              <h2 className="sf-release-title">{release.title}</h2>
+              <p className="sf-release-line">
+                {releaseDays <= 0
+                  ? `Everywhere you listen. ${releaseDays < 0 ? `${Math.abs(releaseDays)} days out and still warm.` : ''}`
+                  : `Save it now and it is there on ${releaseDate}.`}
+              </p>
+              {releaseDays > 0 && release.presaveUrl ? (
+                <a className="sf-release-link" href={release.presaveUrl} target="_blank" rel="noreferrer">
+                  pre-save <span aria-hidden="true">↗</span>
+                </a>
+              ) : instagram ? (
+                <a className="sf-release-link" href={instagram.url} target="_blank" rel="noreferrer">
+                  listen <span aria-hidden="true">↗</span>
+                </a>
+              ) : null}
+            </Reveal>
+          </div>
+        </section>
+      ) : null}
+
       {/* -------------------------------------------------------------- note */}
       {settings.showIntro && letter.length ? (
         <section className="sf-note" id="note">
+          <span className="sf-chapter" aria-hidden="true">
+            01
+          </span>
           <div className="site-wrap sf-note-wrap">
             <Reveal className="sf-note-text">
               <span className="sf-label">a note from us</span>
@@ -194,6 +250,21 @@ export default function SitePage() {
         </section>
       ) : null}
 
+      {/* --------------------------------------------------------- interlude */}
+      {settings.showMedia && interlude ? (
+        <section className="sf-interlude">
+          <div className="sf-interlude-photo">
+            <img src={interlude.url} alt="" loading="lazy" aria-hidden="true" />
+          </div>
+          <div className="sf-interlude-veil" aria-hidden="true" />
+          {settings.tagline ? (
+            <div className="site-wrap sf-interlude-line">
+              <Reveal as="p">{settings.tagline}</Reveal>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       {/* ------------------------------------------------------------ teaser */}
       {settings.showMedia && teaser ? (
         <section className="sf-block">
@@ -221,6 +292,9 @@ export default function SitePage() {
       {/* -------------------------------------------------------------- feed */}
       {settings.showFeed && feed.length ? (
         <section className="sf-block sf-wall-section">
+          <span className="sf-chapter" aria-hidden="true">
+            02
+          </span>
           <div className="site-wrap">
             <Reveal className="sf-label sf-label-wide">
               {settings.feedTitle || 'from the feed'}
@@ -250,6 +324,9 @@ export default function SitePage() {
       {/* ----------------------------------------------------------- connect */}
       {settings.showConnect ? (
         <section className="sf-connect">
+          <span className="sf-chapter" aria-hidden="true">
+            03
+          </span>
           <div className="site-wrap">
             <Reveal className="sf-press">
               <span className="sf-label">say hi</span>
