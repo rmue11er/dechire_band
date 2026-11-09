@@ -56,8 +56,12 @@ to enable it (or use the Plesk **Git** extension to clone).
 > (`SQLITE_CANTOPEN`). Fix ownership before starting the app:
 >
 > ```bash
-> chown -R "$(stat -c '%U' /var/www/vhosts/example.com)":psacln /var/www/vhosts/example.com/bandhq
+> chown -R "$(stat -c '%U' /var/www/vhosts/example.com)":psaserv /var/www/vhosts/example.com/bandhq
 > ```
+>
+> **The group must stay `psaserv`** – that is how Apache/nginx gets read access. `psacln` is only for
+> `data/` (the app has to write the database). A document root with group `psacln` answers **403 Forbidden**
+> with `AH00529 … .htaccess pcfg_openfile: Permission denied` until you fix it (see §9.2).
 
 > Build on the server, not on your laptop: `.next` is tied to the Node major and the OpenSSL build of the
 > machine. Deploy the source and build there.
@@ -80,9 +84,10 @@ ls -ld "$WEB" "$WEB/.next" 2>/dev/null
 sudo rm -rf "$WEB/.next"
 
 # 3. hand the whole app back to the subscription user
-sudo chown -R "$OWNER":psacln "$WEB"
+sudo chown -R "$OWNER":psaserv "$WEB"      # owner writes, psaserv = web server reads
 sudo find "$WEB" -type d -exec chmod 755 {} +
 sudo find "$WEB" -type f -exec chmod 644 {} +
+sudo chown -R "$OWNER":psacln "$WEB/data"  # database + uploads
 
 # 4. build as that user – never as root
 sudo -u "$OWNER" -H bash -lc "
@@ -104,7 +109,8 @@ OWNER=$(stat -c '%U' /var/www/vhosts/example.com)     # the subscription's syste
 ls -ld "$WEB"                                          # drwxr-xr-x root psaserv …  ← the cause
 
 sudo rm -rf "$WEB/node_modules" "$WEB/.next"           # remove leftovers from a root build
-sudo chown -R "$OWNER":psacln "$WEB"
+sudo chown -R "$OWNER":psaserv "$WEB"
+sudo chown -R "$OWNER":psacln "$WEB/data"
 ```
 
 Then `npm ci && npm run build` as that user (see above). nginx/Apache keep serving the folder – they read as
@@ -119,7 +125,7 @@ Rules of thumb:
 
 - Every command that touches the app directory (`git pull`, `npm ci`, `npm run build`, backups) must run as the
   **subscription user** – `sudo -u <owner> -H bash -lc '…'`.
-- `data/` and `data/uploads/` must stay writable by that user (`chown -R <owner>:psacln data`).
+- Group `psaserv` on the document root (web server reads), `psacln` only on `data/` (the app writes).
 - Never `npm run dev` on the server (Turbopack watches the SQLite WAL and restarts in a loop).
 - If you add files as root later, only the new files need `chown` – `.next` and `node_modules` can always be
   deleted and rebuilt.
@@ -358,8 +364,8 @@ Schema changes run themselves on start (`ensureColumn` in `lib/db.ts`); `data/` 
 | 502 / “Web application could not be started” (Passenger) | no `.next` (build missing), wrong Application Root, or startup file ≠ `server.js`; check the app log |
 | `SQLITE_CANTOPEN` or `EACCES: permission denied, open '.../data/band.db'` | `data/` not writable by the service user → `chown -R` |
 | `EACCES: permission denied, open '.../.next/trace'` + `Build directory is not writeable` | `.next` was created by another user (usually `root` from an earlier SSH build) → delete it and rebuild as the subscription user, see §2.1 |
-| `npm ci` → `EACCES … mkdir '…/node_modules'` | the document root itself is owned by `root:psaserv` → `chown -R <sub-user>:psacln` on the app directory (see §2.1) |
-| `EACCES` on `package-lock.json` after switching Plesk users | same cause → `chown -R <sub-user>:psacln` on the app directory |
+| `npm ci` → `EACCES … mkdir '…/node_modules'` | the document root itself belongs to `root:psaserv` → `chown -R <sub-user>:psaserv` on the app directory (see §2.1) |
+| `EACCES` on `package-lock.json` after switching Plesk users | same cause → `chown -R <sub-user>:psaserv` on the app directory |
 | login prompt on `/site` (the public page) | the public list in `proxy.ts` must keep `site`, `_next`, `api/files`, `/login` |
 | **no** password prompt at all | `HQ_PASSWORD` is not set (or not passed by Plesk) → the gate is opt-in; log line must say `auth on` |
 | Pages look unstyled after an update | stale build → `npm run build` again and restart |
@@ -379,6 +385,36 @@ sudo bash scripts/plesk-check.sh "$PWD"
 ```
 
 Read the last section ("What to look for"): it maps the log line to the cause.
+
+### 9.2 The actual 403: `AH00529 … .htaccess pcfg_openfile: Permission denied`
+
+```
+[core:crit] (13)Permission denied: [client …] AH00529: /var/www/vhosts/example.com/dechire.example.com/.htaccess
+pcfg_openfile: unable to check htaccess file, ensure it is readable and that
+'/var/www/vhosts/example.com/dechire.example.com/' is executable
+```
+
+Apache cannot even *enter* the domain folder, so it refuses every request – the app never runs. The folder lost
+the execute bit for the web server, usually because a `chown -R …:psacln` was run over the whole domain instead
+of only over `data/`.
+
+```bash
+DOM=/var/www/vhosts/example.com/dechire.example.com
+
+# owner = subscription user (writes), group = psaserv (web server reads), 755 to traverse
+sudo chown -R <sub-user>:psaserv "$DOM"
+sudo find "$DOM" -type d -exec chmod 755 {} +
+sudo find "$DOM" -type f -exec chmod 644 {} +
+
+# the database is the only thing the group psacln is for
+sudo chown -R <sub-user>:psacln "$DOM/www/data"
+
+namei -l "$DOM/www"        # every line must show x for others / group: drwxr-xr-x
+curl -sI https://dechire.example.com/ | head -3
+```
+
+Restart is not required for permissions, but rebuild if `.next` was owned by another user
+(`sudo -u <sub-user> -H bash -lc 'export PATH=/opt/plesk/node/24/bin:$PATH; cd "$DOM/www" && npm run build'`).
 
 ### 9.1 403 Forbidden
 
