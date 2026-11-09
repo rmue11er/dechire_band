@@ -367,6 +367,19 @@ Schema changes run themselves on start (`ensureColumn` in `lib/db.ts`); `data/` 
 | Instagram upload: “media could not be fetched” | `publicBase` wrong, or `/api/files` is blocked by a firewall / auth proxy |
 | Reload loop while developing on the server | `npm run dev` only — Turbopack watches the WAL files in `data/`. Use the built app in production |
 
+### 9.0 One command that answers most of it
+
+`scripts/plesk-check.sh` prints everything a 403/502 needs: paths, whether the app is really in the Document
+Root, `.next`/`node_modules`, the full permission trace (`namei`), owner/group, `data/` writability, stray
+`.htaccess` rules, the vhost error logs and whether the app answers on localhost.
+
+```bash
+cd /var/www/vhosts/example.com/dechire.example.com/www     # or wherever the app lives
+sudo bash scripts/plesk-check.sh "$PWD"
+```
+
+Read the last section ("What to look for"): it maps the log line to the cause.
+
 ### 9.1 403 Forbidden
 
 A 403 comes from **nginx/Apache, not from the app** – our own gate would answer *401*. Work through this list:
