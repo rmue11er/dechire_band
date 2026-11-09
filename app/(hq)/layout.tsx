@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import CommandPalette from '@/components/CommandPalette';
+import ContextBar from '@/components/ContextBar';
 import SchedulerHeartbeat from '@/components/SchedulerHeartbeat';
 import Sidebar from '@/components/Sidebar';
 import ToastHost from '@/components/ToastHost';
@@ -15,6 +16,7 @@ export default function HqLayout({ children }: { children: React.ReactNode }) {
     <>
       <div className="app">
         <Sidebar />
+        <ContextBar />
         <main className="main">{children}</main>
       </div>
       <CommandPalette />

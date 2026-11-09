@@ -76,7 +76,7 @@ export default function Sidebar() {
 
       <nav className="nav">
         <span className="nav-label">Studio</span>
-        {NAV.map((item) => {
+        {NAV.map((item, index) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (
@@ -86,13 +86,14 @@ export default function Sidebar() {
               className={`nav-item ${active ? 'active' : ''}`}
               aria-current={active ? 'page' : undefined}
             >
-              <Icon size={18} />
+              <span className="nav-index">{String(index + 1).padStart(2, '0')}</span>
+              <Icon size={17} />
               <span>{item.label}</span>
             </Link>
           );
         })}
         <span className="nav-label">Setup</span>
-        {SETUP.map((item) => {
+        {SETUP.map((item, index) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (
@@ -102,7 +103,8 @@ export default function Sidebar() {
               className={`nav-item ${active ? 'active' : ''}`}
               aria-current={active ? 'page' : undefined}
             >
-              <Icon size={18} />
+              <span className="nav-index">{String(NAV.length + index + 1).padStart(2, '0')}</span>
+              <Icon size={17} />
               <span>{item.label}</span>
             </Link>
           );

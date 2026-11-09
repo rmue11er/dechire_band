@@ -50,6 +50,25 @@ npm run typecheck    # tsc --noEmit
 
 ---
 
+## Interface
+
+**Black paper, one accent, print marks.** The workspace runs on `#050508` plus the accent chosen in Settings –
+no second hue in the chrome, no drop shadows. Contrast comes from hairlines, type and space.
+`styles/shell.css` is loaded last and restates the shell plus every shared component, so page styles never fight it.
+
+- **Display voice**: page titles in Anton, uppercase and tight; micro labels in monospace with wide tracking and a
+  `///` accent tick. Dashboard figures use the poster face too, so numbers read like a gig flyer, not a BI tool.
+- **Shell**: a 246 px sidebar with numbered entries (`01 … 11`), grouped by `/// STUDIO` / `/// SETUP`, a quick-jump
+  field that forwards `⌘K` to the command palette, and a slim sticky **context bar** on every page
+  (`DECHIRE /// MEDIA` · date · `⌘K`). Content is capped at 1560 px and centred; a 2 px accent strip sits at the
+  very top of the app.
+- **Components**: buttons, inputs, panels, badges, tables, empty states, modals and toasts share one language –
+  2–3 px radii, 1 px hairlines, accent focus ring, a crop-mark corner on panels, mono uppercase labels.
+- Below 1080 px the sidebar becomes a horizontal icon bar with the accent underline on the active entry, and the
+  sticky panels get their height maths corrected for the context bar (`--ctx-h`).
+
+---
+
 ## The tools
 
 ### 1. Post planner (`/planner`)
@@ -393,8 +412,9 @@ lib/
   kinds.ts                 Document & milestone type labels
   exporters.ts             Caption/metadata/README/HTML export
   zip.ts, api.ts, format.ts, toast.ts, types.ts
-styles/                    base, dashboard, planner, media, notes, settings, studio, palette,
-                           calendar, docs, brand, command, website, site, fonts
+styles/                    base, shell (UI system v2), dashboard, planner, media, notes,
+                           settings, studio, palette, calendar, docs, brand, command,
+                           website, site, login, fonts
 data/                      band.db + uploads (git-ignored, created on first start)
 docs/KONZEPT.md            Product and architecture plan
 docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + nginx, cron, backups
