@@ -12,8 +12,10 @@ import {
 } from '@/components/icons';
 import SurfacePreview from '@/components/studio/SurfacePreview';
 import { useCustomFonts } from '@/components/studio/useCustomFonts';
+import { useAccent } from '@/components/PaletteProvider';
 import { EmptyState, Field, Modal, PageHead, Spinner } from '@/components/ui';
 import { DEFAULT_BACKGROUND, FORMATS, TEMPLATES } from '@/lib/design';
+import { recolourDesign } from '@/lib/studio';
 import { timeAgo } from '@/lib/format';
 import { toast } from '@/lib/toast';
 import type { Design, MediaItem } from '@/lib/types';
@@ -24,6 +26,7 @@ export default function StudioGallery() {
   const router = useRouter();
   // Loads the self-hosted Google Fonts so the previews render correctly.
   useCustomFonts();
+  const accent = useAccent();
   const [designs, setDesigns] = useState<Design[]>([]);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,12 +92,23 @@ export default function StudioGallery() {
     const built = template.build(
       photo ? { url: photo.url, id: photo.id, width: photo.width, height: photo.height } : null
     );
+    // Templates ship in the default lavender – bring them onto the live accent.
+    const themed = recolourDesign(
+      {
+        title: template.name,
+        width: template.width,
+        height: template.height,
+        background: built.background ?? DEFAULT_BACKGROUND,
+        elements: built.elements,
+      },
+      accent
+    );
     await create({
       title: template.name,
-      width: template.width,
-      height: template.height,
-      background: built.background,
-      elements: built.elements,
+      width: themed.width,
+      height: themed.height,
+      background: themed.background,
+      elements: themed.elements,
     });
   };
 
@@ -157,12 +171,16 @@ export default function StudioGallery() {
                 ? { url: previewPhoto.url, id: previewPhoto.id, width: previewPhoto.width, height: previewPhoto.height }
                 : null
             );
-            const previewDesign = {
-              width: template.width,
-              height: template.height,
-              background: built.background ?? DEFAULT_BACKGROUND,
-              elements: built.elements,
-            };
+            const previewDesign = recolourDesign(
+              {
+                title: template.name,
+                width: template.width,
+                height: template.height,
+                background: built.background ?? DEFAULT_BACKGROUND,
+                elements: built.elements,
+              },
+              accent
+            );
             const previewWidth = template.height > template.width ? 170 * (template.width / template.height) : 190;
             return (
               <button

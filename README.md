@@ -93,13 +93,22 @@ npm run typecheck    # tsc --noEmit
     and 6 textures (grain, halftone, scanlines, stripes, grid, vignette) with blend modes.
   - **Layers**: list with visibility, lock, order and delete.
 - **7 templates**: release slammer, show poster, lyrics, merch drop, story announcement, statement, band photo.
-- **Formats**: feed 1:1, feed 4:5, story 9:16 – including “fit elements to format”.
+  Templates are drawn in the band's CI and are **re-coloured to the live accent** on the way in
+  (`recolourDesign()` in `lib/studio.ts`) – change the accent in Settings and every new design, every preview
+  and every existing design (via *Directions → Brand accent*) follows.
+- **Directions**: six one-click takes on the current canvas – *Paper* (light flyer stock, ink type),
+  *Deep* (blacker, hotter glow), *Mono* (no colour, all texture), *Tilt* (everything a few degrees off the
+  grid), *Outline* (hollow display type) and *Brand accent* (pulls every old lavender onto your current CI).
+  Each direction is a full design, so applying one is a single undoable step; the grid shows live previews.
+- **Formats**: feed 1:1, feed 4:5, story 9:16 – including “fit elements to format” and a **“3 sizes” export**
+  that renders 1080×1080, 1080×1350 and 1080×1920 and packages all three PNGs into one ZIP
+  (small store-only ZIP writer in `lib/zipStore.ts`, no extra dependency).
 - **Google Fonts, self-hosted**: search all ~1,900 families in the inspector; a font is downloaded **once** onto
   your server (`data/fonts/`, latin + latin-ext, up to three weights) and served from your own origin. No
   requests to Google while working, exports keep the typeface, and the families show up in the font picker
   next to the nine built-in ones.
 - **Export**: PNG at 2× resolution, save “to library” or drop it into the planner as a
-  **draft post** with one click (PNG → media → draft).
+  **draft post** with one click (PNG → media → draft). Plus *3 sizes* as a ZIP for feed and story in one go.
 
 ### 3. Media library (`/media`)
 - Upload via button or **drag & drop** onto the window, images and videos.
@@ -352,7 +361,9 @@ components/                InstagramMock, PostEditor, PostPerformance, SnippetMe
 lib/docIcons.ts            Curated Font Awesome Free (Solid) set – inline SVG for documents
 components/site/           Reveal, SiteAtmosphere (film layer of the public page)
 components/studio/         Canvas renderer, editor, tool panel, inspector, gallery,
-                           FontBrowser (Google Fonts search) + useCustomFonts store
+                           variants modal, font browser (Google Fonts) + useCustomFonts store
+lib/studio.ts              Accent mapping, format adaptation, design directions
+lib/zipStore.ts            Tiny browser ZIP writer (store only) for the multi-format export
 lib/
   db.ts                    SQLite connection, schema, migrations, atomic seed
   repo.ts                  Queries & mappers

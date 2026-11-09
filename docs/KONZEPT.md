@@ -229,7 +229,26 @@ portable document, not a pile of pixels.
 - Formats: feed 1:1 (1080×1080), feed 4:5 (1080×1350), story 9:16 (1080×1920).
 - 7 templates, each with its own target format: release, show poster, lyrics, merch drop,
   story announcement, statement, band photo (automatically uses the newest photo from the library).
-- “Fit elements to format” scales positions, sizes, font sizes and strokes proportionally.
+- **Templates follow the CI**: the older templates were drawn in the default lavender. Instead of hard-coding
+  an accent into seven builders, `recolourDesign()` maps every lavender-ish colour onto the live accent when the
+  template is applied (gallery preview included). Detection is `oklch`-based – hue within 16°, chroma above
+  0.025 – so neutrals, bone paper and black veils are never touched; lightness *ratios* are preserved, which
+  keeps light tints light and deep shades deep, alpha included.
+- **Directions** (`lib/studio.ts` → `designVariants`): six one-click takes on the current design, shown as live
+  previews and applied as one undoable history step – *Paper* (paper background, light type becomes ink, dark
+  veils become paper, screen blends become multiply), *Deep* (near-black gradient, hotter accent glows),
+  *Mono* (every accent hue mapped to paper/ink), *Tilt* (text alternating ±2°, shapes offset a few degrees),
+  *Outline* (`color: transparent` + `WebkitTextStroke` on the two biggest text blocks) and *Brand accent*
+  (the recolour above).
+- “Fit elements to format” scales positions, sizes, font sizes and strokes proportionally
+  (`adaptDesign()` – the same function the multi-format export uses).
+
+### 6.5b Export set
+
+One click renders the design in all three formats and zips them: `adaptDesign()` → set the hidden export
+canvas → two `requestAnimationFrame`s → `toPng` → collect the bytes → `zipBlob()`. The ZIP writer
+(`lib/zipStore.ts`) is 90 lines of store-only ZIP (local headers, central directory, end record, CRC-32 table)
+– verified against `unzip -t` – so no extra dependency and no server round trip.
 
 ### 6.6 Export pipeline
 

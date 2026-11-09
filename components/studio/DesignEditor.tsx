@@ -15,12 +15,15 @@ import {
   IconX,
 } from '@/components/icons';
 import MediaPicker from '@/components/MediaPicker';
+import { useAccent } from '@/components/PaletteProvider';
 import CanvasSurface from '@/components/studio/CanvasSurface';
 import StudioInspector, { type AlignTarget } from '@/components/studio/StudioInspector';
 import StudioLeftPanel, { type StudioTab } from '@/components/studio/StudioLeftPanel';
+import VariantsModal from '@/components/studio/VariantsModal';
 import { useCustomFonts } from '@/components/studio/useCustomFonts';
 import {
   DEFAULT_BACKGROUND,
+  FORMATS,
   TEMPLATES,
   TEXT_PRESETS,
   clamp,
@@ -32,7 +35,9 @@ import {
   type Template,
   type TextPreset,
 } from '@/lib/design';
+import { adaptDesign, recolourDesign, type DesignVariant } from '@/lib/studio';
 import { toast } from '@/lib/toast';
+import { zipBlob, type ZipEntry } from '@/lib/zipStore';
 import type { Design, DesignElement, MediaItem, ShapeKind, StickerKind, TextureKind } from '@/lib/types';
 
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
@@ -177,6 +182,7 @@ export default function DesignEditor({ designId }: { designId: number }) {
   const router = useRouter();
   // Subscribing here re-renders the canvas once the self-hosted fonts arrive.
   useCustomFonts();
+  const accent = useAccent();
   const [design, setDesign] = useState<Design | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,6 +197,8 @@ export default function DesignEditor({ designId }: { designId: number }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [variantsOpen, setVariantsOpen] = useState(false);
+  const [exportDesign, setExportDesign] = useState<Design | null>(null);
   const [historyVersion, setHistoryVersion] = useState(0);
 
   const designRef = useRef<Design | null>(null);
@@ -663,34 +671,7 @@ export default function DesignEditor({ designId }: { designId: number }) {
     (width: number, height: number) => {
       const current = designRef.current;
       if (!current) return;
-      const sx = width / current.width;
-      const sy = height / current.height;
-      const factor = Math.min(sx, sy);
-      commit((state) => ({
-        ...state,
-        width,
-        height,
-        elements: state.elements.map((element) => {
-          const next: any = {
-            ...element,
-            x: Math.round(element.x * sx),
-            y: Math.round(element.y * sy),
-            w: Math.round(element.w * sx),
-            h: Math.round(element.h * sy),
-          };
-          if (element.type === 'text') {
-            next.fontSize = Math.max(6, Math.round(element.fontSize * factor));
-            next.letterSpacing = Math.round(element.letterSpacing * factor);
-            next.bgPadding = Math.round(element.bgPadding * factor);
-          }
-          if (element.type === 'shape') {
-            next.strokeWidth = Math.round(element.strokeWidth * factor);
-            next.radius = Math.round(element.radius * factor);
-          }
-          if (element.type === 'image') next.radius = Math.round(element.radius * factor);
-          return next as DesignElement;
-        }),
-      }));
+      commit(() => adaptDesign(current, width, height));
     },
     [commit]
   );
@@ -703,18 +684,29 @@ export default function DesignEditor({ designId }: { designId: number }) {
       const built = template.build(
         photo ? { url: photo.url, id: photo.id, width: photo.width, height: photo.height } : null
       );
+      // Templates are drawn in the default lavender CI – pull them onto the live accent.
+      const themed = recolourDesign(
+        {
+          title: template.name,
+          width: template.width,
+          height: template.height,
+          background: built.background ?? DEFAULT_BACKGROUND,
+          elements: built.elements,
+        },
+        accent
+      );
       commit((current) => ({
         ...current,
-        width: template.width,
-        height: template.height,
-        background: built.background ?? DEFAULT_BACKGROUND,
-        elements: built.elements,
+        width: themed.width,
+        height: themed.height,
+        background: themed.background,
+        elements: themed.elements,
       }));
       setSelectedId(null);
       setEditingId(null);
       toast(`Template “${template.name}” applied`);
     },
-    [commit, media]
+    [accent, commit, media]
   );
 
   const addText = useCallback(
@@ -822,6 +814,63 @@ export default function DesignEditor({ designId }: { designId: number }) {
       setBusy(null);
     }
   }, [renderPng]);
+
+  const slug = (value: string) =>
+    value
+      .replace(/[^\wäöüß-]+/gi, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase() || 'design';
+
+  /** One design → every feed/story format, packaged as a ZIP. */
+  const exportSet = useCallback(async () => {
+    const current = designRef.current;
+    if (!current) return;
+    setBusy('set');
+    try {
+      const files: ZipEntry[] = [];
+      for (const preset of FORMATS) {
+        setExportDesign(adaptDesign(current, preset.width, preset.height));
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve(null)))
+        );
+        await new Promise((resolve) => setTimeout(resolve, 140));
+        const blob = await renderPng();
+        if (!blob) continue;
+        files.push({
+          name: `${slug(current.title)}-${preset.width}x${preset.height}.png`,
+          data: new Uint8Array(await blob.arrayBuffer()),
+        });
+      }
+      if (!files.length) throw new Error('Nothing rendered');
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(zipBlob(files));
+      link.download = `${slug(current.title)}-formats.zip`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      toast(`${files.length} formats in one ZIP`);
+    } catch (error: any) {
+      console.error(error);
+      toast('Export failed', 'error');
+    } finally {
+      setExportDesign(null);
+      setBusy(null);
+    }
+  }, [renderPng]);
+
+  const applyVariant = useCallback(
+    (variant: DesignVariant) => {
+      commit((current) => ({
+        ...current,
+        background: variant.design.background,
+        elements: variant.design.elements,
+      }));
+      setVariantsOpen(false);
+      setSelectedId(null);
+      setEditingId(null);
+      toast(`Direction “${variant.label}” applied`);
+    },
+    [commit]
+  );
 
   const saveToLibrary = useCallback(
     async (mode: 'library' | 'post') => {
@@ -1013,9 +1062,28 @@ export default function DesignEditor({ designId }: { designId: number }) {
             <IconRedo size={16} />
           </button>
           <span className="topbar-sep" />
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setVariantsOpen(true)}
+            title="Six directions for this design"
+          >
+            <IconSparkles size={15} />
+            Directions
+          </button>
           <button type="button" className="btn btn-ghost" onClick={downloadPng} disabled={busy === 'download'}>
             <IconDownload size={15} />
             {busy === 'download' ? 'Rendering …' : 'PNG'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={exportSet}
+            disabled={busy === 'set'}
+            title="1:1, 4:5 and 9:16 as one ZIP"
+          >
+            <IconDownload size={15} />
+            {busy === 'set' ? 'Zipping …' : '3 sizes'}
           </button>
           <button type="button" className="btn" onClick={() => saveToLibrary('library')} disabled={busy === 'library'}>
             <IconImage size={15} />
@@ -1138,10 +1206,21 @@ export default function DesignEditor({ designId }: { designId: number }) {
       </div>
 
       <div className="studio-export" aria-hidden="true">
-        <div ref={exportRef} style={{ width: design.width, height: design.height }}>
-          <CanvasSurface design={design} />
+        <div
+          ref={exportRef}
+          style={{ width: (exportDesign ?? design).width, height: (exportDesign ?? design).height }}
+        >
+          <CanvasSurface design={exportDesign ?? design} />
         </div>
       </div>
+
+      <VariantsModal
+        open={variantsOpen}
+        design={design}
+        accent={accent}
+        onClose={() => setVariantsOpen(false)}
+        onApply={applyVariant}
+      />
 
       <MediaPicker
         open={pickerOpen}
