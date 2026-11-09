@@ -1106,6 +1106,10 @@ export default function DesignEditor({ designId }: { designId: number }) {
           onAddText={addText}
           onAddShape={addShape}
           onAddImage={addImage}
+          onAddStockImage={(item) => {
+            setMedia((current) => [item, ...current]);
+            addImage(item);
+          }}
           onAddSticker={addSticker}
           onAddTexture={addTexture}
           onApplyTemplate={applyTemplate}

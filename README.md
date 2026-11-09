@@ -96,6 +96,18 @@ npm run typecheck    # tsc --noEmit
   Templates are drawn in the band's CI and are **re-coloured to the live accent** on the way in
   (`recolourDesign()` in `lib/studio.ts`) – change the accent in Settings and every new design, every preview
   and every existing design (via *Directions → Brand accent*) follows.
+- **5 more templates for the genre**: *Close* (full-bleed portrait, Cormorant whisper over a dark veil),
+  *Diary* (tape strips, typewriter date, handwritten note), *Elegy* (almost empty black, Instrument Serif
+  italic), *Bleed* (type bleeding off the story edges, halftone), *Tour Dates* (condensed date rows).
+- **17 fonts, all self-hosted** – beside the poster faces (Anton, Bebas, Archivo Black, Oswald) the post-hardcore
+  voice: **Cormorant Garamond**, **Bodoni Moda**, **EB Garamond**, **Instrument Serif**, **Spectral**,
+  **Special Elite** (typewriter), **Caveat** (handwriting), **Archivo Narrow**. New text presets *Whisper,
+  Elegy, Typewriter, Diary, Tight caps*.
+- **Free photos in the studio** (`Stock` tab): search **Openverse** (WordPress/Automattic) filtered to
+  **CC0 / public domain only** – usable commercially, **no credit and no payment**. Clicking a result downloads
+  the file server-side (`/api/stock/import`), stores it in the media library with `stock`, licence and provider
+  tags and drops it onto the canvas. Local copies matter: the canvas export needs same-origin images, and the
+  design keeps working when the provider is offline.
 - **Directions**: six one-click takes on the current canvas – *Paper* (light flyer stock, ink type),
   *Deep* (blacker, hotter glow), *Mono* (no colour, all texture), *Tilt* (everything a few degrees off the
   grid), *Outline* (hollow display type) and *Brand accent* (pulls every old lavender onto your current CI).
@@ -364,6 +376,7 @@ components/studio/         Canvas renderer, editor, tool panel, inspector, galle
                            variants modal, font browser (Google Fonts) + useCustomFonts store
 lib/studio.ts              Accent mapping, format adaptation, design directions
 lib/zipStore.ts            Tiny browser ZIP writer (store only) for the multi-format export
+app/api/stock/             Openverse search (CC0 only) + import into the media library
 lib/
   db.ts                    SQLite connection, schema, migrations, atomic seed
   repo.ts                  Queries & mappers

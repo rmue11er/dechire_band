@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
+  IconBookmark,
   IconCalendar,
   IconDocument,
   IconGlobe,
@@ -11,6 +12,7 @@ import {
   IconInstagram,
   IconLayout,
   IconNote,
+  IconSearch,
   IconSettings,
   IconSparkles,
   IconSwatch,
@@ -29,7 +31,7 @@ const NAV = [
 
 const SETUP = [
   { href: '/website', label: 'Website', icon: IconGlobe },
-  { href: '/brand', label: 'Brand Sheet', icon: IconSwatch },
+  { href: '/brand', label: 'Brand Sheet', icon: IconBookmark },
   { href: '/settings', label: 'Settings', icon: IconSettings },
 ];
 
@@ -51,6 +53,11 @@ export default function Sidebar() {
     window.location.assign('/login');
   };
 
+  /* the palette owns the shortcut – the button just forwards it */
+  const openPalette = () => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
+  };
+
   return (
     <aside className="sidebar">
       <Link href="/" className="brand">
@@ -61,12 +68,24 @@ export default function Sidebar() {
         </div>
       </Link>
 
+      <button type="button" className="sidebar-search" onClick={openPalette}>
+        <IconSearch size={15} />
+        <span>Jump to …</span>
+        <kbd>⌘K</kbd>
+      </button>
+
       <nav className="nav">
         <span className="nav-label">Studio</span>
         {NAV.map((item) => {
           const Icon = item.icon;
+          const active = isActive(item.href);
           return (
-            <Link key={item.href} href={item.href} className={`nav-item ${isActive(item.href) ? 'active' : ''}`}>
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`nav-item ${active ? 'active' : ''}`}
+              aria-current={active ? 'page' : undefined}
+            >
               <Icon size={18} />
               <span>{item.label}</span>
             </Link>
@@ -75,8 +94,14 @@ export default function Sidebar() {
         <span className="nav-label">Setup</span>
         {SETUP.map((item) => {
           const Icon = item.icon;
+          const active = isActive(item.href);
           return (
-            <Link key={item.href} href={item.href} className={`nav-item ${isActive(item.href) ? 'active' : ''}`}>
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`nav-item ${active ? 'active' : ''}`}
+              aria-current={active ? 'page' : undefined}
+            >
               <Icon size={18} />
               <span>{item.label}</span>
             </Link>
@@ -85,16 +110,18 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-foot">
-        <span className="mono">POST-HARDCORE /// 2026</span>
         <strong>Loud. Honest. Unpolished.</strong>
-        <a className="mono" href="/site" target="_blank" rel="noreferrer">
-          Public site ↗
-        </a>
-        {locked ? (
-          <button type="button" className="sidebar-lock mono" onClick={signOut}>
-            Lock workspace
-          </button>
-        ) : null}
+        <span className="mono">POST-HARDCORE /// 2026</span>
+        <div className="sidebar-links">
+          <a className="mono" href="/site" target="_blank" rel="noreferrer">
+            Public site ↗
+          </a>
+          {locked ? (
+            <button type="button" className="sidebar-lock mono" onClick={signOut}>
+              Lock
+            </button>
+          ) : null}
+        </div>
       </div>
     </aside>
   );

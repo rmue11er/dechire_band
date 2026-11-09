@@ -1546,3 +1546,133 @@
   font-size: 9.5px;
   color: var(--muted);
 }
+
+/* free photo search (Openverse, CC0) ------------------------------------- */
+
+.stock {
+  display: grid;
+  gap: 10px;
+}
+
+.stock-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--muted-2);
+}
+
+.stock-search .input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 2px;
+  border: 0;
+  background: none;
+  font-size: 12px;
+}
+
+.stock-search .input:focus {
+  outline: none;
+}
+
+.stock-note {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.55;
+  color: var(--muted-2, #6e6684);
+}
+
+.stock-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.stock-chip {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.stock-chip:hover {
+  color: var(--text);
+  border-color: rgb(var(--accent-rgb) / 0.45);
+  background: rgb(var(--accent-rgb) / 0.1);
+}
+
+.stock-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.stock-tile {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #05040a;
+  cursor: pointer;
+}
+
+.stock-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.9;
+  transition: opacity 0.15s ease, transform 0.25s ease;
+}
+
+.stock-tile:hover img {
+  opacity: 1;
+  transform: scale(1.04);
+}
+
+.stock-tile:disabled {
+  cursor: progress;
+}
+
+.stock-tile-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0a0812;
+  font-size: 10px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.stock-tile-meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 5px 3px;
+  background: linear-gradient(180deg, transparent, rgba(4, 3, 8, 0.85));
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.75);
+  text-align: left;
+}
+
+.stock-more {
+  justify-self: start;
+}

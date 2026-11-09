@@ -9,6 +9,7 @@ import {
   IconLayout,
   IconLock,
   IconPlus,
+  IconSearch,
   IconSparkles,
   IconSquare,
   IconTrash,
@@ -18,6 +19,7 @@ import {
   IconArrowDown,
 } from '@/components/icons';
 import { MediaThumb } from '@/components/MediaThumb';
+import StockSearch from '@/components/studio/StockSearch';
 import { StickerGlyph } from '@/components/studio/ElementContent';
 import SurfacePreview from '@/components/studio/SurfacePreview';
 import {
@@ -35,13 +37,14 @@ import {
 } from '@/lib/design';
 import type { Design, DesignElement, MediaItem, ShapeKind, StickerKind, TextureKind } from '@/lib/types';
 
-export type StudioTab = 'templates' | 'text' | 'shapes' | 'media' | 'extras' | 'layers';
+export type StudioTab = 'templates' | 'text' | 'shapes' | 'media' | 'stock' | 'extras' | 'layers';
 
 const TABS: { id: StudioTab; label: string; icon: (p: { size?: number }) => React.ReactElement }[] = [
   { id: 'templates', label: 'Templates', icon: IconLayout },
   { id: 'text', label: 'Text', icon: IconType },
   { id: 'shapes', label: 'Shapes', icon: IconSquare },
   { id: 'media', label: 'Media', icon: IconImage },
+  { id: 'stock', label: 'Stock', icon: IconSearch },
   { id: 'extras', label: 'Extras', icon: IconSparkles },
   { id: 'layers', label: 'Layers', icon: IconLayers },
 ];
@@ -51,6 +54,7 @@ const TAB_TITLE: Record<StudioTab, string> = {
   text: 'Add text',
   shapes: 'Shapes & fills',
   media: 'Media',
+  stock: 'Free photos',
   extras: 'Stickers & effects',
   layers: 'Layers',
 };
@@ -95,6 +99,7 @@ export default function StudioLeftPanel({
   onAddText,
   onAddShape,
   onAddImage,
+  onAddStockImage,
   onAddSticker,
   onAddTexture,
   onApplyTemplate,
@@ -114,6 +119,7 @@ export default function StudioLeftPanel({
   onAddText: (preset: TextPreset) => void;
   onAddShape: (shape: ShapeKind) => void;
   onAddImage: (item: MediaItem) => void;
+  onAddStockImage: (item: MediaItem) => void;
   onAddSticker: (glyph: StickerKind) => void;
   onAddTexture: (texture: TextureKind) => void;
   onApplyTemplate: (template: Template) => void;
@@ -264,6 +270,8 @@ export default function StudioLeftPanel({
               )}
             </div>
           ) : null}
+
+          {tab === 'stock' ? <StockSearch onUse={onAddStockImage} /> : null}
 
           {tab === 'extras' ? (
             <div className="extras-panel">

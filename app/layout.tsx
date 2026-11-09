@@ -16,6 +16,28 @@ import '@fontsource/playfair-display/latin-700.css';
 import '@fontsource/playfair-display/latin-900.css';
 import '@fontsource/space-mono/latin-400.css';
 import '@fontsource/space-mono/latin-700.css';
+// Post-hardcore voice: fragile serifs, typewriter, handwriting, condensed caps.
+import '@fontsource/cormorant-garamond/latin-300.css';
+import '@fontsource/cormorant-garamond/latin-400.css';
+import '@fontsource/cormorant-garamond/latin-400-italic.css';
+import '@fontsource/cormorant-garamond/latin-600.css';
+import '@fontsource/bodoni-moda/latin-400.css';
+import '@fontsource/bodoni-moda/latin-700.css';
+import '@fontsource/bodoni-moda/latin-400-italic.css';
+import '@fontsource/eb-garamond/latin-400.css';
+import '@fontsource/eb-garamond/latin-400-italic.css';
+import '@fontsource/eb-garamond/latin-600.css';
+import '@fontsource/special-elite/latin-400.css';
+import '@fontsource/caveat/latin-400.css';
+import '@fontsource/caveat/latin-600.css';
+import '@fontsource/archivo-narrow/latin-400.css';
+import '@fontsource/archivo-narrow/latin-700.css';
+import '@fontsource/instrument-serif/latin-400.css';
+import '@fontsource/instrument-serif/latin-400-italic.css';
+import '@fontsource/spectral/latin-300.css';
+import '@fontsource/spectral/latin-400.css';
+import '@fontsource/spectral/latin-400-italic.css';
+import '@fontsource/spectral/latin-600.css';
 import './globals.css';
 
 export const metadata: Metadata = {

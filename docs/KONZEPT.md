@@ -227,8 +227,26 @@ portable document, not a pile of pixels.
 ### 6.5 Templates & formats
 
 - Formats: feed 1:1 (1080×1080), feed 4:5 (1080×1350), story 9:16 (1080×1920).
-- 7 templates, each with its own target format: release, show poster, lyrics, merch drop,
-  story announcement, statement, band photo (automatically uses the newest photo from the library).
+- 12 templates: release, show poster, lyrics, merch drop, story announcement, statement, band photo plus the
+  genre set – *Close* (portrait, dark veil, whisper in Cormorant), *Diary* (tape, typewriter date, handwriting),
+  *Elegy* (empty black, Instrument Serif italic, two hairlines), *Bleed* (display type running off both edges,
+  halftone), *Tour Dates* (condensed rows with accent rules).
+- **Type voice** (all self-hosted via `@fontsource`): Cormorant Garamond, Bodoni Moda, EB Garamond,
+  Instrument Serif, Spectral, Special Elite, Caveat, Archivo Narrow – 17 families total. Text presets
+  *Whisper / Elegy / Typewriter / Diary / Tight caps* encode the intent, so a design reads emotional before
+  anyone touches a slider.
+
+### 6.5a Free stock photos
+
+`Stock` tab → `/api/stock/search` → **Openverse** (`openverse.org`, no API key) with
+`license=cc0,pdm`, `category=photograph`, `size=large`, `filter_dead=true`. The filters are not cosmetic:
+without them the index returns book scans, memes and 230 px thumbnails. Anonymous requests are capped at
+20 results per page, so the route caches queries for 10 minutes.
+
+Chosen photo → `/api/stock/import` downloads it **server-side**, writes it into `data/uploads` and registers a
+media item tagged `stock`, licence and provider. Copying instead of hot-linking is deliberate: `html-to-image`
+needs same-origin (or CORS) images, licensing stays traceable, and the design survives the provider going down.
+CC0 means commercial use without credit or payment.
 - **Templates follow the CI**: the older templates were drawn in the default lavender. Instead of hard-coding
   an accent into seven builders, `recolourDesign()` maps every lavender-ish colour onto the live accent when the
   template is applied (gallery preview included). Detection is `oklch`-based – hue within 16°, chroma above
