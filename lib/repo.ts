@@ -1,4 +1,5 @@
-import { execute, queryAll, queryOne } from './db';
+import { db, execute, queryAll, queryOne } from './db';
+import { buildTasks } from './release';
 import type {
   BandDocument,
   ChecklistItem,
@@ -11,6 +12,8 @@ import type {
   Note,
   PaletteColor,
   Post,
+  Release,
+  ReleaseTask,
   PostMetrics,
   Profile,
   SchedulerRun,
@@ -1305,4 +1308,197 @@ export function getStats(): Stats {
       .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime())
       .slice(0, 3),
   };
+}
+
+/* --------------------------------------------------------------- releases */
+
+const RELEASE_SELECT = `
+  SELECT r.*, m.filename AS cover_filename,
+    (SELECT COUNT(*) FROM release_tasks t WHERE t.release_id = r.id) AS task_total,
+    (SELECT COUNT(*) FROM release_tasks t WHERE t.release_id = r.id AND t.done = 1) AS task_done
+  FROM releases r
+  LEFT JOIN media m ON m.id = r.cover_media_id`;
+
+export function mapRelease(row: any): Release {
+  return {
+    id: Number(row.id),
+    title: row.title,
+    type: row.type,
+    status: row.status,
+    releaseDate: row.release_date,
+    announceDate: row.announce_date ?? null,
+    presaveUrl: row.presave_url ?? '',
+    coverMediaId: row.cover_media_id == null ? null : Number(row.cover_media_id),
+    coverUrl: row.cover_filename ? `/api/files/${row.cover_filename}` : null,
+    notes: row.notes ?? '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    taskTotal: row.task_total == null ? undefined : Number(row.task_total),
+    taskDone: row.task_done == null ? undefined : Number(row.task_done),
+  };
+}
+
+const mapTask = (row: any): ReleaseTask => ({
+  id: Number(row.id),
+  releaseId: Number(row.release_id),
+  phase: row.phase,
+  key: row.key,
+  label: row.label,
+  detail: row.detail ?? '',
+  module: row.module,
+  offsetDays: Number(row.offset_days ?? 0),
+  dueDate: row.due_date,
+  channel: row.channel ?? '',
+  critical: Boolean(row.critical),
+  done: Boolean(row.done),
+  postId: row.post_id == null ? null : Number(row.post_id),
+  documentId: row.document_id == null ? null : Number(row.document_id),
+  createdAt: row.created_at,
+});
+
+export function listReleases(): Release[] {
+  return queryAll<any>(`${RELEASE_SELECT} ORDER BY r.release_date DESC`).map(mapRelease);
+}
+
+export function getRelease(id: number): Release | null {
+  const row = queryOne<any>(`${RELEASE_SELECT} WHERE r.id = ?`, [id]);
+  return row ? mapRelease(row) : null;
+}
+
+export function listReleaseTasks(releaseId: number): ReleaseTask[] {
+  return queryAll<any>(
+    'SELECT * FROM release_tasks WHERE release_id = ? ORDER BY due_date ASC, id ASC',
+    [releaseId]
+  ).map(mapTask);
+}
+
+export function getReleaseTask(id: number): ReleaseTask | null {
+  const row = queryOne<any>('SELECT * FROM release_tasks WHERE id = ?', [id]);
+  return row ? mapTask(row) : null;
+}
+
+export function createRelease(input: {
+  title: string;
+  type?: string;
+  status?: string;
+  releaseDate: string;
+  announceDate?: string | null;
+  presaveUrl?: string;
+  coverMediaId?: number | null;
+  notes?: string;
+}) {
+  const now = new Date().toISOString();
+  const result = execute(
+    `INSERT INTO releases (title, type, status, release_date, announce_date, presave_url, cover_media_id, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      input.title,
+      input.type ?? 'single',
+      input.status ?? 'planning',
+      input.releaseDate,
+      input.announceDate ?? null,
+      input.presaveUrl ?? '',
+      input.coverMediaId ?? null,
+      input.notes ?? '',
+      now,
+      now,
+    ]
+  );
+  const id = Number(result.lastInsertRowid);
+  const insertTask = db.prepare(
+    `INSERT INTO release_tasks (release_id, phase, key, label, detail, module, offset_days, due_date, channel, critical, done, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`
+  );
+  buildTasks(input.releaseDate).forEach((task) => {
+    insertTask.run(
+      id,
+      task.phase,
+      task.key,
+      task.label,
+      task.detail,
+      task.module,
+      task.offsetDays,
+      task.dueDate,
+      task.channel,
+      task.critical ? 1 : 0,
+      now
+    );
+  });
+  return id;
+}
+
+export function updateRelease(
+  id: number,
+  patch: {
+    title?: string;
+    type?: string;
+    status?: string;
+    releaseDate?: string;
+    announceDate?: string | null;
+    presaveUrl?: string;
+    coverMediaId?: number | null;
+    notes?: string;
+  }
+) {
+  const sets: string[] = [];
+  const params: any[] = [];
+  const map: Record<string, string> = {
+    title: 'title',
+    type: 'type',
+    status: 'status',
+    releaseDate: 'release_date',
+    announceDate: 'announce_date',
+    presaveUrl: 'presave_url',
+    coverMediaId: 'cover_media_id',
+    notes: 'notes',
+  };
+  Object.entries(map).forEach(([key, column]) => {
+    const value = (patch as any)[key];
+    if (value !== undefined) {
+      sets.push(`${column} = ?`);
+      params.push(value ?? null);
+    }
+  });
+  sets.push('updated_at = ?');
+  params.push(new Date().toISOString(), id);
+  execute(`UPDATE releases SET ${sets.join(', ')} WHERE id = ?`, params);
+
+  // a moved release re-times the whole wave
+  if (patch.releaseDate) {
+    buildTasks(patch.releaseDate).forEach((task) => {
+      execute('UPDATE release_tasks SET due_date = ? WHERE release_id = ? AND key = ?', [
+        task.dueDate,
+        id,
+        task.key,
+      ]);
+    });
+  }
+}
+
+export function deleteRelease(id: number) {
+  execute('DELETE FROM release_tasks WHERE release_id = ?', [id]);
+  execute('DELETE FROM releases WHERE id = ?', [id]);
+}
+
+export function updateReleaseTask(
+  id: number,
+  patch: { done?: boolean; postId?: number | null; documentId?: number | null }
+) {
+  const sets: string[] = [];
+  const params: any[] = [];
+  if (patch.done !== undefined) {
+    sets.push('done = ?');
+    params.push(patch.done ? 1 : 0);
+  }
+  if (patch.postId !== undefined) {
+    sets.push('post_id = ?');
+    params.push(patch.postId ?? null);
+  }
+  if (patch.documentId !== undefined) {
+    sets.push('document_id = ?');
+    params.push(patch.documentId ?? null);
+  }
+  if (!sets.length) return;
+  params.push(id);
+  execute(`UPDATE release_tasks SET ${sets.join(', ')} WHERE id = ?`, params);
 }

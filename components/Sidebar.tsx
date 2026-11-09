@@ -16,12 +16,14 @@ import {
   IconSettings,
   IconSparkles,
   IconSwatch,
+  IconZap,
 } from '@/components/icons';
 
 const NAV = [
   { href: '/', label: 'Dashboard', icon: IconLayout },
   { href: '/planner', label: 'Post Planner', icon: IconInstagram },
   { href: '/calendar', label: 'Calendar', icon: IconCalendar },
+  { href: '/releases', label: 'Release Wave', icon: IconZap },
   { href: '/studio', label: 'Design Studio', icon: IconSparkles },
   { href: '/palette', label: 'Colour Lab', icon: IconSwatch },
   { href: '/media', label: 'Media', icon: IconImage },

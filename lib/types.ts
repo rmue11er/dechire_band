@@ -387,3 +387,48 @@ export interface SiteData {
   handle: string;
   avatarUrl: string | null;
 }
+
+/* ------------------------------------------------------- release wave */
+
+export type ReleaseType = 'single' | 'ep' | 'album' | 'video';
+export type ReleaseStatus = 'planning' | 'active' | 'released' | 'archived';
+export type ReleasePhaseId = 'tease' | 'announce' | 'countdown' | 'release' | 'sustain';
+
+export type TaskModule = 'planner' | 'studio' | 'media' | 'docs' | 'press' | 'website' | 'orga';
+
+export interface ReleaseTask {
+  id: number;
+  releaseId: number;
+  phase: ReleasePhaseId;
+  key: string;
+  label: string;
+  detail: string;
+  module: TaskModule;
+  offsetDays: number;
+  dueDate: string;
+  channel: string;
+  critical: boolean;
+  done: boolean;
+  postId: number | null;
+  documentId: number | null;
+  createdAt: string;
+}
+
+export interface Release {
+  id: number;
+  title: string;
+  type: ReleaseType;
+  status: ReleaseStatus;
+  releaseDate: string;
+  announceDate: string | null;
+  presaveUrl: string;
+  coverMediaId: number | null;
+  coverUrl: string | null;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+  tasks?: ReleaseTask[];
+  /** summary for the gallery, computed in listReleases() */
+  taskTotal?: number;
+  taskDone?: number;
+}

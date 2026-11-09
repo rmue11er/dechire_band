@@ -63,6 +63,9 @@ export default function BrandSheetPage() {
         sub="One page with logo, colours, type and rules – for printers, promoters, merch and everyone who works with the band."
         actions={
           <>
+            <a className="btn btn-ghost" href="/api/export/presskit" title="Bio, Fotos, Logo und Unterlagen als ZIP">
+              <IconDownload size={15} /> Press kit .zip
+            </a>
             <button type="button" className="btn btn-ghost" onClick={() => window.print()}>
               <IconExternal size={15} /> Print / PDF
             </button>

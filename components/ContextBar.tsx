@@ -6,6 +6,7 @@ import { IconSearch } from '@/components/icons';
 const LABELS: { href: string; label: string }[] = [
   { href: '/planner', label: 'Post Planner' },
   { href: '/calendar', label: 'Calendar' },
+  { href: '/releases', label: 'Release Wave' },
   { href: '/studio', label: 'Design Studio' },
   { href: '/palette', label: 'Colour Lab' },
   { href: '/media', label: 'Media' },

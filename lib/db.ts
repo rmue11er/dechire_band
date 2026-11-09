@@ -25,6 +25,39 @@ CREATE TABLE IF NOT EXISTS media_folders (
   FOREIGN KEY (parent_id) REFERENCES media_folders(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS releases (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'single',
+  status TEXT NOT NULL DEFAULT 'planning',
+  release_date TEXT NOT NULL,
+  announce_date TEXT,
+  presave_url TEXT NOT NULL DEFAULT '',
+  cover_media_id INTEGER,
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS release_tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  release_id INTEGER NOT NULL,
+  phase TEXT NOT NULL,
+  key TEXT NOT NULL,
+  label TEXT NOT NULL,
+  detail TEXT NOT NULL DEFAULT '',
+  module TEXT NOT NULL DEFAULT 'planner',
+  offset_days INTEGER NOT NULL DEFAULT 0,
+  due_date TEXT NOT NULL,
+  channel TEXT NOT NULL DEFAULT '',
+  critical INTEGER NOT NULL DEFAULT 0,
+  done INTEGER NOT NULL DEFAULT 0,
+  post_id INTEGER,
+  document_id INTEGER,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (release_id) REFERENCES releases(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS media (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   group_id INTEGER,

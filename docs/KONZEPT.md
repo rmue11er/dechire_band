@@ -524,6 +524,49 @@ hue are perceptually even, which is exactly what words like “pastel”, “mut
 - The module writes through the existing `PUT /api/palette` and `PATCH /api/profile` (`accentHex`), so a
   found colour can be saved into the CI or set as the UI accent immediately.
 
+## 7.8 Release wave – planning a campaign, not a date
+
+Goal: the module should feel like an experienced person sitting next to you, not like a to-do list.
+Input is intentionally tiny (title, format, release day); everything else is derived.
+
+### 7.8.1 Model
+
+- `releases(id, title, type, status, release_date, announce_date, presave_url, cover_media_id, notes)`
+- `release_tasks(id, release_id, phase, key, label, detail, module, offset_days, due_date, channel,
+  critical, done, post_id, document_id)`
+- Tasks are **generated once** from `TASK_TEMPLATES` (`lib/release.ts`, 27 steps) and then live their own
+  life: check off, link to a post, retime. Every task keeps the *offset* it was born with, so changing the
+  release date recalculates `due_date` for the whole wave (`updateRelease`).
+- `phase` is stored, not derived, so a step can be moved between phases later without breaking the wave.
+
+### 7.8.2 Phases and why they are shaped like this
+
+| Phase | Window | Job |
+| --- | --- | --- |
+| Tease | T‑28 … T‑15 | attention without information: assets, press text, teaser clip |
+| Ankündigung | T‑14 … T‑8 | make it official, pre-save live, press + playlist pitches out |
+| Countdown | T‑7 … T‑1 | closeness: audio hook, making-of, credits, link check |
+| Release-Tag | T0 | one loud post, stories, thanks |
+| Nachbrenner | T+1 … T+21 | lyrics, live version, community – the second wave |
+
+### 7.8.3 Integration instead of isolation
+
+- Planner: each planner task can create a real draft via `POST /api/posts` with a caption written for that
+  step (`draftCaption` fills title, date, band) and the recommended slot (`draftTimestamp` = 18:00 local on
+  the due date). The task stores `post_id` and links to the post afterwards.
+- Calendar: `POST /api/releases/:id/apply` writes announcement, pitch deadline, release and follow-up into
+  the milestone calendar – de-duplicated by title + date, so pressing the button twice is harmless.
+- Studio / Media / Docs / Website: non-content steps link into the module that does the work.
+- Readiness: `waveStats()` gives percentage, per-phase bars, open *critical* steps and the next four dates.
+
+### 7.8.4 The rules panel
+
+`WAVE_RULES` encodes nine defaults from release practice (Friday releases because playlists rotate then,
+announcement 3–4 weeks out, pitch 7–14 days ahead, post in the morning because midnight is silent, cover in
+3000 × 3000, one motif in three formats, craft over posters, stories carry reach / feed carries binding,
+second wave at day 7 and 21). They are shown next to the plan so the *why* is never lost – and marked as
+arguable defaults, not laws.
+
 ## 8. Design system
 
 ### Colours

@@ -335,6 +335,36 @@ documents, dashboard and the brand sheet all follow the two colours you pick.
 
 ---
 
+### 11. Release wave (`/releases`)
+The module that plans a release with you instead of just storing a date. You enter title, format and
+release day – everything else is derived from it.
+
+- **Five phases**, all relative to the release date: *Tease* (T‑28…T‑15), *Ankündigung* (T‑14…T‑8),
+  *Countdown* (T‑7…T‑1), *Release-Tag* (T0), *Nachbrenner* (T+1…T+21). Every phase has its own brief and
+  its own progress.
+- **27 steps** from the playbook (`lib/release.ts`): asset checks, press text, teaser clip, announcement
+  with pre-save, press & playlist pitches, cover reveal, audio snippet, tracklist, link check, out-now,
+  lyric post, live version, community post, outlook. Each step carries the offset it should happen at, the
+  module it belongs to and a sentence on *why* – not just a checkbox.
+- **Drafts with one click**: every planner step creates a real draft in the post planner, with a caption
+  written for that step (title, date, band filled in) and the recommended slot (18:00 on the due date).
+  The step then links straight to the post.
+- **Moving the release re-times the whole wave** – all due dates are recalculated from the offsets.
+- **Calendar integration**: *Termine in den Kalender* writes announcement, pitch deadline, release and
+  follow-up wave into the milestone calendar (idempotent – running it twice creates nothing new).
+- **Readiness score**: overall percentage, open critical steps (announcement, pre-save, pitches, out-now),
+  per-phase bars and the next four steps.
+- **Spielregeln** on the side: nine rules of thumb from real release campaigns (Friday releases, announce
+  3–4 weeks out, pitch 7–14 days ahead, post in the morning, one motif in three formats, craft over
+  posters, second wave at day 7 and 21 …) – defaults to argue with, not laws.
+
+### 12. Press kit (`/brand` → *Press kit .zip*)
+One click builds a ZIP for promoters, blogs and playlist editors:
+`index.html` (clickable overview with photos and documents), `README.txt`, `bio-short.txt`,
+`bio-long.txt`, `links.txt`, `press-photos/`, `logos/` and `documents/` – rider, stage plot, booking and
+press text rendered as printable HTML pages in the CI accent. Everything is generated from the profile,
+the media library and the document module, so the kit is never out of date.
+
 ## Export format
 
 `GET /api/export/plan` returns:
