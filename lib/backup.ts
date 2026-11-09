@@ -9,6 +9,7 @@ export const BACKUP_VERSION = 1;
 
 const TABLES = [
   'media_groups',
+  'media_folders',
   'media',
   'posts',
   'post_media',
@@ -21,6 +22,8 @@ const TABLES = [
   'palette',
   'profile',
   'connections',
+  'site',
+  'trash',
 ] as const;
 
 const countRows = (table: string) => {
@@ -127,8 +130,8 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
   source.close();
   fs.rmSync(workDir, { recursive: true, force: true });
 
-  const insertAll = (table: string, rows: Record<string, any>[]) => {
-    if (!rows.length) return;
+  const insertAll = (table: string, rows: Record<string, any>[] | undefined) => {
+    if (!rows || !rows.length) return;
     const columns = Object.keys(rows[0]);
     const statement = db.prepare(
       `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`
@@ -144,6 +147,7 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
       DELETE FROM post_metrics;
       DELETE FROM posts;
       DELETE FROM media;
+      DELETE FROM media_folders;
       DELETE FROM media_groups;
       DELETE FROM notes;
       DELETE FROM designs;
@@ -153,10 +157,13 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
       DELETE FROM connections;
       DELETE FROM palette;
       DELETE FROM profile;
+      DELETE FROM site;
+      DELETE FROM trash;
     `);
 
     // parents before children, children before their parents for post_media
     insertAll('media_groups', data.media_groups);
+    insertAll('media_folders', data.media_folders);
     insertAll('media', data.media);
     insertAll('posts', data.posts);
     insertAll('post_media', data.post_media);
@@ -169,8 +176,10 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
     insertAll('palette', data.palette);
     insertAll('profile', data.profile);
     insertAll('connections', data.connections);
+    insertAll('site', data.site);
+    insertAll('trash', data.trash);
 
-    for (const table of TABLES) counts[table] = data[table].length;
+    for (const table of TABLES) counts[table] = data[table]?.length ?? 0;
     db.exec('COMMIT');
   } catch (error) {
     try {
