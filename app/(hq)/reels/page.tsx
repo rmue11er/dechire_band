@@ -129,6 +129,7 @@ export default function ReelsPage() {
   const [text, setText] = useState<ReelText>(DEFAULT_TEXT);
   const [step, setStep] = useState<Step>('clips');
   const [guides, setGuides] = useState(true);
+  const [coverAt, setCoverAt] = useState(0.6);
   const [lyricsDraft, setLyricsDraft] = useState('');
   const [tapMode, setTapMode] = useState(false);
   const [tapIndex, setTapIndex] = useState(0);
@@ -472,7 +473,7 @@ export default function ReelsPage() {
       look,
       text: { ...text, lyrics: planLyrics },
       beats,
-      coverAt: Math.min(totalDuration - 0.1, 0.6),
+      coverAt: Math.min(Math.max(0.1, totalDuration - 0.1), Math.max(0, coverAt)),
     };
   };
 
@@ -1288,6 +1289,22 @@ export default function ReelsPage() {
                 />
                 <em className="mono">{Math.round(look.vignette * 100)} %</em>
               </label>
+
+              <div className="reel-cover-row">
+                <div>
+                  <div className="label">Cover</div>
+                  <p className="small muted">Das Bild, das im Feed stehen bleibt.</p>
+                </div>
+                <span className="mono">{clock(coverAt)}</span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => setCoverAt(Math.min(Math.max(0.1, totalDuration - 0.1), time))}
+                  disabled={!totalDuration}
+                >
+                  Aus Playhead
+                </button>
+              </div>
 
               <div className="reel-hint">
                 <IconSparkles size={14} />

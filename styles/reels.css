@@ -880,3 +880,21 @@
     display: none;
   }
 }
+
+.reel-cover-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 2px;
+  border-top: 1px solid var(--line);
+}
+
+.reel-cover-row > div {
+  flex: 1;
+}
+
+.reel-cover-row .mono {
+  color: var(--accent);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}

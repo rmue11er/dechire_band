@@ -709,7 +709,7 @@ per clip: scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,
           format=yuv420p,settb=AVTB,setpts=PTS-STARTPTS
 concat -> eq (grade) -> noise (grain) -> vignette -> timed lyric overlays -> fade out
 audio:  atrim, afade in/out, loudnorm=I=-14:TP=-1:LRA=11, aresample=48000, alimiter
-output: libx264 -crf 20 -preset veryfast -r 30, aac 192k, +faststart
+output: libx264 -crf 18 -preset medium -tune grain -r 30, aac 192k, +faststart
 ```
 
 Photos are fed with `-loop 1 -framerate 30` and get the Ken Burns move through `zoompan`; a cover JPEG is

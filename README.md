@@ -446,10 +446,11 @@ and rasterised to a transparent 1080×1920 PNG with `html-to-image` – what you
 - **Preview** – the real 9:16 frame, scaled: media layers switch at the cuts, the song plays in sync,
 safe-zone guides and the live text sit on top. Grain, vignette and grade are approximated in CSS.
 - **Look** – Raw/Warm/Mono, grain, vignette, fade-out. *Warm* is the default: desaturated, slightly warm
-shadows, no colour cast. Beat flash is gone; the cut is the effect.
+shadows, no colour cast. Beat flash is gone; the cut is the effect. The **cover frame** is set from the
+playhead (or stays at the default 0.6 s) so the feed thumbnail is a deliberate image, not a random frame.
 - **Export** – `POST /api/reels` validates the plan and renders in a background job with progress:
 trim/crop/motion per clip, concat, grade, grain, vignette, timed lyric PNGs, fade-out,
-`loudnorm I=-14`, AAC 48 kHz, H.264 CRF 20, 1080×1920 @ 30 fps, `+faststart`; a cover JPEG is grabbed from
+`loudnorm I=-14`, AAC 48 kHz, H.264 CRF 18, medium preset, `-tune grain`, 1080×1920 @ 30 fps, `+faststart`; a cover JPEG is grabbed from
 the result. Both appear in the media library, and *In den Planner* creates a reel draft with the hook as
   caption. Clips must be raster photos (PNG/JPG/WebP) or videos – SVG artwork has to be exported to PNG first.
   Needs **ffmpeg** on the server (`FFMPEG_PATH` if it lives outside `PATH`).
