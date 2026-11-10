@@ -927,7 +927,7 @@ export default function MediaPage() {
           <Field label="Name">
             <input
               className="input"
-              placeholder="e.g. DECHIRE Wordmark"
+              placeholder="z. B. déchire Wordmark"
               value={newGroup.name}
               onChange={(event) => setNewGroup({ ...newGroup, name: event.target.value })}
             />

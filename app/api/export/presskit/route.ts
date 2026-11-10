@@ -130,7 +130,7 @@ export async function GET() {
 
   const archive = createZip();
   const stamp = new Date().toISOString().slice(0, 10);
-  const bandName = profile.bandName || 'DECHIRE';
+  const bandName = profile.bandName || 'déchire';
   const accent = profile.accentHex || '#b9a5e8';
   const website = profile.website || '';
 

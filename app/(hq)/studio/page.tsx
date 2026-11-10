@@ -1,7 +1,7 @@
 import StudioGallery from '@/components/studio/StudioGallery';
 
 export const metadata = {
-  title: 'Design Studio · DECHIRE',
+  title: 'Design Studio · déchire',
 };
 
 export default function StudioPage() {

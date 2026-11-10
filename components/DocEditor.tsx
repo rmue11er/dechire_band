@@ -108,7 +108,7 @@ export default function DocEditor({
   const [shareOpen, setShareOpen] = useState(false);
   const [origin, setOrigin] = useState('');
   const ciPrimary = palette.find((color) => color.role === 'primary')?.hex ?? '#6b54a6';
-  const band = profile?.bandName ?? 'DECHIRE';
+  const band = profile?.bandName ?? 'déchire';
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -591,7 +591,7 @@ export default function DocEditor({
     const accent2 = token('--accent-2', ciPrimary);
     const accentDeep = token('--accent-deep', ciPrimary);
     const accentRgb = token('--accent-rgb', '185 165 232');
-    const tagline = profile?.bio?.split('\n')[0] || 'Post-hardcore // Ruhr';
+    const tagline = profile?.bio?.split('\n')[0] || 'Post-Hardcore /// Augsburg';
     const mono = 'ui-monospace, "SF Mono", Menlo, monospace';
     const display = '"Anton", "Impact", sans-serif';
     const html = `<!doctype html>
@@ -1110,7 +1110,7 @@ export default function DocEditor({
               )}
               <span className="doc-sheet-wordmark">
                 <strong>{band}</strong>
-                <em>{profile?.bio?.split('\n')[0] || 'Post-hardcore // Ruhr'}</em>
+                <em>{profile?.bio?.split('\n')[0] || 'Post-Hardcore /// Augsburg'}</em>
               </span>
             </div>
           </div>

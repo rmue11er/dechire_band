@@ -2,23 +2,24 @@ import type { PaletteColor } from './types';
 import { hexToOklch, oklchToHex } from './colorlab';
 
 /**
- * CI “Bruised Bloom” – emotional post-hardcore.
+ * CI “Ascheglut” – emotional post-hardcore from Augsburg.
  *
- * Idea: black stage, lavender haze, warm bone paper from flyers,
- * rust on the amp, a wound that never quite closes – and in between
- * cold moss/fog grey-green as a calm counterweight.
+ * Warm black instead of blue-black, bone paper, one muted ember accent and a
+ * dark rust that only shows up in print. Everything else is ash, smoke, moss
+ * and a wound that never quite closes. No candy colours – the room is dark and
+ * that is where the songs live.
  */
 export const DEFAULT_PALETTE: PaletteColor[] = [
-  { name: 'Night', hex: '#08070b', role: 'base' },
-  { name: 'Ash', hex: '#16121e', role: 'base' },
-  { name: 'Dusk', hex: '#2b2238', role: 'deep' },
-  { name: 'Lavender', hex: '#b9a5e8', role: 'primary' },
-  { name: 'Violet', hex: '#6b54a6', role: 'accent' },
-  { name: 'Bone', hex: '#efe7da', role: 'paper' },
-  { name: 'Rust', hex: '#c86a4a', role: 'warm' },
-  { name: 'Wound', hex: '#c0455a', role: 'signal' },
-  { name: 'Moss', hex: '#7e9c94', role: 'calm' },
-  { name: 'Fog', hex: '#8792a6', role: 'neutral' },
+  { name: 'Night', hex: '#0a0807', role: 'base' },
+  { name: 'Soot', hex: '#141110', role: 'base' },
+  { name: 'Ash', hex: '#231c18', role: 'deep' },
+  { name: 'Umbra', hex: '#33261f', role: 'deep' },
+  { name: 'Ember', hex: '#b87a63', role: 'primary' },
+  { name: 'Rust', hex: '#6e3b2c', role: 'warm' },
+  { name: 'Bone', hex: '#e9e0d2', role: 'paper' },
+  { name: 'Wound', hex: '#5f2a2e', role: 'signal' },
+  { name: 'Moss', hex: '#5e6b5a', role: 'calm' },
+  { name: 'Smoke', hex: '#8d8178', role: 'neutral' },
 ];
 
 export const PALETTE_ROLES = [
@@ -38,7 +39,7 @@ export const roleLabel = (role: string) =>
   PALETTE_ROLES.find((item) => item.value === role)?.label ?? role;
 
 /** Neutral utilities that should always be available. */
-export const UTILITY_COLORS = ['#000000', '#ffffff', '#9a91b2', '#3a3350'];
+export const UTILITY_COLORS = ['#000000', '#ffffff', '#8d8178', '#33261f'];
 
 export const isHex = (value: string) => /^#[0-9a-f]{6}$/i.test(value.trim());
 
@@ -54,7 +55,7 @@ export const isLightHex = (value: string) => {
 /* ------------------------------------------------- app accent (UI colour) */
 
 const toRgb = (hex: string) => {
-  const value = isHex(hex) ? hex.trim() : '#b9a5e8';
+  const value = isHex(hex) ? hex.trim() : '#b87a63';
   return {
     r: Number.parseInt(value.slice(1, 3), 16),
     g: Number.parseInt(value.slice(3, 5), 16),
@@ -78,7 +79,7 @@ const rgbTriple = (hex: string) => {
   return `${r} ${g} ${b}`;
 };
 
-export const DEFAULT_ACCENT = '#b9a5e8';
+export const DEFAULT_ACCENT = '#b87a63';
 
 /**
  * Second CI colour. `null` = derived from the primary accent: a *visible*

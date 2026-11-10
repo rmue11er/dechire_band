@@ -336,7 +336,7 @@ export default function WebsitePage() {
                   onChange={(event) =>
                     patch({ manifesto: event.target.value.split('\n').filter((line) => line.trim().length > 0) })
                   }
-                  placeholder={'We are four people from the Ruhr…\nWe never learned how to do this properly.'}
+                  placeholder={'wir sind vier leute aus augsburg…\nwir machen das nicht besonders gut, aber wir machen es ehrlich.'}
                 />
               </Field>
 

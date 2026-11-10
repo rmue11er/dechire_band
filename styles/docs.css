@@ -232,7 +232,7 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: #f4f1ea;
+  background: #ece4d6;
   background-image: radial-gradient(rgb(20 16 26 / 0.045) 0.5px, transparent 0.6px);
   background-size: 3px 3px;
   color: #1d1826;
@@ -247,8 +247,8 @@
   position: relative;
   overflow: hidden;
   padding: 22px 34px 0;
-  background: #0b0a10;
-  color: #f6f2ff;
+  background: #0c0908;
+  color: #ece4d6;
 }
 
 .doc-sheet-photo {
@@ -311,7 +311,7 @@
   place-items: center;
   font-family: 'Anton', var(--font-sans);
   font-size: 19px;
-  color: #0b0a10;
+  color: #14100d;
   background: var(--accent);
 }
 
@@ -326,8 +326,8 @@
   font-weight: 400;
   font-size: 27px;
   line-height: 0.9;
-  letter-spacing: 0.015em;
-  text-transform: uppercase;
+  letter-spacing: 0.005em;
+  text-transform: none;
   color: #fbf8ff;
 }
 
@@ -573,18 +573,18 @@
 }
 
 .doc-page .prose table th {
-  background: #100d16;
-  border-color: #100d16;
+  background: #171310;
+  border-color: #171310;
   font-family: var(--font-mono);
   font-size: 8.5px;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #f4f1ea;
+  color: #ece4d6;
 }
 
 .doc-page .prose table th * {
-  color: #f4f1ea;
+  color: #ece4d6;
 }
 
 .doc-page .prose table tbody tr:nth-child(even) td {
@@ -1829,8 +1829,8 @@
   justify-content: space-between;
   gap: 14px;
   padding: 16px 22px;
-  background: #0b0a10;
-  color: #f6f2ff;
+  background: #0c0908;
+  color: #ece4d6;
 }
 
 .doc-share-brand {

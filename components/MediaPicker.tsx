@@ -54,7 +54,9 @@ export default function MediaPicker({
   const only = kind ?? (audioOnly ? 'audio' : imagesOnly ? 'image' : null);
 
   const filtered = media.filter((item) => {
-    if (visualOnly && !(item.mime.startsWith('image/') || item.mime.startsWith('video/'))) return false;
+    if (visualOnly && (item.mime === 'image/svg+xml' || !(item.mime.startsWith('image/') || item.mime.startsWith('video/')))) {
+      return false;
+    }
     if (only) {
       if (!item.mime.startsWith(`${only}/`)) return false;
     } else {
@@ -196,13 +198,23 @@ export default function MediaPicker({
           <div className="empty-icon">
             <IconPlus size={22} />
           </div>
-          <h3>{only === 'audio' ? 'No audio found' : only === 'video' ? 'No video found' : 'No media found'}</h3>
+          <h3>
+            {only === 'audio'
+              ? 'No audio found'
+              : only === 'video'
+                ? 'No video found'
+                : visualOnly
+                  ? 'Noch keine Fotos oder Videos'
+                  : 'No media found'}
+          </h3>
           <p>
             {only === 'audio'
               ? 'Upload an MP3, WAV or FLAC – or pick one from the library.'
               : only === 'video'
                 ? 'Upload an MP4/MOV – or pick one from the library.'
-                : 'Upload files or adjust the filter.'}
+                : visualOnly
+                  ? 'Für Reels: PNG, JPG, WebP oder MP4. SVG-Grafiken kann der Renderer nicht lesen.'
+                  : 'Upload files or adjust the filter.'}
           </p>
         </div>
       ) : (

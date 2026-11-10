@@ -39,7 +39,7 @@ export default async function SharedDocumentPage({ params }: Props) {
 
   const profile = getProfile();
   const kindLabel = docKindLabel(document.kind);
-  const tagline = profile.bio?.split('\n')[0] || 'Post-hardcore // Ruhr';
+  const tagline = profile.bio?.split('\n')[0] || 'Post-Hardcore /// Augsburg';
 
   return (
     <main className="doc-share">

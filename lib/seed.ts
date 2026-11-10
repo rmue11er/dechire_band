@@ -3,9 +3,9 @@ import path from 'node:path';
 import { UPLOAD_DIR } from './db';
 import { DOC_TEMPLATES } from './docTemplates';
 
-const LAV = '#B9A5E8';
-const LAV_DEEP = '#7E63B8';
-const INK = '#07060B';
+const LAV = '#B87A63';
+const LAV_DEEP = '#6E3B2C';
+const INK = '#0A0807';
 
 const esc = (value: string) =>
   String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -22,9 +22,9 @@ function defs(id: string) {
   return `
   <defs>
     <linearGradient id="bg${id}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#111019"/>
-      <stop offset=".5" stop-color="#0a0911"/>
-      <stop offset="1" stop-color="#040408"/>
+      <stop offset="0" stop-color="#171311"/>
+      <stop offset=".5" stop-color="#0d0a09"/>
+      <stop offset="1" stop-color="#060504"/>
     </linearGradient>
     <radialGradient id="glow${id}" cx=".5" cy=".5" r=".5">
       <stop offset="0" stop-color="${LAV}" stop-opacity=".85"/>
@@ -75,10 +75,10 @@ function scene(seed: number, w: number, h: number) {
   <rect width="${w}" height="${h}" filter="url(#grain${id})" opacity=".16" style="mix-blend-mode:overlay"/>`;
 }
 
-function photoSvg(seed: number, w = 1080, h = 1350, caption = 'DECHIRE /// LIVE') {
+function photoSvg(seed: number, w = 1080, h = 1350, caption = 'déchire /// live') {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   ${scene(seed, w, h)}
-  <g font-family="Helvetica Neue, Arial, sans-serif" fill="#EDE7F8">
+  <g font-family="Helvetica Neue, Arial, sans-serif" fill="#EDE4D6">
     <text x="56" y="${h - 64}" font-size="26" letter-spacing="7" opacity=".65" font-weight="700">${esc(caption)}</text>
     <text x="56" y="96" font-size="22" letter-spacing="9" opacity=".4" font-weight="700">35 MM / 1.4</text>
   </g>
@@ -110,14 +110,14 @@ function posterSvg(opts: {
   words.forEach((word) => lines.push(word));
   const baseY = h - 260;
   const lineHeight = titleSize(title) * 0.9;
-  const textColor = tone === 'lavender' ? INK : '#F1ECFA';
+  const textColor = tone === 'lavender' ? INK : '#EDE4D6';
   const bg = tone === 'lavender' ? LAV : null;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   ${bg ? defs(id) : scene(seed, w, h)}
   ${bg ? `<rect width="${w}" height="${h}" fill="${LAV}"/>` : ''}
   <text x="${w / 2}" y="${h / 2}" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif" font-size="${Math.round(
     w / 2.6
-  )}" font-weight="900" fill="${tone === 'lavender' ? '#000' : LAV}" opacity=".07" transform="rotate(-90 ${w / 2} ${h / 2})" letter-spacing="-8">DECHIRE</text>
+  )}" font-weight="900" fill="${tone === 'lavender' ? '#000' : LAV}" opacity=".07" transform="rotate(-90 ${w / 2} ${h / 2})" letter-spacing="-8">déchire</text>
   <g font-family="Helvetica Neue, Arial, sans-serif" fill="${textColor}">
     <text x="60" y="120" font-size="27" letter-spacing="8" font-weight="700" opacity=".8">${esc(kicker)}</text>
     <rect x="60" y="152" width="86" height="6" fill="${textColor}" opacity=".9"/>
@@ -130,7 +130,7 @@ function posterSvg(opts: {
       )
       .join('\n    ')}
     <text x="60" y="${h - 120}" font-size="30" letter-spacing="6" font-weight="600" opacity=".8">${esc(footer)}</text>
-    <text x="60" y="${h - 72}" font-size="24" letter-spacing="10" opacity=".5">POST-HARDCORE /// DE</text>
+    <text x="60" y="${h - 72}" font-size="24" letter-spacing="10" opacity=".5">POST-HARDCORE /// AUGSBURG</text>
   </g>
   ${tone === 'lavender' ? '' : `<rect width="${w}" height="${h}" fill="url(#scan${id})" opacity=".3"/>`}
 </svg>`;
@@ -145,7 +145,7 @@ function logoSvg(opts: {
   h?: number;
 }) {
   const { color, bg, sub, variant = 'wordmark', w = 1080, h = 1080 } = opts;
-  const word = 'DECHIRE';
+  const word = 'déchire';
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   ${bg ? `<rect width="${w}" height="${h}" rx="${variant === 'sticker' ? 90 : 0}" fill="${bg}"/>` : ''}
   ${
@@ -200,39 +200,39 @@ function buildMedia(): SeedMedia[] {
   const w = 1080;
   return [
     {
-      title: 'DECHIRE Wordmark',
+      title: 'déchire Wordmark',
       variant: 'White / transparent',
-      group: 'DECHIRE Wordmark',
+      group: 'déchire Wordmark',
       kind: 'logo',
       tags: ['logo', 'wordmark', 'transparent'],
-      alt: 'DECHIRE wordmark in white on a transparent background',
+      alt: 'déchire wordmark in warm white on a transparent background',
       svg: logoSvg({ color: '#F4F0FA', bg: null, sub: 'POST-HARDCORE' }),
     },
     {
-      title: 'DECHIRE Wordmark',
-      variant: 'Lavender / transparent',
-      group: 'DECHIRE Wordmark',
+      title: 'déchire Wordmark',
+      variant: 'Ember / transparent',
+      group: 'déchire Wordmark',
       kind: 'logo',
-      tags: ['logo', 'wordmark', 'lavender', 'transparent'],
-      alt: 'DECHIRE wordmark in lavender on a transparent background',
+      tags: ['logo', 'wordmark', 'ember', 'transparent'],
+      alt: 'déchire wordmark in ember on a transparent background',
       svg: logoSvg({ color: LAV, bg: null, sub: 'POST-HARDCORE' }),
     },
     {
-      title: 'DECHIRE Sticker',
-      variant: 'Black on lavender (1080×1080)',
-      group: 'DECHIRE Wordmark',
+      title: 'déchire Sticker',
+      variant: 'Black on ember (1080×1080)',
+      group: 'déchire Wordmark',
       kind: 'logo',
       tags: ['logo', 'sticker', 'social'],
-      alt: 'DECHIRE sticker, black lettering on a lavender square',
+      alt: 'déchire sticker, black lettering on an ember square',
       svg: logoSvg({ color: INK, bg: LAV, sub: 'STICKER /// 1080', variant: 'sticker' }),
     },
     {
-      title: 'DECHIRE Social Avatar',
+      title: 'déchire Social Avatar',
       variant: 'White on black (profile)',
-      group: 'DECHIRE Wordmark',
+      group: 'déchire Wordmark',
       kind: 'logo',
       tags: ['logo', 'avatar', 'profile'],
-      alt: 'DECHIRE avatar, white wordmark on a black background',
+      alt: 'déchire avatar, warm white wordmark on a black background',
       svg: logoSvg({ color: '#F4F0FA', bg: INK, sub: 'AVATAR /// 1:1' }),
     },
     {
@@ -245,8 +245,8 @@ function buildMedia(): SeedMedia[] {
       svg: posterSvg({
         seed: 11,
         title: 'Fracture',
-        kicker: 'NEW SINGLE /// NOV 14',
-        footer: 'DECHIRE · 03:42',
+        kicker: 'NEUE SINGLE /// 14. NOV',
+        footer: 'déchire · 03:42',
       }),
     },
     {
@@ -259,8 +259,8 @@ function buildMedia(): SeedMedia[] {
       svg: posterSvg({
         seed: 11,
         title: 'Fracture',
-        kicker: 'OUT NOW /// EVERYWHERE',
-        footer: 'DECHIRE · 03:42',
+        kicker: 'JETZT DRAUSSEN /// ÜBERALL',
+        footer: 'déchire · 03:42',
         w: 1080,
         h: 1920,
       }),
@@ -275,31 +275,31 @@ function buildMedia(): SeedMedia[] {
       svg: photoSvg(23, 1080, 1350, 'FRACTURE /// TEASER'),
     },
     {
-      title: 'Tour Poster Halle',
+      title: 'Tour Poster Augsburg',
       variant: '4:5 Feed',
       group: 'Tour 2026',
       kind: 'artwork',
-      tags: ['tour', 'show', 'poster', 'halle'],
-      alt: `Tour poster for the show in Halle on ${dayLabel(2)}`,
+      tags: ['tour', 'show', 'poster', 'augsburg'],
+      alt: `Tour poster for the show in Augsburg on ${dayLabel(2)}`,
       svg: posterSvg({
         seed: 41,
-        title: `${dayLabel(2).toUpperCase()} HALLE`,
-        kicker: 'LIVE /// TOUR 2026',
-        footer: 'TICKETS: DECHIRE.BAND',
+        title: `${dayLabel(2).toUpperCase()} AUGSBURG`,
+        kicker: 'LIVE /// KANTINE',
+        footer: 'TICKETS: déchire.band',
       }),
     },
     {
-      title: 'Tour Poster Cologne',
+      title: 'Tour Poster München',
       variant: '4:5 Feed',
       group: 'Tour 2026',
       kind: 'artwork',
-      tags: ['tour', 'show', 'poster', 'cologne'],
-      alt: `Tour poster for the show in Cologne on ${dayLabel(9)}`,
+      tags: ['tour', 'show', 'poster', 'muenchen'],
+      alt: `Tour poster for the show in München on ${dayLabel(9)}`,
       svg: posterSvg({
         seed: 57,
-        title: `${dayLabel(9).toUpperCase()} COLOGNE`,
-        kicker: 'LIVE /// TOUR 2026',
-        footer: 'TICKETS: DECHIRE.BAND',
+        title: `${dayLabel(9).toUpperCase()} MÜNCHEN`,
+        kicker: 'LIVE /// BACKSTAGE',
+        footer: 'TICKETS: déchire.band',
       }),
     },
     {
@@ -309,7 +309,7 @@ function buildMedia(): SeedMedia[] {
       kind: 'photo',
       tags: ['live', 'stage', 'smoke'],
       alt: 'Live shot with smoke and backlight',
-      svg: photoSvg(73, 1080, 1350, 'DECHIRE /// LIVE'),
+      svg: photoSvg(73, 1080, 1350, 'déchire /// live'),
     },
     {
       title: 'Live – Crowd',
@@ -326,8 +326,8 @@ function buildMedia(): SeedMedia[] {
       group: 'Studio',
       kind: 'photo',
       tags: ['studio', 'recording', 'session'],
-      alt: 'Studio shot during a recording session',
-      svg: photoSvg(101, 1080, 1350, 'STUDIO /// SESSION 04'),
+      alt: 'Proberaum shot during a late session',
+      svg: photoSvg(101, 1080, 1350, 'PROBENRAUM /// 04'),
     },
     {
       title: 'Merch – Tee Front',
@@ -335,13 +335,13 @@ function buildMedia(): SeedMedia[] {
       group: 'Merch',
       kind: 'merch',
       tags: ['merch', 'shirt', 'mockup'],
-      alt: 'Mockup of a black t-shirt with a lavender print',
+      alt: 'Mockup of a black t-shirt with an ember print',
       svg: posterSvg({
         seed: 131,
-        title: 'Merch Drop',
-        kicker: 'LIMITED /// 50 PIECES',
-        footer: 'DECHIRE.BAND/SHOP',
-        tone: 'lavender',
+        title: 'Merch',
+        kicker: 'NUR 50 STÜCK',
+        footer: 'déchire.band/shop',
+        tone: 'dark',
       }),
     },
   ];
@@ -349,49 +349,49 @@ function buildMedia(): SeedMedia[] {
 
 const NOTES = [
   {
-    title: 'Show Halle – Running order & Setlist',
+    title: 'Augsburg – Ablauf & Setlist',
     folder: 'Shows',
     pinned: 1,
-    tags: ['show', 'halle', 'setlist'],
-    content: `<h2>Timeline</h2><ul><li><strong>16:30</strong> Load-in (backyard, gate 3)</li><li><strong>18:00</strong> Soundcheck – 45 min.</li><li><strong>20:15</strong> Doors</li><li><strong>21:00</strong> Show (60 min.)</li></ul><h2>Setlist</h2><ol><li>Fracture</li><li>Ashes in the Wind</li><li>Cold Room</li><li>Night Piece <em>(new, maybe cut)</em></li><li>No Light</li></ol><blockquote>Merch table needs two people – <mark>waiting to hear from Lina</mark>.</blockquote><ul data-type="taskList"><li data-checked="true">Send backline list to venue</li><li data-checked="false">Print setlist</li><li data-checked="false">Confirm fee</li></ul>`,
+    tags: ['show', 'augsburg', 'setlist'],
+    content: `<h2>Ablauf</h2><ul><li><strong>16:30</strong> Load-in (Hof, Tor 3)</li><li><strong>18:00</strong> Soundcheck – 45 Min.</li><li><strong>20:15</strong> Einlass</li><li><strong>21:00</strong> Show (60 Min.)</li></ul><h2>Setlist</h2><ol><li>Fracture</li><li>Ashes in the Wind</li><li>Cold Room</li><li>Night Piece <em>(neu, vielleicht raus)</em></li><li>No Light</li></ol><blockquote>Merch braucht zwei Leute – <mark>Rückmeldung von Lina steht aus</mark>.</blockquote><ul data-type="taskList"><li data-checked="true">Backline-Liste an den Laden</li><li data-checked="false">Setlist drucken</li><li data-checked="false">Gage bestätigen</li></ul>`,
   },
   {
-    title: 'Content Plan – Week 45',
+    title: 'Wochenplan – ruhig bleiben',
     folder: 'Social',
     pinned: 1,
-    tags: ['instagram', 'planning'],
-    content: `<p>Goal for the week: <strong>release teaser + tour poster</strong>.</p><h3>Monday</h3><p>Teaser clip (9:16) with a <code>Fracture</code> snippet, caption asking the community a question.</p><h3>Wednesday</h3><p>Carousel: cover + lyrics snippet + tour poster. First comment with the ticket link.</p><h3>Friday</h3><p>Live photo from the archive, story repost in the evening.</p><hr><p><em>Keep hashtags out of the caption – put them in the first comment.</em></p>`,
+    tags: ['instagram', 'planung'],
+    content: `<p>Diese Woche: <strong>Teaser + Tour-Poster</strong>, sonst nichts.</p><h3>Montag</h3><p>9:16-Clip mit einem Ausschnitt aus <code>Fracture</code>. Kein großes Setup, nur der Raum und der Song.</p><h3>Mittwoch</h3><p>Karussell: Cover, eine Zeile aus dem Text, Poster.</p><h3>Freitag</h3><p>Live-Foto aus dem Archiv. Abends in der Story.</p><hr><p><em>Keine Hashtags in die Caption – wenn überhaupt, in den ersten Kommentar.</em></p>`,
   },
   {
-    title: 'Lyrics – Fracture',
+    title: 'Text – Fracture',
     folder: 'Songs',
     pinned: 0,
     tags: ['lyrics', 'fracture'],
-    content: `<p>Verse 1</p><p>I sharpened all the edges,<br>until the rest could not be saved.<br>You say I lost myself somewhere –<br>maybe that was the plan.</p><p>Chorus</p><p><strong>Fracture, hold me down,</strong><br><strong>until the noise takes over.</strong></p><p><em>© DECHIRE 2026</em></p>`,
+    content: `<p>Verse 1</p><p>I sharpened all the edges,<br>until the rest could not be saved.<br>You say I lost myself somewhere –<br>maybe that was the plan.</p><p>Chorus</p><p><strong>Fracture, hold me down,</strong><br><strong>until the noise takes over.</strong></p><p><em>© déchire 2026</em></p>`,
   },
   {
-    title: 'Merch ideas / print files',
+    title: 'Merch – Druckdateien',
     folder: 'Merch',
     pinned: 0,
-    tags: ['merch', 'print'],
-    content: `<h3>Open items</h3><ul><li>Tee: two-colour screen print, lavender on black</li><li>Sticker set: logo version <em>Sticker</em> from the media library</li><li>Poster 50×70 – matte, 3 motifs</li></ul><p>Printer: <strong>Rauwerk</strong>, request a quote by Nov 20.</p>`,
+    tags: ['merch', 'druck'],
+    content: `<h3>Offen</h3><ul><li>Tee: zwei Farben, Ember auf Schwarz</li><li>Sticker: Logo-Version <em>Sticker</em> aus der Mediathek</li><li>Poster 50×70 – matt, drei Motive</li></ul><p>Druck: <strong>Rauwerk</strong>, Angebot bis 20. Nov.</p>`,
   },
 ];
 
 const MILESTONES = [
   {
-    title: 'Print deadline: tour posters',
+    title: 'Poster-Druck: Tour',
     day: -3,
     kind: 'deadline',
-    note: 'Rauwerk needs the final PDF for the 50×70 posters.',
+    note: 'Rauwerk braucht die finale Datei für die 50×70-Poster.',
     done: 1,
   },
-  { title: 'Merch restock call', day: 1, kind: 'meeting', note: 'With Lina, 18:00, 20 minutes.', done: 0 },
-  { title: 'Show Halle', day: 2, kind: 'show', note: 'Load-in 16:30 · doors 20:15 · show 21:00', done: 0 },
-  { title: 'Content plan next week', day: 4, kind: 'content', note: 'Three feed posts + two stories.', done: 0 },
-  { title: 'Fracture release', day: 5, kind: 'release', note: 'Upload at 00:01 – cover, teaser and story are ready.', done: 0 },
-  { title: 'Show Cologne', day: 9, kind: 'show', note: 'Second night of the tour, backline shared with Halle.', done: 0 },
-  { title: 'Photo shoot (promo)', day: 13, kind: 'other', note: 'Studio, Bochum. Bring two outfits and the banner.', done: 0 },
+  { title: 'Merch nachbestellen', day: 1, kind: 'meeting', note: 'Mit Lina, 18:00, 20 Minuten.', done: 0 },
+  { title: 'Show Augsburg', day: 2, kind: 'show', note: 'Load-in 16:30 · Einlass 20:15 · Show 21:00', done: 0 },
+  { title: 'Wochenplan', day: 4, kind: 'content', note: 'Drei Feed-Posts, zwei Stories. Nicht mehr.', done: 0 },
+  { title: 'Fracture Release', day: 5, kind: 'release', note: '00:01 hochladen – Cover, Teaser und Story liegen bereit.', done: 0 },
+  { title: 'Show München', day: 9, kind: 'show', note: 'Zweiter Abend, Backline geteilt mit Augsburg.', done: 0 },
+  { title: 'Fotoshooting', day: 13, kind: 'other', note: 'Proberaum, Augsburg. Zwei Sachen zum Wechseln, sonst nichts.', done: 0 },
 ];
 
 const DOCUMENTS = [
@@ -402,7 +402,7 @@ const DOCUMENTS = [
   },
   {
     template: 'contract',
-    title: 'Booking confirmation – Halle',
+    title: 'Booking confirmation – Augsburg',
     tags: ['booking', 'contract'],
   },
   {
@@ -466,17 +466,19 @@ export function seed(db: any) {
   const avatarId = mediaIds[1];
 
   db.prepare(
-    `INSERT INTO profile (id, band_name, handle, bio, website, followers, following, avatar_media_id, highlight_names, updated_at)
-     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO profile (id, band_name, handle, bio, website, followers, following, avatar_media_id, highlight_names, accent_hex, accent_2_hex, updated_at)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
-    'DECHIRE',
+    'déchire',
     'dechire.band',
-    'Post-hardcore from the Ruhr.\nLoud, honest, unpolished.\nBooking: booking@dechire.band',
+    'Emotional Post-Hardcore aus Augsburg.\nKein großes Programm. Nur das, was wirklich da ist.\nBooking: booking@dechire.band',
     'dechire.band/tickets',
     4218,
     312,
     avatarId,
-    JSON.stringify(['TOUR 26', 'FRACTURE', 'LIVE', 'MERCH']),
+    JSON.stringify(['LIVE', 'FRACTURE', 'PROBERAUM', 'MERCH']),
+    '#b87a63',
+    null,
     now
   );
 
@@ -490,10 +492,10 @@ export function seed(db: any) {
       type: 'carousel',
       status: 'published',
       caption:
-        'FRACTURE is out.\n\nThree minutes that cost us two years. Everywhere you listen to music – link in bio.\n\nThank you to everyone who helped. See you on tour.',
-      first: '#fracture #dechire #posthardcore #newrelease',
-      song: ['Fracture', 'DECHIRE'],
-      location: 'Essen, Germany',
+        'Fracture ist draußen.\n\nDrei Minuten, die zwei Jahre gekostet haben. Überall, wo du Musik hörst.\n\nDanke an alle, die mitgetragen haben.',
+      first: '#fracture #déchire #posthardcore',
+      song: ['Fracture', 'déchire'],
+      location: 'Augsburg',
       scheduled: iso(-4, 18),
       published: iso(-4, 18),
       media: [mediaIds[5], mediaIds[4], mediaIds[6]],
@@ -501,10 +503,10 @@ export function seed(db: any) {
     {
       type: 'photo',
       status: 'published',
-      caption: `Last show burned. Thank you, Halle.\n\n${showDay} we are back – this time with a new setlist.`,
+      caption: `Letzte Show war ein Loch. Danke, Augsburg.\n\n${showDay} spielen wir wieder – mit neuen Songs.`,
       first: 'Tickets: dechire.band/tickets',
-      song: ['No Light', 'DECHIRE'],
-      location: 'Halle (Saale)',
+      song: ['No Light', 'déchire'],
+      location: 'Augsburg',
       scheduled: iso(-11, 20),
       published: iso(-11, 20),
       media: [mediaIds[9]],
@@ -512,10 +514,10 @@ export function seed(db: any) {
     {
       type: 'reel',
       status: 'published',
-      caption: 'Session 04. The rest is coming soon. #studio #dechire',
+      caption: 'Proberaum, 04. Der Rest kommt, wenn er fertig ist.',
       first: '',
-      song: ['Night Piece (Demo)', 'DECHIRE'],
-      location: 'Studio, Bochum',
+      song: ['Night Piece (Demo)', 'déchire'],
+      location: 'Proberaum, Augsburg',
       scheduled: iso(-17, 17),
       published: iso(-17, 17),
       media: [mediaIds[11]],
@@ -523,9 +525,9 @@ export function seed(db: any) {
     {
       type: 'photo',
       status: 'published',
-      caption: 'Merch drop. 50 pieces, no repress.\n\nLink in bio.',
-      first: 'Limited at dechire.band/shop',
-      song: ['Ashes in the Wind', 'DECHIRE'],
+      caption: 'Merch. 50 Stück, kein Nachdruck.\n\nLink in bio.',
+      first: 'Nur bei dechire.band/shop',
+      song: ['Ashes in the Wind', 'déchire'],
       location: '',
       scheduled: iso(-24, 12),
       published: iso(-24, 12),
@@ -534,9 +536,9 @@ export function seed(db: any) {
     {
       type: 'carousel',
       status: 'published',
-      caption: `TOUR 2026. Two cities, two nights, one promise.\n\n${showDay} Halle · ${secondShowDay} Cologne`,
-      first: 'Tickets in link.',
-      song: ['Fracture', 'DECHIRE'],
+      caption: `Zwei Abende, zwei Räume.\n\n${showDay} Augsburg · ${secondShowDay} München`,
+      first: 'Tickets in der Bio.',
+      song: ['Fracture', 'déchire'],
       location: 'Tour 2026',
       scheduled: iso(-31, 19),
       published: iso(-31, 19),
@@ -545,10 +547,10 @@ export function seed(db: any) {
     {
       type: 'photo',
       status: 'scheduled',
-      caption: `${showDay}, Halle. We are playing almost the whole new record.\n\nTickets in link, come early – the room is small.`,
-      first: '#dechire #live #tour2026',
-      song: ['Fracture', 'DECHIRE'],
-      location: 'Halle (Saale)',
+      caption: `${showDay}, Augsburg. Wir spielen fast das ganze neue Album.\n\nKommt früh, der Raum ist klein.`,
+      first: '#déchire #live #augsburg',
+      song: ['Fracture', 'déchire'],
+      location: 'Augsburg',
       scheduled: iso(2, 18),
       published: null,
       media: [mediaIds[7]],
@@ -556,9 +558,9 @@ export function seed(db: any) {
     {
       type: 'carousel',
       status: 'scheduled',
-      caption: `A song about what is left behind.\n\nFracture – ${releaseDay}.`,
-      first: 'Pre-save in bio.',
-      song: ['Fracture', 'DECHIRE'],
+      caption: `Ein Song darüber, was übrig bleibt.\n\nFracture – ${releaseDay}.`,
+      first: 'Pre-save in der Bio.',
+      song: ['Fracture', 'déchire'],
       location: '',
       scheduled: iso(5, 0),
       published: null,
@@ -567,9 +569,9 @@ export function seed(db: any) {
     {
       type: 'photo',
       status: 'draft',
-      caption: 'Lyrics snippet – not final. Check the crop, maybe use a different frame.',
+      caption: 'Textzeile – noch nicht final. Zuschnitt prüfen, vielleicht ein anderes Bild.',
       first: '',
-      song: ['Night Piece (Demo)', 'DECHIRE'],
+      song: ['Night Piece (Demo)', 'déchire'],
       location: '',
       scheduled: null,
       published: null,
@@ -578,10 +580,10 @@ export function seed(db: any) {
     {
       type: 'story',
       status: 'scheduled',
-      caption: 'Soundcheck story with a countdown sticker.',
+      caption: 'Soundcheck. Kurz bevor es dunkel wird.',
       first: '',
-      song: ['No Light', 'DECHIRE'],
-      location: 'Halle (Saale)',
+      song: ['No Light', 'déchire'],
+      location: 'Augsburg',
       scheduled: iso(9, 16),
       published: null,
       media: [mediaIds[9]],
@@ -670,33 +672,33 @@ export function seed(db: any) {
   const snippets = [
     {
       kind: 'hashtags',
-      label: 'Release set',
-      body: '#dechire #posthardcore #newrelease #fracture #ruhr #bandfromgermany',
+      label: 'Release',
+      body: '#déchire #posthardcore #augsburg #fracture',
     },
     {
       kind: 'hashtags',
-      label: 'Live set',
-      body: '#dechire #livemusic #posthardcore #liveshow #tour2026 #ruhr',
+      label: 'Live',
+      body: '#déchire #livemusic #posthardcore #augsburg',
     },
     {
       kind: 'caption',
-      label: 'Release day',
-      body: 'FRACTURE is out.\n\nThree minutes that cost us two years. Everywhere you listen to music – link in bio.',
+      label: 'Release-Tag',
+      body: 'Fracture ist draußen.\n\nDrei Minuten, die zwei Jahre gekostet haben. Überall, wo du Musik hörst.',
     },
     {
       kind: 'caption',
-      label: 'Show announcement',
-      body: 'We are playing.\n\nDoors 20:15, show 21:00. Come early, the room is small. Tickets in link.',
+      label: 'Show-Ansage',
+      body: 'Wir spielen.\n\nEinlass 20:15, Show 21:00. Kommt früh, der Raum ist klein. Tickets im Link.',
     },
     {
       kind: 'hook',
-      label: 'Question hook',
-      body: 'What do you do when the room goes quiet?',
+      label: 'Frage-Hook',
+      body: 'Was machst du, wenn es still wird?',
     },
     {
       kind: 'hook',
-      label: 'Cold open',
-      body: 'No intro. No count-in. Just this.',
+      label: 'Kalter Einstieg',
+      body: 'Kein Intro. Kein Count-in. Nur das hier.',
     },
   ];
   snippets.forEach((snippet) => {

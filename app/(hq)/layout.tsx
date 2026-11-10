@@ -6,8 +6,8 @@ import Sidebar from '@/components/Sidebar';
 import ToastHost from '@/components/ToastHost';
 
 export const metadata: Metadata = {
-  title: 'DECHIRE · Band HQ',
-  description: 'Instagram planning, media library and notes for DECHIRE. Post-hardcore, black on lavender.',
+  title: 'déchire · Band HQ',
+  description: 'Emotional Post-Hardcore aus Augsburg – Planung, Medien, Texte. Dunkel, warm, ohne großes Programm.',
 };
 
 /** The internal workspace: sidebar, palette, toasts – everything the public site skips. */

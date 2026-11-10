@@ -39,7 +39,7 @@ export default function ContextBar() {
   return (
     <div className="ctx-bar">
       <span className="ctx-crumb">
-        <b>DECHIRE</b>
+        <b>déchire</b>
         <i>///</i>
         <span>{label}</span>
       </span>

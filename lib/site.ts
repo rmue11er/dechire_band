@@ -30,7 +30,7 @@ const asCrew = (entry: any): SiteCrewMember => ({
 
 const DEFAULT_SETTINGS: SiteSettings = {
   published: true,
-  bandName: 'DECHIRE',
+  bandName: 'déchire',
   tagline: '',
   manifesto: [],
   introTitle: '',
@@ -50,7 +50,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   showFeed: true,
   showConnect: true,
   showFooter: true,
-  feedTitle: 'FROM THE FEED',
+  feedTitle: 'AUS DEM PROBERAUM',
   teaserUrl: '',
   showTeaser: true,
   links: [],

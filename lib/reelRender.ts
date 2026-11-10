@@ -53,9 +53,13 @@ function clipFilter(motion: ReelPlan['clips'][number]['motion'], index: number) 
 }
 
 function gradeChain(grade: ReelPlan['look']['grade']) {
-  if (grade === 'film') return 'eq=contrast=1.07:saturation=1.06:brightness=-0.005';
-  if (grade === 'mono') return 'hue=s=0,eq=contrast=1.12:brightness=-0.01';
-  if (grade === 'bleed') return 'eq=contrast=1.14:saturation=1.22:brightness=-0.02,colorbalance=rs=0.03:bs=-0.03';
+  if (grade === 'warm') {
+    return 'eq=contrast=1.04:saturation=0.9:brightness=-0.012,colorbalance=rs=0.05:gs=0.01:bs=-0.05';
+  }
+  if (grade === 'mono') return 'hue=s=0,eq=contrast=1.1:brightness=-0.02';
+  if (grade === 'faded') {
+    return "eq=contrast=0.94:saturation=0.72:brightness=0.02,curves=all='0/0.06 0.5/0.5 1/0.94'";
+  }
   return '';
 }
 
@@ -97,6 +101,9 @@ export async function renderReel(
     const filters: string[] = [];
     clips.forEach((clip, index) => {
       const { media, absolute } = sourcePath(clip.mediaId);
+      if (media.mime === 'image/svg+xml') {
+        throw new Error(`${media.title} is an SVG – the reel renderer needs a photo or video (PNG/JPG/MP4).`);
+      }
       if (media.mime.startsWith('video/')) {
         inputArgs.push('-ss', clip.start.toFixed(3), '-t', clip.duration.toFixed(3), '-i', absolute);
       } else {

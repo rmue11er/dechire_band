@@ -531,9 +531,9 @@ export default function PaletteLabPage() {
             </div>
             <div className="lab-preview" style={{ background: base, color: onBase }}>
               <span className="lab-preview-kicker" style={{ color: primary }}>
-                post-hardcore /// ruhr
+                post-hardcore /// augsburg
               </span>
-              <strong>DECHIRE</strong>
+              <strong>déchire</strong>
               <span className="lab-preview-rule" style={{ background: `linear-gradient(90deg, ${primary}, ${accent})` }} />
               <p style={{ color: onBase }}>
                 {colors.length} colours · contrast {contrastRatio(paper, base).toFixed(1)}:1 on the base.

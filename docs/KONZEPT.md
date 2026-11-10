@@ -1,4 +1,4 @@
-# DECHIRE · Band HQ – Concept & implementation plan
+# déchire · Band HQ – Concept & implementation plan
 
 Goal: a **local backend with a UI** where a post-hardcore band plans its social media
 presence – no agency tool, no cloud lock-in, no monthly subscription.
@@ -14,7 +14,8 @@ From the brief:
 2. **Media library** – all media organised; when the logo is needed somewhere,
    grab the right **version** (transparent, white, sticker, square …) straight away.
 3. **Notes** – another tool with *solid formatting options*.
-4. Colour world: lots of black, accent **dark pastel lavender**, post-hardcore friendly, creative.
+4. Colour world: warm black instead of blue-black, one muted ember accent, almost no colour – dark and
+   warm, not cold and corporate; a hint of 80s/90s texture, never a costume.
 
 Quality goals derived from that:
 
@@ -122,7 +123,7 @@ The problem in the brief – “when I use my logo somewhere, I want the version
 is solved by a two-level model:
 
 ```
-Asset group "DECHIRE Wordmark"
+Asset group "déchire Wordmark"
 ├── Version "White / transparent"      1080×1080, SVG
 ├── Version "Lavender / transparent"   1080×1080, SVG
 ├── Version "Sticker 1080×1080"        1080×1080, SVG
@@ -145,7 +146,7 @@ Asset group "DECHIRE Wordmark"
 ### 4.3 Folders
 
 Groups answer “which versions belong together”, folders answer “where does this live”. Both stay independent:
-an asset can sit in `Live 2026 / Cologne` *and* be part of the logo group.
+an asset can sit in `Live 2026 / München` *and* be part of the logo group.
 
 - `media_folders(id, parent_id, name, created_at)` with `ON DELETE CASCADE` for the tree, `media.folder_id` added
   through `ensureColumn` so old databases migrate in place.
@@ -241,10 +242,11 @@ portable document, not a pile of pixels.
 ### 6.5 Templates & formats
 
 - Formats: feed 1:1 (1080×1080), feed 4:5 (1080×1350), story 9:16 (1080×1920).
-- 12 templates: release, show poster, lyrics, merch drop, story announcement, statement, band photo plus the
-  genre set – *Close* (portrait, dark veil, whisper in Cormorant), *Diary* (tape, typewriter date, handwriting),
-  *Elegy* (empty black, Instrument Serif italic, two hairlines), *Bleed* (display type running off both edges,
-  halftone), *Tour Dates* (condensed rows with accent rules).
+- 12 templates, all in the dark warm language: *Release*, *Show*, *Zitat*, *Merch*, *Story*, *Statement*,
+  *Porträt* plus *Nähe* (portrait, dark veil, whisper in Cormorant), *Notiz* (tape, date, handwriting),
+  *Elegie* (empty black, Instrument Serif, two hairlines), *Lärm* (display type running off both edges) and
+  *Termine* (condensed rows with accent rules). Marketing shouting was removed on purpose: serif instead of
+  caps, fewer decorations, one accent, grain over glow.
 - **Type voice** (all self-hosted via `@fontsource`): Cormorant Garamond, Bodoni Moda, EB Garamond,
   Instrument Serif, Spectral, Special Elite, Caveat, Archivo Narrow – 17 families total. Text presets
   *Whisper / Elegy / Typewriter / Diary / Tight caps* encode the intent, so a design reads emotional before
@@ -261,8 +263,8 @@ Chosen photo → `/api/stock/import` downloads it **server-side**, writes it int
 media item tagged `stock`, licence and provider. Copying instead of hot-linking is deliberate: `html-to-image`
 needs same-origin (or CORS) images, licensing stays traceable, and the design survives the provider going down.
 CC0 means commercial use without credit or payment.
-- **Templates follow the CI**: the older templates were drawn in the default lavender. Instead of hard-coding
-  an accent into seven builders, `recolourDesign()` maps every lavender-ish colour onto the live accent when the
+- **Templates follow the CI**: the older templates were drawn in the default CI placeholder. Instead of hard-coding
+  an accent into seven builders, `recolourDesign()` maps every CI-ish colour onto the live accent when the
   template is applied (gallery preview included). Detection is `oklch`-based – hue within 16°, chroma above
   0.025 – so neutrals, bone paper and black veils are never touched; lightness *ratios* are preserved, which
   keeps light tints light and deep shades deep, alpha included.
@@ -395,7 +397,7 @@ small things that otherwise get lost.
   a two-tone accent rule, **uppercase section headings** with a thin accent tick and a fading hairline,
   tables with night-coloured header cells (the rider look), italic accent-2 blockquotes and a closing
   footer line. Everything colour-related is `--accent` / `--accent-2` (including `--accent-rgb` for the
-  translucent tints), so changing the accent in Settings changes the document too – no hardcoded lavender.
+  translucent tints), so changing the accent in Settings changes the document too – no hardcoded accent.
 - **Emoji picker** (`components/EmojiPicker.tsx`) in the toolbar: five hand-picked groups (band, mood,
   orga, road, faces) plus the last ten picks from `localStorage`, inserted at the cursor via
   `editor.chain().focus().insertContent(emoji)`.
@@ -673,9 +675,10 @@ text element inside that inner box. Music is expected to be the band's own or li
 **The plan model** (`lib/reels.ts`) is deliberately small: clips `{ mediaId, start, duration, motion }`,
 one audio window `{ mediaId, start, duration }`, the look (`grade`, `grain`, `vignette`, `fadeOut`, `flash`,
 `beatCut`, `accent`), the text layer and the beat positions. Presets are just patches
-(*Loop 8 s, Drop Teaser 15 s, Live Cut 20 s, Single Trailer 30 s*). `planClipLengths()` splits the target
+(*Nacht* 8 s, *Herz* 15 s, *Keller* 20 s, *Heimweg* 30 s). `planClipLengths()` splits the target
 duration either evenly or snapped to the beat grid – with a minimum shot length, so a beat cut never
-produces a 0.2 s flash frame.
+produces a 0.2 s flash frame. All presets stay dark and warm (grade, more grain, stronger vignette) and
+leave the beat flash off by default – the strobe is there if wanted, not the default.
 
 **Beat tracking in the browser** (`lib/beats.ts`): the audio file is fetched and decoded with
 `decodeAudioData`, then analysed in plain arithmetic – RMS envelope at 100 fps, a 3-tap smooth, half-wave
@@ -715,7 +718,8 @@ grabbed from the finished file. Both the reel and the cover become media rows (t
 draft via `POST /api/posts` with the hook as caption.
 
 **Constraints, on purpose**: no auto-captions (that needs speech recognition), original clip audio is muted
-(the song is the point), clips shorter than their slot are cut rather than looped, and rendering needs
+(the song is the point), clips shorter than their slot are cut rather than looped, SVG artwork cannot be used
+as a clip (export it to PNG first – ffmpeg has no SVG decoder), and rendering needs
 ffmpeg on the server (`FFMPEG_PATH` overrides the binary). If ffmpeg is missing the page says so instead of
 failing silently.
 
@@ -725,37 +729,36 @@ failing silently.
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--ink` | `#06060a` | Background, near black |
-| `--panel` | `#100e17` | Cards, panels |
-| `--text` | `#efeaf7` | Body copy |
-| `--muted` | `#9a91b2` | Secondary text |
-| `--accent` | `#b9a5e8` | Pastel lavender, interaction, focus (profile accent) |
-| `--accent-rgb` | `185 165 232` | Same colour as `r g b` – every translucent tint uses `rgb(var(--accent-rgb) / x)`, so a new accent reaches every surface |
+| `--ink` | `#070605` | Background, warm near-black |
+| `--panel` | `#110e0c` | Cards, panels |
+| `--text` | `#ece4d8` | Body copy |
+| `--muted` | `#9a8d81` | Secondary text |
+| `--accent` | `#b87a63` | Muted ember, interaction, focus (profile accent) |
+| `--accent-rgb` | `184 122 99` | Same colour as `r g b` – every translucent tint uses `rgb(var(--accent-rgb) / x)`, so a new accent reaches every surface |
 | `--accent-2` | derived | **Second working colour** (`profile.accent_2_hex`, *Auto* = sibling tone, hue +26°): page kickers, panel icons, `scheduled` badges, meta labels, document kicker, milestone dates, selection, `.chip.secondary` – plus gradients and two-tone rules |
 | `--accent-2-deep` / `--accent-2-soft` | derived | Depth + tint of the second colour |
-| `--accent-deep` | `#6b54a6` | Gradients, depth |
-| `--ok / --warn / --danger` | `#7fd3b0 / #e8c07d / #e4778b` | Status |
+| `--accent-deep` | `#6e3b2c` | Gradients, depth |
+| `--ok / --warn / --danger` | `#8aa891 / #c9a06a / #b25b60` | Status |
 
-### CI palette “Bruised Bloom”
+### CI palette “Ascheglut”
 
-Emotional post-hardcore means, for us: **no cold agency CI**. The palette tells a
-story – black stage, lavender haze, warm bone paper from copied flyers,
-rust on the amp, a wound that never quite closes, and cold moss/fog grey in between
-as a calm counterweight. Lavender stays the core (as originally requested) but gains
-warmth and friction through rust and wound.
+Emotional post-hardcore means: **no agency CI, no colour that wants attention**. The
+palette stays inside one warm, dark room – soot, ash, bone, a muted ember for
+the few places that need an accent, and a dark rust that only shows up in print.
+Darker accents beat louder ones: the light is low on purpose, but it is not lost.
 
 | Name | Hex | Role | Emotion / use |
 | --- | --- | --- | --- |
-| Night | `#08070b` | Base | Stage, ground, “everything off” |
-| Ash | `#16121e` | Base | Panels, shadows with warmth |
-| Dusk | `#2b2238` | Deep | Gradients, depth layering |
-| Lavender | `#b9a5e8` | Primary | Core accent, light in the haze |
-| Violet | `#6b54a6` | Accent | Gradient partner, depth in the accent |
-| Bone | `#efe7da` | Paper | Warm white for type on dark |
-| Rust | `#c86a4a` | Warm | Energy, amps, dust |
-| Wound | `#c0455a` | Signal | Emotion, highlights, errors |
-| Moss | `#7e9c94` | Calm | Cold counterweight, melancholy |
-| Fog | `#8792a6` | Neutral | Secondary text, distance |
+| Night | `#0a0807` | Base | Stage, ground, “everything off” |
+| Soot | `#141110` | Base | Panels, shadows with warmth |
+| Ash | `#231c18` | Deep | Gradients, depth layering |
+| Umbra | `#33261f` | Deep | Second depth for vignettes and paper |
+| Ember | `#b87a63` | Primary | The only real accent: buttons, kickers, embers |
+| Rust | `#6e3b2c` | Warm | Amps, dust, print ink |
+| Bone | `#e9e0d2` | Paper | Warm white for type on dark |
+| Wound | `#5f2a2e` | Signal | Emotion, errors, the quiet wound |
+| Moss | `#5e6b5a` | Calm | Cold counterweight, melancholy |
+| Smoke | `#8d8178` | Neutral | Secondary text, distance |
 
 **Technically** the palette lives in the `palette` table (name, hex, role, position).
 `PaletteProvider` loads it client-side and distributes it via context to every `ColorField` picker;
@@ -787,8 +790,8 @@ the dashboard all change with one colour now.
 
 - Grotesk stack (Inter/SF/Helvetica), headlines 800–900 with negative tracking,
   mono labels in uppercase with wide letter-spacing – zine/poster feel without kitsch.
-- Background: two lavender glows + fine SVG noise overlay (fixed, pointer-events: none).
-- Cards with 1 px lines in lavender alpha, hover lift, soft drop shadows.
+- Background: one ember glow + fine SVG noise overlay (fixed, pointer-events: none).
+- Cards with 1 px lines in ember alpha, hover lift, soft drop shadows.
 - Consistent “///” separators, status pills, locked lowercase for meta information.
 
 ### Interaction
@@ -896,7 +899,7 @@ site         (id=1, published, band_name, tagline, manifesto JSON (the letter),
 - [x] Design studio: text, shapes, stickers, textures, media, layers, templates, 3 formats.
 - [x] Move, resize, rotate, snapping, undo/redo, duplicate, lock, hide.
 - [x] PNG export at 2× resolution, save to the library, straight to a draft post.
-- [x] CI palette “Bruised Bloom” definable in one place, visible as its own row in every colour picker.
+- [x] CI palette “Ascheglut” definable in one place, visible as its own row in every colour picker.
 - [x] Interface accent colour changeable in the settings, applied instantly and persisted with the profile.
 - [x] Calendar with milestones (type, note, done), month navigation, selected day and upcoming list.
 - [x] Documents: technical rider and other templates, tables, autosave, folders, public share links, print-to-PDF and HTML export.
@@ -912,4 +915,4 @@ site         (id=1, published, band_name, tagline, manifesto JSON (the letter),
 - [x] Manual performance numbers and best-weekday insight from real data.
 - [x] Public one-pager (`/site`) that reads like a letter: hero, letter + crew, media corner, feed strip, links,
       footer — every block switchable in `/website` with a live desktop/mobile preview, plus a pre-launch gate.
-- [x] Black/lavender design, responsive down to mobile.
+- [x] Warm black/ember design, responsive down to mobile.

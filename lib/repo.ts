@@ -642,7 +642,7 @@ export function getProfile(): Profile {
   const row = queryOne<any>('SELECT * FROM profile WHERE id = 1');
   if (!row) {
     return {
-      bandName: 'DECHIRE',
+      bandName: 'déchire',
       handle: 'dechire.band',
       bio: '',
       website: '',

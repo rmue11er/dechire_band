@@ -140,10 +140,10 @@ export default function SitePage() {
             <div className="sf-hero-lead">
               <h1 className="sf-title">
                 <span className="sf-title-main">
-                  <Letters text={bandName.toUpperCase()} />
+                  <Letters text={bandName} />
                 </span>
                 <span className="sf-title-ghost" aria-hidden="true">
-                  {bandName.toUpperCase()}
+                  {bandName}
                 </span>
               </h1>
 
@@ -164,7 +164,7 @@ export default function SitePage() {
 
           <div className="sf-hero-foot">
             <a className="sf-scroll" href="#note">
-              read the note <span aria-hidden="true">↓</span>
+              lies den brief <span aria-hidden="true">↓</span>
             </a>
           </div>
         </header>
@@ -215,7 +215,7 @@ export default function SitePage() {
           </span>
           <div className="site-wrap sf-note-wrap">
             <Reveal className="sf-note-text">
-              <span className="sf-label">a note from us</span>
+              <span className="sf-label">ein brief von uns</span>
 
               {settings.introTitle ? <h2 className="sf-note-title">{settings.introTitle}</h2> : null}
 
@@ -270,7 +270,7 @@ export default function SitePage() {
         <section className="sf-block">
           <div className="site-wrap">
             <Reveal className="sf-teaser">
-              <span className="sf-label">{teaser.kind === 'video' ? 'a clip' : 'somewhere else'}</span>
+              <span className="sf-label">{teaser.kind === 'video' ? 'ein clip' : 'woanders'}</span>
               <div className="sf-teaser-frame">
                 {teaser.kind === 'video' ? (
                   <video src={teaser.src} controls playsInline />
@@ -297,8 +297,8 @@ export default function SitePage() {
           </span>
           <div className="site-wrap">
             <Reveal className="sf-label sf-label-wide">
-              {settings.feedTitle || 'from the feed'}
-              <span className="sf-label-aside">the last things we put outside</span>
+              {settings.feedTitle || 'aus dem proberaum'}
+              <span className="sf-label-aside">das letzte, was wir rausgelassen haben</span>
             </Reveal>
 
             <div className="sf-wall">
@@ -329,16 +329,16 @@ export default function SitePage() {
           </span>
           <div className="site-wrap">
             <Reveal className="sf-press">
-              <span className="sf-label">say hi</span>
+              <span className="sf-label">schreib uns</span>
               <blockquote>
                 {settings.pressQuote ||
-                  'Booking, collabs, or just to tell us a song helped — the inbox is open and we answer, eventually.'}
+                  'Booking, Kollaborationen – oder einfach, um zu sagen, dass ein Song geholfen hat. Die Inbox ist offen, wir antworten irgendwann.'}
               </blockquote>
               {settings.pressSource ? <cite>{settings.pressSource}</cite> : null}
             </Reveal>
 
             <Reveal className="sf-links" delay={70}>
-              <span className="sf-links-head">where to find us</span>
+              <span className="sf-links-head">wo du uns findest</span>
               <ul>
                 {settings.links.map((link, index) => (
                   <li key={`${link.label}-${index}`}>
@@ -353,7 +353,7 @@ export default function SitePage() {
                   </li>
                 ))}
               </ul>
-              <span className="sf-links-foot">{settings.footerNote || `post-hardcore /// ${year}`}</span>
+              <span className="sf-links-foot">{settings.footerNote || `augsburg /// ${year}`}</span>
             </Reveal>
           </div>
         </section>

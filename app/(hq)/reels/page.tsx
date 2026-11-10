@@ -87,20 +87,20 @@ const sourceDuration = (url: string) =>
   });
 
 const DEFAULT_LOOK: ReelLook = {
-  grade: 'film',
-  grain: 10,
-  vignette: 0.45,
+  grade: 'warm',
+  grain: 16,
+  vignette: 0.5,
   fadeOut: true,
-  flash: true,
+  flash: false,
   beatCut: true,
-  accent: '#b9a5e8',
+  accent: '#b87a63',
 };
 
 const DEFAULT_TEXT: ReelText = {
   kicker: '',
   hook: '',
   sub: '',
-  style: 'block',
+  style: 'serif',
   align: 'left',
   place: 'low',
   showHandle: true,
@@ -306,6 +306,7 @@ export default function ReelsPage() {
     const chosen = ids
       .map((id) => media.find((item) => item.id === id))
       .filter((item): item is MediaItem => Boolean(item))
+      .filter((item) => item.mime !== 'image/svg+xml')
       .slice(0, room);
     if (!chosen.length) return;
     const next: ClipState[] = [];
@@ -461,7 +462,7 @@ export default function ReelsPage() {
           type: 'reel',
           status: 'draft',
           caption,
-          altText: `${profile?.bandName ?? 'DECHIRE'} – ${text.hook.trim() || 'Reel'}`,
+          altText: `${profile?.bandName ?? 'déchire'} – ${text.hook.trim() || 'Reel'}`,
           songTitle: audioMedia?.title ?? '',
           songArtist: profile?.bandName ?? '',
           mediaIds: [job.mediaId],
@@ -852,7 +853,7 @@ export default function ReelsPage() {
                   <input
                     className="input"
                     value={text.kicker}
-                    placeholder="New single"
+                    placeholder="Neue Single"
                     onChange={(event) => setText((current) => ({ ...current, kicker: event.target.value }))}
                   />
                 </Field>
@@ -860,7 +861,7 @@ export default function ReelsPage() {
                   <input
                     className="input"
                     value={text.sub}
-                    placeholder="Out now · everywhere"
+                    placeholder="überall, wo du hörst"
                     onChange={(event) => setText((current) => ({ ...current, sub: event.target.value }))}
                   />
                 </Field>
@@ -872,7 +873,7 @@ export default function ReelsPage() {
                   rows={2}
                   maxLength={48}
                   value={text.hook}
-                  placeholder="FRACTURE"
+                  placeholder="fracture"
                   onChange={(event) => setText((current) => ({ ...current, hook: event.target.value }))}
                 />
               </Field>
@@ -942,7 +943,7 @@ export default function ReelsPage() {
               <div className="reel-look-row">
                 <Field label="Look">
                   <div className="reel-chips">
-                    {(['none', 'film', 'mono', 'bleed'] as ReelGrade[]).map((value) => (
+                    {(['none', 'warm', 'mono', 'faded'] as ReelGrade[]).map((value) => (
                       <button
                         key={value}
                         type="button"

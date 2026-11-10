@@ -141,7 +141,7 @@ export default function ReleaseDetailPage() {
 
   const stats = useMemo(() => waveStats(tasks), [tasks]);
   const days = release ? daysUntil(release.releaseDate) : 0;
-  const bandName = profile?.bandName ?? 'DECHIRE';
+  const bandName = profile?.bandName ?? 'déchire';
   const currentPhase = phaseFor(-days);
   const documentById = useMemo(
     () => new Map(documents.map((entry) => [entry.id, entry])),

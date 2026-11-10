@@ -145,7 +145,7 @@ export default function StudioGallery() {
             Post<span className="slash">/</span>Builder
           </>
         }
-        sub="Build images from scratch – Canva style: text, shapes, stickers, textures and your own media. Export as PNG or turn it straight into a post."
+        sub="Bilder von Hand bauen: Schrift, Formen, Texturen, eigene Fotos. Export als PNG – oder direkt als Post."
         actions={
           <button type="button" className="btn btn-primary" onClick={() => setNewOpen(true)}>
             <IconPlus size={15} />

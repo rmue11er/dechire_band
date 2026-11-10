@@ -179,8 +179,8 @@
   font-weight: 400;
   font-size: clamp(58px, 15.5vw, 200px);
   line-height: 0.84;
-  letter-spacing: -0.012em;
-  text-transform: uppercase;
+  letter-spacing: -0.005em;
+  text-transform: none;
   color: var(--site-bone);
 }
 

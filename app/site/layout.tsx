@@ -10,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const description =
     settings.seoDescription ||
     settings.tagline ||
-    'Post-hardcore from the Ruhr. Four people, a few songs, no plan.';
+    'Emotional Post-Hardcore aus Augsburg. Vier Leute, ein paar Songs, kein großer Plan.';
   return {
     title: settings.published ? bandName : `${bandName} · soon`,
     description,

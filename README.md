@@ -1,4 +1,4 @@
-# DECHIRE · Band HQ
+# déchire · Band HQ
 
 **Two things in one repo:** an internal workspace for everything a band needs around social media and
 paperwork — and a small public one-pager that is configured from inside it.
@@ -11,7 +11,7 @@ paperwork — and a small public one-pager that is configured from inside it.
 ![Public site – hero](docs/screenshots/site-hero.jpg)
 
 Everything is local: **SQLite via the built-in `node:sqlite`** (no database server, no native dependencies),
-uploads on disk, no cloud, no external services. Black, ash, pastel lavender. Post-hardcore.
+uploads on disk, no cloud, no external services. Warm black, bone, ember – almost no colour. Emotional post-hardcore from Augsburg.
 
 ---
 
@@ -60,7 +60,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   `///` accent tick. Dashboard figures use the poster face too, so numbers read like a gig flyer, not a BI tool.
 - **Shell**: a 246 px sidebar with numbered entries (`01 … 11`), grouped by `/// STUDIO` / `/// SETUP`, a quick-jump
   field that forwards `⌘K` to the command palette, and a slim sticky **context bar** on every page
-  (`DECHIRE /// MEDIA` · date · `⌘K`). Content is capped at 1560 px and centred; a 2 px accent strip sits at the
+  (`déchire /// MEDIA` · date · `⌘K`). Content is capped at 1560 px and centred; a 2 px accent strip sits at the
   very top of the app.
 - **Components**: buttons, inputs, panels, badges, tables, empty states, modals and toasts share one language –
   2–3 px radii, 1 px hairlines, accent focus ring, a crop-mark corner on panels, mono uppercase labels.
@@ -111,13 +111,14 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   - **Extras**: 10 stickers (asterisk, spark, bolt, arrow, X, brackets, dots, wave, heart, circle)
     and 6 textures (grain, halftone, scanlines, stripes, grid, vignette) with blend modes.
   - **Layers**: list with visibility, lock, order and delete.
-- **7 templates**: release slammer, show poster, lyrics, merch drop, story announcement, statement, band photo.
-  Templates are drawn in the band's CI and are **re-coloured to the live accent** on the way in
+- **12 templates, all dark and warm**: *Release* (serif type instead of a poster shout), *Show* (date +
+  city, print frame), *Zitat* (song line, two hairlines), *Merch* (50 Stück, dark), *Story* (Jetzt draußen),
+  *Statement* (Instrument Serif, no paper flash), *Porträt* (photo, warm grade, lowercase wordmark),
+  *Nähe* (full-bleed portrait, Cormorant whisper), *Notiz* (tape, handwriting), *Elegie* (almost empty black),
+  *Lärm* (type bleeding off the story edges) and *Termine* (Augsburg, München, Stuttgart …).
+  Templates are drawn in the CI placeholder and are **re-coloured to the live accent** on the way in
   (`recolourDesign()` in `lib/studio.ts`) – change the accent in Settings and every new design, every preview
   and every existing design (via *Directions → Brand accent*) follows.
-- **5 more templates for the genre**: *Close* (full-bleed portrait, Cormorant whisper over a dark veil),
-  *Diary* (tape strips, typewriter date, handwritten note), *Elegy* (almost empty black, Instrument Serif
-  italic), *Bleed* (type bleeding off the story edges, halftone), *Tour Dates* (condensed date rows).
 - **17 fonts, all self-hosted** – beside the poster faces (Anton, Bebas, Archivo Black, Oswald) the post-hardcore
   voice: **Cormorant Garamond**, **Bodoni Moda**, **EB Garamond**, **Instrument Serif**, **Spectral**,
   **Special Elite** (typewriter), **Caveat** (handwriting), **Archivo Narrow**. New text presets *Whisper,
@@ -129,7 +130,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   design keeps working when the provider is offline.
 - **Directions**: six one-click takes on the current canvas – *Paper* (light flyer stock, ink type),
   *Deep* (blacker, hotter glow), *Mono* (no colour, all texture), *Tilt* (everything a few degrees off the
-  grid), *Outline* (hollow display type) and *Brand accent* (pulls every old lavender onto your current CI).
+  grid), *Outline* (hollow display type) and *Brand accent* (pulls every CI placeholder colour onto your current accent).
   Each direction is a full design, so applying one is a single undoable step; the grid shows live previews.
 - **Formats**: feed 1:1, feed 4:5, story 9:16 – including “fit elements to format” and a **“3 sizes” export**
   that renders 1080×1080, 1080×1350 and 1080×1920 and packages all three PNGs into one ZIP
@@ -149,7 +150,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   back to *Unfiled*. Uploads land in the folder you have open. Any file can also be re-filed from its detail dialog
   (`Folder` select, indented tree).
 - Upload via button or **drag & drop** onto the window, images and videos.
-- **Asset groups = versions**: a logo exists as “White/transparent”, “Lavender”, “Sticker 1080×1080”,
+- **Asset groups = versions**: a logo exists as “White/transparent”, “Ember”, “Sticker 1080×1080”,
   “Social avatar” and so on. Every version downloads on its own (`?download=1`) or via “download version” in the group dialog.
 - Search across title, version, tags and filename; filter by images / logos / video.
 - Detail dialog: title, version label, group, tags, alt text, dimensions, size, **where the asset is used**
@@ -225,10 +226,10 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 
 ### 7. Colour lab (`/palette`)
 The band's palette is not guessed any more – it is searched. Everything runs in **OKLCH**, so “pastel”,
-“muted” or “a sibling of our lavender” are numbers instead of vibes (`lib/colorlab.ts`).
+“muted” or “a sibling of our ember” are numbers instead of vibes (`lib/colorlab.ts`).
 
 - **Guided search**: type what you mean – `pastel purple`, `muted moss`, `warm rust`,
-  `complement of lavender` – and the query is parsed into hue family + mood + harmony. Chips for
+  `complement of ember` – and the query is parsed into hue family + mood + harmony. Chips for
   mood (pastel, muted, dark, bright, neon, earthy, vintage) and harmony (analogous, complementary,
   split, triad, tetrad, mono), plus lightness/chroma sliders when you want to drive it yourself.
 - **Scoring**: every candidate is ranked against the palette you already have – hue relationship to the
@@ -325,7 +326,7 @@ does not come back) or **reset** (wipe + demo data again).
 - **⌘K / Ctrl+K** opens a command palette that searches posts, assets, notes, documents, milestones,
   designs and snippets and jumps straight there.
 
-### CI palette “Bruised Bloom”
+### CI palette “Ascheglut”
 The band colours live in the database (`palette`) and are managed through `/api/palette`.
 In settings you can change name, hex value, role and order, add new colours
 and restore the defaults. Every colour picker in the design studio shows the CI as its own
@@ -333,16 +334,19 @@ row “Band CI” above the neutral tones – with names as tooltips.
 
 | Name | Hex | Role |
 | --- | --- | --- |
-| Night | `#08070b` | Base |
-| Ash | `#16121e` | Base |
-| Dusk | `#2b2238` | Deep |
-| Lavender | `#b9a5e8` | Primary |
-| Violet | `#6b54a6` | Accent |
-| Bone | `#efe7da` | Paper |
-| Rust | `#c86a4a` | Warm |
-| Wound | `#c0455a` | Signal |
-| Moss | `#7e9c94` | Calm |
-| Fog | `#8792a6` | Neutral |
+| Night | `#0a0807` | Base |
+| Soot | `#141110` | Base |
+| Ash | `#231c18` | Deep |
+| Umbra | `#33261f` | Deep |
+| Ember | `#b87a63` | Primary |
+| Rust | `#6e3b2c` | Warm |
+| Bone | `#e9e0d2` | Paper |
+| Wound | `#5f2a2e` | Signal |
+| Moss | `#5e6b5a` | Calm |
+| Smoke | `#8d8178` | Neutral |
+
+The accent is a muted ember, not a signal colour: enough presence for buttons and kickers, but it never
+shouts. Everything else stays between soot, ash and bone – the few colours that exist are warm and dark.
 
 ### Interface accent colour
 
@@ -363,7 +367,7 @@ partner. It carries the *information* layer of the UI while the primary carries 
 Leave it on *Auto* and the second tone is a sibling of the primary (hue +26°, slightly lighter, a bit
 less chroma) – recognisably its own colour, still in the family. Pick a CI colour and it takes over
 everywhere at once (also possible from the colour lab with the `2nd` button on any swatch). Nothing in
-the app hardcodes a lavender value any more – every translucent surface uses
+the app hardcodes an accent value any more – every translucent surface uses
 `rgb(var(--accent-rgb) / x)` or `rgb(var(--accent-2-rgb) / x)`, so notes, studio, planner, media,
 documents, dashboard and the brand sheet all follow the two colours you pick.
 
@@ -413,8 +417,8 @@ the media library and the document module, so the kit is never out of date.
 
 ### 13. Reel Lab (`/reels`)
 The mini reel machine: clips from the library, one song, three steps, one MP4.
-- **Presets** – Loop 8 s, Drop Teaser 15 s, Live Cut 20 s, Single Trailer 30 s. Each one sets length,
-grade, grain, vignette, motion and the beat flash in a click.
+- **Presets** – Nacht 8 s, Herz 15 s, Keller 20 s, Heimweg 30 s. Each one sets length, grade, grain,
+vignette, motion and the beat flash in a click – all warm, dark, without strobe.
 - **Clips** – 1–12 videos or photos, reorderable, each with a trim offset and a motion
 (*still / push / pull*). Videos are cropped to 9:16 (`force_original_aspect_ratio=increase,crop`), photos
 get a Ken Burns move through `zoompan`.
@@ -430,7 +434,8 @@ safe-zone guides and the live text sit on top. Grain, vignette and grade are app
 trim/crop/motion per clip, concat, grade, grain, vignette, overlay PNG, beat flashes, fade-out,
 `loudnorm I=-14`, AAC 48 kHz, H.264 CRF 20, 1080×1920 @ 30 fps, `+faststart`; a cover JPEG is grabbed from
 the result. Both appear in the media library, and *In den Planner* creates a reel draft with the hook as
-caption. Needs **ffmpeg** on the server (`FFMPEG_PATH` if it lives outside `PATH`).
+  caption. Clips must be raster photos (PNG/JPG/WebP) or videos – SVG artwork has to be exported to PNG first.
+  Needs **ffmpeg** on the server (`FFMPEG_PATH` if it lives outside `PATH`).
 
 ## Export format
 

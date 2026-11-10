@@ -67,7 +67,7 @@ export default function Sidebar() {
       <Link href="/" className="brand">
         <div className="brand-mark">D</div>
         <div className="brand-text">
-          <span className="brand-name">DECHIRE</span>
+          <span className="brand-name">déchire</span>
           <span className="brand-sub">Band HQ</span>
         </div>
       </Link>
@@ -116,8 +116,8 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-foot">
-        <strong>Loud. Honest. Unpolished.</strong>
-        <span className="mono">POST-HARDCORE /// 2026</span>
+        <strong>Dunkel. Ehrlich. Nah.</strong>
+        <span className="mono">POST-HARDCORE /// AUGSBURG</span>
         <div className="sidebar-links">
           <a className="mono" href="/site" target="_blank" rel="noreferrer">
             Public site ↗

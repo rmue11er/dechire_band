@@ -157,7 +157,7 @@ export default function BrandSheetPage() {
             <div className="bs-type">
               <div className="bs-type-row">
                 <span className="bs-type-label">Display · Anton</span>
-                <span className="bs-sample display">DECHIRE</span>
+                <span className="bs-sample display">déchire</span>
               </div>
               <div className="bs-type-row">
                 <span className="bs-type-label">Headline · Bebas Neue</span>
@@ -170,12 +170,12 @@ export default function BrandSheetPage() {
               <div className="bs-type-row">
                 <span className="bs-type-label">Body · Inter</span>
                 <span className="bs-sample body">
-                  Post-hardcore from the Ruhr. Loud, honest, unpolished – and always at eye level with the room.
+                  Emotional Post-Hardcore aus Augsburg. Dunkel, düster, aber nicht verloren – und immer auf Augenhöhe mit dem Raum.
                 </span>
               </div>
               <div className="bs-type-row">
                 <span className="bs-type-label">Mono · Space Mono</span>
-                <span className="bs-sample mono-label">POST-HARDCORE /// DECHIRE · 2026</span>
+                <span className="bs-sample mono-label">POST-HARDCORE /// AUGSBURG · 2026</span>
               </div>
             </div>
           </section>

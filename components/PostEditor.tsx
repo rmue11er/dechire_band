@@ -27,7 +27,7 @@ import type { MediaItem, Post, PostStatus, PostType } from '@/lib/types';
 
 type Tab = 'content' | 'publish' | 'insights';
 
-const HASHTAGS = '#dechire #posthardcore #ruhr #livemusic #newrelease #band';
+const HASHTAGS = '#déchire #posthardcore #augsburg #livemusic';
 
 const FOLD = 125;
 
@@ -592,7 +592,7 @@ export default function PostEditor({
                     <IconMapPin size={14} />
                     <input
                       className="input"
-                      placeholder="Halle (Saale)"
+                      placeholder="Augsburg"
                       value={location}
                       onChange={(event) => setLocation(event.target.value)}
                     />
@@ -613,7 +613,7 @@ export default function PostEditor({
               <Field label="Artist">
                 <input
                   className="input"
-                  placeholder="DECHIRE"
+                  placeholder="déchire"
                   value={songArtist}
                   onChange={(event) => setSongArtist(event.target.value)}
                 />

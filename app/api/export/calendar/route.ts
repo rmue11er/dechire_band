@@ -25,10 +25,10 @@ export async function GET() {
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//DECHIRE Band HQ//Calendar//EN',
+    'PRODID:-//déchire Band HQ//Calendar//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'X-WR-CALNAME:DECHIRE · Band HQ',
+    'X-WR-CALNAME:déchire · Band HQ',
     'X-WR-TIMEZONE:Europe/Berlin',
   ];
 

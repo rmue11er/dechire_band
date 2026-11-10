@@ -5,7 +5,7 @@ import { authEnabled } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'DECHIRE · Sign in',
+  title: 'déchire · Sign in',
   robots: { index: false, follow: false },
 };
 

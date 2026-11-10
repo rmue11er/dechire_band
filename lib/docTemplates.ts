@@ -26,7 +26,7 @@ export const DOC_TEMPLATES: DocTemplate[] = [
     hint: 'Line-up, channel list, monitoring, backline, hospitality',
     content: `
 <h2>1 · Band</h2>
-<p><strong>DECHIRE</strong> – post-hardcore, 5 piece. Home base: Essen, Germany.<br>Set length: 60 minutes. No playback, no backing tracks.</p>
+<p><strong>déchire</strong> – emotional post-hardcore, 5 people. Home base: Augsburg, Germany.<br>Set length: 60 minutes. No playback, no backing tracks.</p>
 <h2>2 · Contacts</h2>
 ${table(
   ['Role', 'Name', 'Phone / mail'],
@@ -88,7 +88,7 @@ ${table(
     hint: 'Fee, billing, cancellation, curfew',
     content: `
 <h2>Booking confirmation</h2>
-<p><strong>Between</strong> the promoter and <strong>DECHIRE</strong>, represented by tour management.</p>
+<p><strong>Between</strong> the promoter and <strong>déchire</strong>, represented by tour management.</p>
 <h2>1 · Event</h2>
 ${table(
   ['Item', 'Detail'],
@@ -124,7 +124,7 @@ ${table(
 ${table(
   ['Time', 'What', 'Who / where'],
   [
-    ['12:00', 'Departure', 'Backline van, Essen'],
+    ['12:00', 'Departure', 'Backline van, Augsburg'],
     ['16:30', 'Load-in', 'Gate 3, backyard'],
     ['18:00', 'Soundcheck', '45 minutes'],
     ['19:00', 'Line check / dinner', ''],
@@ -152,13 +152,13 @@ ${table(
     hint: 'Short and long bio for promoters and press',
     content: `
 <h2>Short (50 words)</h2>
-<p>DECHIRE come from the Ruhr and play post-hardcore that sounds like a room with the light switched off. Loud, honest, unpolished.</p>
+<p>déchire machen emotionalen Post-Hardcore aus Augsburg. Dunkel, düster, aber nicht verloren – Musik für den Moment, in dem man merkt, dass man angekommen ist.</p>
 <h2>Long (150 words)</h2>
-<p>DECHIRE started in a rehearsal room in Essen – no plan, no budget, but a lot of frustration and a borrowed amp. Ten years later the band still sounds like that room: heavy guitars, vocals that keep slipping between singing and screaming, songs that break before they get comfortable.</p>
-<p>With <strong>Fracture</strong> DECHIRE released the most direct record so far: three minutes that cost the band two years. The lyrics are about the moment something breaks and you decide to keep the pieces.</p>
-<p>Live the band plays almost the entire record, without playback, without a click.</p>
+<p>déchire kommen aus einem Proberaum in Augsburg: kein Plan, kein Budget, dafür ein geliehener Amp und sehr viel Ungeduld. Auch Jahre später klingt die Band wie dieser Raum – schwere Gitarren, eine Stimme zwischen Singen und Schreien, Songs, die kaputtgehen, bevor sie sich bequem einrichten.</p>
+<p>Mit <strong>Fracture</strong> ist die bislang direkteste Aufnahme entstanden: drei Minuten, die zwei Jahre gekostet haben. Es geht um den Moment, in dem etwas bricht – und um die Entscheidung, die Stücke zu behalten.</p>
+<p>Live spielt die Band fast das ganze Album, ohne Playback, ohne Klick. Kein großes Programm, keine große Produktion. Nur der Raum, die Songs und die Leute davor.</p>
 <h2>Quotes</h2>
-<blockquote>“Post-hardcore from the Ruhr – loud, honest, unpolished.”</blockquote>
+<blockquote>“Dunkel, düster, aber nicht verloren.”</blockquote>
 <h2>Links</h2>
 <p>Instagram: @dechire.band · Music: dechire.band/links · Booking: booking@dechire.band</p>
 `.trim(),

@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS profile (
   following INTEGER NOT NULL DEFAULT 0,
   avatar_media_id INTEGER,
   highlight_names TEXT NOT NULL DEFAULT '[]',
-  accent_hex TEXT NOT NULL DEFAULT '#b9a5e8',
+  accent_hex TEXT NOT NULL DEFAULT '#b87a63',
   updated_at TEXT NOT NULL
 );
 
@@ -261,7 +261,7 @@ CREATE TABLE IF NOT EXISTS fonts (
 CREATE TABLE IF NOT EXISTS site (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   published INTEGER NOT NULL DEFAULT 0,
-  band_name TEXT NOT NULL DEFAULT 'DECHIRE',
+  band_name TEXT NOT NULL DEFAULT 'déchire',
   tagline TEXT NOT NULL DEFAULT '',
   manifesto TEXT NOT NULL DEFAULT '[]',
   intro_title TEXT NOT NULL DEFAULT '',
@@ -327,17 +327,18 @@ function ensurePalette(db: DatabaseSync) {
 }
 
 const SITE_LETTER = [
-  "We're four people from the Ruhr who never learned how to do this properly.",
-  "DECHIRE started as an excuse to keep meeting: one room, one amp that hums, songs that mostly complain about the weather and about each other.",
-  "We don't tour. We don't have a label. We record what we have and put it out, hoping it lands somewhere near you.",
-  "Thank you for listening. Honestly, that's the whole reason any of this exists.",
+  'wir sind vier leute aus augsburg. wir machen das nicht besonders gut, aber wir machen es ehrlich.',
+  'irgendwann war der proberaum der einzige ort, an dem alles gleichzeitig laut und ruhig sein durfte.',
+  'déchire ist kein projekt. eher ein zustand: dunkel, düster, aber nicht verloren.',
+  'wir touren nicht viel. wir nehmen auf, was da ist, und stellen es online. wenn es dich irgendwo erreicht, hat es gereicht.',
+  'danke fürs zuhören. das ist wirklich der ganze grund.',
 ];
 
 const SITE_CREW = [
-  { name: 'Marla', role: 'voice' },
-  { name: 'Bene', role: 'guitar' },
-  { name: 'Jonte', role: 'bass' },
-  { name: 'Tobi', role: 'drums' },
+  { name: 'Marla', role: 'Stimme' },
+  { name: 'Bene', role: 'Gitarre' },
+  { name: 'Jonte', role: 'Bass' },
+  { name: 'Tobi', role: 'Schlagzeug' },
 ];
 
 /** Default content for the public one-pager – also applied to older databases. */
@@ -368,13 +369,13 @@ function ensureSite(db: DatabaseSync) {
        show_hero, show_intro, show_media, show_feed, show_connect, show_footer, feed_title,
        teaser_url, show_teaser, links, press_quote, press_source, footer_note, seo_description,
        accent_hex, updated_at)
-     VALUES (1, 1, 'DECHIRE', ?, ?, 'hello.', '— Marla, Bene, Jonte & Tobi', ?, ?, '', 40, 1,
-       'photos', 'shot on phones, mostly in the dark', ?,
-       1, 1, 1, 1, 1, 1, 'FROM THE FEED', '', 1, ?, '', '',
-       '© 2026 DECHIRE · written in the Ruhr, recorded in the dark',
-       'DECHIRE — post-hardcore from the Ruhr. Four people, a few songs, no plan.', '', ?)`
+     VALUES (1, 1, 'déchire', ?, ?, 'hallo.', '— Marla, Bene, Jonte & Tobi', ?, ?, '', 40, 1,
+       'bilder', 'meistens nachts, meistens mit dem handy', ?,
+       1, 1, 1, 1, 1, 1, 'AUS DEM PROBERAUM', '', 1, ?, '', '',
+       '© 2026 déchire · augsburg · aufgenommen im dunkeln',
+       'déchire – emotionaler Post-Hardcore aus Augsburg. Dunkel, düster, aber nicht verloren.', '', ?)`
   ).run(
-    'Post-hardcore from the Ruhr. Loud, honest, unpolished.',
+    'Emotional Post-Hardcore aus Augsburg.',
     JSON.stringify(SITE_LETTER),
     JSON.stringify(SITE_CREW),
     hero?.id ?? null,
@@ -421,7 +422,7 @@ function createConnection(): DatabaseSync {
   }
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec(SCHEMA);
-  ensureColumn(db, 'profile', 'accent_hex', "TEXT NOT NULL DEFAULT '#b9a5e8'");
+  ensureColumn(db, 'profile', 'accent_hex', "TEXT NOT NULL DEFAULT '#b87a63'");
   ensureColumn(db, 'profile', 'accent_2_hex', 'TEXT');
   ensureColumn(db, 'profile', 'doc_media_id', 'INTEGER');
   ensureColumn(db, 'profile', 'doc_mark_strength', 'INTEGER NOT NULL DEFAULT 30');

@@ -68,7 +68,7 @@ export function postMetadata(post: Post) {
 
 export function postReadme(post: Post) {
   const song = post.songTitle ? `${post.songTitle}${post.songArtist ? ` – ${post.songArtist}` : ''}` : '—';
-  return `DECHIRE · BAND HQ
+  return `déchire · Band HQ
 ====================
 
 POST #${post.id}
@@ -87,7 +87,7 @@ HOW TO POST
 5. Add music → search for "${post.songTitle || '—'}"
 6. Use the alt text from "post.json" (Advanced → Write alt text)
 
-GOOD LUCK. /// DECHIRE
+danke fürs zuhören. /// déchire
 `;
 }
 

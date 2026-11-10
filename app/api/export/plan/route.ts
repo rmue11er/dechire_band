@@ -83,7 +83,7 @@ export async function GET() {
   });
 
   archive.append(
-    `DECHIRE · BAND HQ – Full export
+    `déchire · Band HQ – Full export
 Date: ${new Date().toLocaleString('en-GB')}
 
 Contents
@@ -93,7 +93,7 @@ posts/                      One folder per post: media, caption, upload guide
 media/                      Complete media library (all versions)
 notes/                      All notes as HTML (readable in the browser)
 
-Post-hardcore. /// DECHIRE
+Emotional Post-Hardcore aus Augsburg. /// déchire
 `,
     { name: 'README.txt' }
   );

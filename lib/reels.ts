@@ -21,7 +21,7 @@ export const REEL_SAFE = {
 export const REEL_MAX_SECONDS = 60;
 
 export type ReelMotion = 'none' | 'in' | 'out';
-export type ReelGrade = 'none' | 'film' | 'mono' | 'bleed';
+export type ReelGrade = 'none' | 'warm' | 'mono' | 'faded';
 export type ReelTextStyle = 'block' | 'serif' | 'mono';
 export type ReelTextPlace = 'top' | 'middle' | 'low';
 
@@ -87,51 +87,51 @@ export interface ReelPreset {
 
 export const REEL_PRESETS: ReelPreset[] = [
   {
-    id: 'loop',
-    label: 'Loop',
-    hint: '8 s, ein Clip, weiches Ausblenden',
+    id: 'nacht',
+    label: 'Nacht',
+    hint: '8 s, ein Bild, kaum Bewegung',
     duration: 8,
-    grade: 'none',
-    grain: 6,
-    vignette: 0.25,
+    grade: 'warm',
+    grain: 18,
+    vignette: 0.55,
     motion: 'in',
     flash: false,
     fadeOut: true,
   },
   {
-    id: 'teaser',
-    label: 'Drop Teaser',
-    hint: '15 s, Schnitt auf Beats, Akzent-Blitz',
+    id: 'herz',
+    label: 'Herz',
+    hint: '15 s, ruhiger Schnitt, warmes Bild',
     duration: 15,
-    grade: 'film',
-    grain: 10,
-    vignette: 0.45,
-    motion: 'in',
-    flash: true,
-    fadeOut: true,
-  },
-  {
-    id: 'live',
-    label: 'Live Cut',
-    hint: '20 s, hartes Mono, mehr Korn',
-    duration: 20,
-    grade: 'mono',
-    grain: 18,
-    vignette: 0.6,
-    motion: 'out',
-    flash: true,
-    fadeOut: true,
-  },
-  {
-    id: 'trailer',
-    label: 'Single Trailer',
-    hint: '30 s, Film-Look, volle Hook',
-    duration: 30,
-    grade: 'film',
-    grain: 12,
+    grade: 'warm',
+    grain: 14,
     vignette: 0.5,
     motion: 'in',
-    flash: true,
+    flash: false,
+    fadeOut: true,
+  },
+  {
+    id: 'keller',
+    label: 'Keller',
+    hint: '20 s, körniges Schwarzweiß',
+    duration: 20,
+    grade: 'mono',
+    grain: 22,
+    vignette: 0.62,
+    motion: 'out',
+    flash: false,
+    fadeOut: true,
+  },
+  {
+    id: 'heimweg',
+    label: 'Heimweg',
+    hint: '30 s, langsamer Bogen',
+    duration: 30,
+    grade: 'faded',
+    grain: 16,
+    vignette: 0.55,
+    motion: 'in',
+    flash: false,
     fadeOut: true,
   },
 ];
@@ -139,10 +139,10 @@ export const REEL_PRESETS: ReelPreset[] = [
 export const REEL_DURATIONS = [8, 15, 20, 30, 45, 60];
 
 export const GRADE_LABEL: Record<ReelGrade, string> = {
-  none: 'Raw',
-  film: 'Film',
+  none: 'Roh',
+  warm: 'Warm',
   mono: 'Mono',
-  bleed: 'Bleed',
+  faded: 'Verblasst',
 };
 
 /**

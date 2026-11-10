@@ -15,9 +15,9 @@ export interface StageClip {
 }
 
 function cssFilter(grade: ReelLook['grade']) {
-  if (grade === 'film') return 'contrast(1.07) saturate(1.06)';
-  if (grade === 'mono') return 'grayscale(1) contrast(1.12)';
-  if (grade === 'bleed') return 'contrast(1.14) saturate(1.22)';
+  if (grade === 'warm') return 'sepia(0.14) saturate(0.9) contrast(1.04) brightness(0.97)';
+  if (grade === 'mono') return 'grayscale(1) contrast(1.1) brightness(0.95)';
+  if (grade === 'faded') return 'sepia(0.22) saturate(0.72) contrast(0.94) brightness(1.03)';
   return 'none';
 }
 

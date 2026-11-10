@@ -818,8 +818,8 @@ export default function SettingsPage() {
               {docImageUrl ? <img className="docsheet-preview-photo" src={docImageUrl} alt="" style={{ opacity: (docMark / 100) * 1.4 }} /> : null}
               <span className="docsheet-preview-veil" />
               <div className="docsheet-preview-head">
-                <strong>DECHIRE</strong>
-                <em>Final</em>
+                <strong>déchire</strong>
+                <em>Rider</em>
               </div>
               <span className="docsheet-preview-bar" />
               <div className="docsheet-preview-lines">
