@@ -1621,7 +1621,7 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
-  background: #05040a;
+  background: #080807;
   cursor: pointer;
 }
 
@@ -1665,12 +1665,42 @@
   right: 0;
   bottom: 0;
   padding: 8px 5px 3px;
-  background: linear-gradient(180deg, transparent, rgba(4, 3, 8, 0.85));
+  background: linear-gradient(180deg, transparent, rgba(8, 8, 7, 0.9));
   font-family: var(--font-mono);
   font-size: 7.5px;
   letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.75);
   text-align: left;
+}
+
+.stock-tile-duration {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(8, 8, 7, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.stock-tile-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted-2);
+}
+
+.stock-tile.is-added {
+  border-color: rgb(var(--accent-rgb) / 0.55);
+}
+
+.stock-tile.is-added img {
+  opacity: 0.55;
 }
 
 .stock-more {

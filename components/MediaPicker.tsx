@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { IconCheck, IconLayers, IconPlus, IconSearch, IconUpload } from '@/components/icons';
 import { MediaThumb } from '@/components/MediaThumb';
+import StockVideoSearch from '@/components/studio/StockVideoSearch';
 import { Modal, Segmented } from '@/components/ui';
 import { toast } from '@/lib/toast';
 import type { MediaItem } from '@/lib/types';
@@ -39,6 +40,7 @@ export default function MediaPicker({
   const [selection, setSelection] = useState<number[]>(selectedIds);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
+  const [source, setSource] = useState<'library' | 'stock'>('library');
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -47,11 +49,13 @@ export default function MediaPicker({
       setSelection(selectedIds);
       setQuery('');
       setFilter('all');
+      setSource('library');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const only = kind ?? (audioOnly ? 'audio' : imagesOnly ? 'image' : null);
+  const stockEnabled = visualOnly || only === 'video';
 
   const filtered = media.filter((item) => {
     if (visualOnly && (item.mime === 'image/svg+xml' || !(item.mime.startsWith('image/') || item.mime.startsWith('video/')))) {
@@ -108,10 +112,22 @@ export default function MediaPicker({
       open={open}
       onClose={onClose}
       title={
-        only === 'audio' ? 'Select audio' : only === 'video' ? 'Select video' : only === 'image' ? 'Select image' : visualOnly ? 'Select clips' : 'Select media'
+        source === 'stock'
+          ? 'Stock clips'
+          : only === 'audio'
+            ? 'Select audio'
+            : only === 'video'
+              ? 'Select video'
+              : only === 'image'
+                ? 'Select image'
+                : visualOnly
+                  ? 'Select clips'
+                  : 'Select media'
       }
       subtitle={
-        only === 'audio'
+        source === 'stock'
+          ? 'Free-to-use footage – copied into your media library, then cut in the reel.'
+          : only === 'audio'
           ? 'The finished master – plays at the top of the release.'
           : only === 'video'
             ? 'Music video, Canvas loop or cutdown footage.'
@@ -148,52 +164,73 @@ export default function MediaPicker({
       }
     >
       <div className="row wrap between" style={{ marginBottom: 14, gap: 10 }}>
-        <div className="picker-search">
-          <IconSearch size={15} />
-          <input
-            className="input"
-            placeholder="Search – title, version, tag …"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </div>
-        {only ? null : (
+        {stockEnabled ? (
           <Segmented
-            value={filter}
-            onChange={(value) => setFilter(value as Filter)}
+            value={source}
+            onChange={(value) => setSource(value)}
             options={[
-              { value: 'all', label: 'All' },
-              { value: 'image', label: 'Images' },
-              { value: 'logo', label: 'Logos' },
-              { value: 'video', label: 'Video' },
+              { value: 'library', label: 'Library' },
+              { value: 'stock', label: 'Stock videos' },
             ]}
           />
-        )}
-        <button type="button" className="btn btn-sm" onClick={() => inputRef.current?.click()} disabled={uploading}>
-          <IconUpload size={14} />
-          {uploading ? 'Uploading …' : 'Upload'}
-        </button>
-        <input
-          ref={inputRef}
-          type="file"
-          hidden
-          multiple
-          accept={
-            only === 'audio'
-              ? 'audio/*,.mp3,.m4a,.wav,.aac,.ogg,.flac'
-              : only === 'video'
-                ? 'video/*'
-                : only === 'image'
-                  ? 'image/*'
-                  : visualOnly
-                    ? 'image/*,video/*'
-                    : 'image/*,video/*,audio/*'
-          }
-          onChange={(event) => handleUpload(event.target.files)}
-        />
+        ) : null}
+        {source === 'library' ? (
+          <>
+            <div className="picker-search">
+              <IconSearch size={15} />
+              <input
+                className="input"
+                placeholder="Search – title, version, tag …"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </div>
+            {only ? null : (
+              <Segmented
+                value={filter}
+                onChange={(value) => setFilter(value as Filter)}
+                options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'image', label: 'Images' },
+                  { value: 'logo', label: 'Logos' },
+                  { value: 'video', label: 'Video' },
+                ]}
+              />
+            )}
+            <button type="button" className="btn btn-sm" onClick={() => inputRef.current?.click()} disabled={uploading}>
+              <IconUpload size={14} />
+              {uploading ? 'Uploading …' : 'Upload'}
+            </button>
+            <input
+              ref={inputRef}
+              type="file"
+              hidden
+              multiple
+              accept={
+                only === 'audio'
+                  ? 'audio/*,.mp3,.m4a,.wav,.aac,.ogg,.flac'
+                  : only === 'video'
+                    ? 'video/*'
+                    : only === 'image'
+                      ? 'image/*'
+                      : visualOnly
+                        ? 'image/*,video/*'
+                        : 'image/*,video/*,audio/*'
+              }
+              onChange={(event) => handleUpload(event.target.files)}
+            />
+          </>
+        ) : null}
       </div>
 
-      {filtered.length === 0 ? (
+      {source === 'stock' ? (
+        <StockVideoSearch
+          onUse={(item) => {
+            onUploaded?.([item]);
+            setSelection((current) => (multiple ? [...current, item.id] : [item.id]));
+          }}
+        />
+      ) : filtered.length === 0 ? (
         <div className="empty">
           <div className="empty-icon">
             <IconPlus size={22} />

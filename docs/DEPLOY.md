@@ -147,6 +147,9 @@ Plesk → **Websites & Domains → your domain → Node.js**:
 | **Application Startup File** | `server.js` |
 | **Custom environment variables** | `NODE_ENV=production`, `HQ_USER=dechire`, `HQ_PASSWORD=<long random>` |
 
+Optional: set `PEXELS_API_KEY` to enable Pexels stock videos in the Reel Lab. Without it the stock video search
+falls back to Wikimedia Commons (CC0 / public domain / CC BY only), no key required.
+
 `server.js` is in the repo for exactly this case: Passenger needs a startable module, not a CLI.
 
 **Paths are relative to the subscription root** – no `/var/www/vhosts`, no trailing slash:

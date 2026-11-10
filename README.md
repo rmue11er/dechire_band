@@ -130,6 +130,10 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   the file server-side (`/api/stock/import`), stores it in the media library with `stock`, licence and provider
   tags and drops it onto the canvas. Local copies matter: the canvas export needs same-origin images, and the
   design keeps working when the provider is offline.
+- **Free clips in the reel editor** (`Clips wählen → Stock videos`): search **Pexels** when `PEXELS_API_KEY` is
+  set (free commercial licence, no credit needed); without a key it falls back to **Wikimedia Commons**, filtered
+  to CC0, public domain or plain CC BY and 2–30 s. The chosen clip is downloaded into `data/uploads`
+  (`/api/stock/videos/import`), with author, provider and licence stored with it – ready for the ffmpeg cut.
 - **Directions**: six one-click takes on the current canvas – *Paper* (light flyer stock, ink type),
   *Deep* (blacker, hotter glow), *Mono* (no colour, all texture), *Tilt* (everything a few degrees off the
   grid), *Outline* (hollow display type) and *Brand accent* (pulls every CI placeholder colour onto your current accent).
@@ -511,7 +515,7 @@ components/studio/         Canvas renderer, editor, tool panel, inspector, galle
                            variants modal, font browser (Google Fonts) + useCustomFonts store
 lib/studio.ts              Accent mapping, format adaptation, design directions
 lib/zipStore.ts            Tiny browser ZIP writer (store only) for the multi-format export
-app/api/stock/             Openverse search (CC0 only) + import into the media library
+app/api/stock/             Openverse photo search, Pexels/Commons video search + local import
 lib/
   db.ts                    SQLite connection, schema, migrations, atomic seed
   repo.ts                  Queries & mappers
