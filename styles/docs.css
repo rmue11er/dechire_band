@@ -1971,3 +1971,25 @@
     text-align: right;
   }
 }
+
+/* ------------------------------------------------------- song link */
+.docs-song-filter {
+  width: 100%;
+}
+
+.doc-item-song {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.doc-item-song svg {
+  color: var(--accent);
+  flex: none;
+}

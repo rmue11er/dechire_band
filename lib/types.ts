@@ -2,10 +2,29 @@ export type PostType = 'photo' | 'carousel' | 'reel' | 'story';
 export type PostStatus = 'draft' | 'scheduled' | 'published';
 export type MediaKind = 'logo' | 'photo' | 'artwork' | 'merch' | 'video' | 'other';
 
+export type SongStatus = 'idea' | 'demo' | 'recording' | 'mix' | 'master' | 'released';
+
+export interface Song {
+  id: number;
+  title: string;
+  status: SongStatus;
+  songKey: string;
+  bpm: number | null;
+  /** Length in seconds. */
+  duration: number | null;
+  notes: string;
+  mediaCount: number;
+  docCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface MediaItem {
   id: number;
   groupId: number | null;
   folderId: number | null;
+  songId: number | null;
+  songTitle: string | null;
   folderName: string | null;
   groupName: string | null;
   groupKind: string | null;
@@ -197,6 +216,8 @@ export interface BandDocument {
   kind: DocumentKind;
   folderId: number | null;
   folderName: string | null;
+  songId: number | null;
+  songTitle: string | null;
   /** `null` = private. A token means the document has a public link. */
   shareToken: string | null;
   content: string;

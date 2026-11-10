@@ -39,6 +39,7 @@ export function resetToDemo() {
     DELETE FROM milestones;
     DELETE FROM document_audio;
     DELETE FROM documents;
+    DELETE FROM songs;
     DELETE FROM snippets;
     DELETE FROM post_metrics;
     DELETE FROM trash;

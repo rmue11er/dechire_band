@@ -9,6 +9,7 @@ import {
   IconFolder,
   IconImage,
   IconLayers,
+  IconMusic,
   IconPencil,
   IconPlus,
   IconSearch,
@@ -20,7 +21,7 @@ import { MediaThumb } from '@/components/MediaThumb';
 import { EmptyState, Field, Modal, PageHead, Segmented, Spinner } from '@/components/ui';
 import { formatDate, formatBytes } from '@/lib/format';
 import { toast } from '@/lib/toast';
-import type { MediaFolder, MediaGroup, MediaItem } from '@/lib/types';
+import type { MediaFolder, MediaGroup, MediaItem, Song } from '@/lib/types';
 
 type Filter = 'all' | 'image' | 'video' | 'logo';
 
@@ -37,6 +38,9 @@ export default function MediaPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [groups, setGroups] = useState<MediaGroup[]>([]);
   const [folders, setFolders] = useState<MediaFolder[]>([]);
+  const [songs, setSongs] = useState<Song[]>([]);
+  /** 'all' = no song filter, 'none' = unlinked, otherwise a song id */
+  const [songFilter, setSongFilter] = useState<'all' | 'none' | number>('all');
   /** 'all' = everything, 'unfiled' = no folder, otherwise a folder id */
   const [place, setPlace] = useState<'all' | 'unfiled' | number>('all');
   const [folderModal, setFolderModal] = useState<{ id?: number; parentId: number | null; name: string } | null>(
@@ -54,7 +58,7 @@ export default function MediaPage() {
   const [activeGroup, setActiveGroup] = useState<MediaGroup | null>(null);
   const [groupModal, setGroupModal] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: '', kind: 'artwork' });
-  const [edit, setEdit] = useState({ title: '', variantLabel: '', alt: '', tags: '', groupId: '', folderId: '' });
+  const [edit, setEdit] = useState({ title: '', variantLabel: '', alt: '', tags: '', groupId: '', folderId: '', songId: '' });
   const [saving, setSaving] = useState(false);
   const [usage, setUsage] = useState<{ id: number; status: string; caption: string; scheduledAt: string | null; publishedAt: string | null }[]>([]);
   const [replacing, setReplacing] = useState(false);
@@ -67,12 +71,20 @@ export default function MediaPage() {
     setMedia(data.media ?? []);
     setGroups(data.groups ?? []);
     setFolders(data.folders ?? []);
+    setSongs(data.songs ?? []);
     setLoading(false);
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get('song');
+    if (!raw) return;
+    if (raw === 'none') setSongFilter('none');
+    else if (Number(raw) > 0) setSongFilter(Number(raw));
+  }, []);
 
   useEffect(() => {
     if (activeMedia) {
@@ -83,6 +95,7 @@ export default function MediaPage() {
         tags: activeMedia.tags.join(', '),
         groupId: activeMedia.groupId ? String(activeMedia.groupId) : '',
         folderId: activeMedia.folderId ? String(activeMedia.folderId) : '',
+        songId: activeMedia.songId ? String(activeMedia.songId) : '',
       });
       fetch(`/api/media/${activeMedia.id}`)
         .then((response) => response.json())
@@ -121,6 +134,7 @@ export default function MediaPage() {
     const form = new FormData();
     list.forEach((file) => form.append('files', file));
     if (typeof place === 'number') form.append('folderId', String(place));
+    if (typeof songFilter === 'number') form.append('songId', String(songFilter));
     try {
       const response = await fetch('/api/media', { method: 'POST', body: form });
       const data = await response.json();
@@ -152,6 +166,7 @@ export default function MediaPage() {
             .filter(Boolean),
           groupId: edit.groupId ? Number(edit.groupId) : null,
           folderId: edit.folderId ? Number(edit.folderId) : null,
+          songId: edit.songId ? Number(edit.songId) : null,
         }),
       });
       const data = await response.json();
@@ -294,12 +309,15 @@ export default function MediaPage() {
     if (filter === 'image' && !item.mime.startsWith('image/')) return false;
     if (filter === 'video' && !item.mime.startsWith('video/')) return false;
     if (filter === 'logo' && item.groupKind !== 'logo' && !item.tags.includes('logo')) return false;
+    if (songFilter === 'none' && item.songId) return false;
+    if (typeof songFilter === 'number' && item.songId !== songFilter) return false;
     if (!query.trim()) return true;
     const haystack = [
       item.title,
       item.variantLabel,
       item.groupName,
       item.folderName,
+      item.songTitle,
       item.originalName,
       item.tags.join(' '),
     ]
@@ -376,6 +394,23 @@ export default function MediaPage() {
             onChange={(event) => setQuery(event.target.value)}
           />
         </div>
+        <select
+          className="select media-song-filter"
+          value={songFilter}
+          onChange={(event) => {
+            const value = event.target.value;
+            setSongFilter(value === 'all' || value === 'none' ? value : Number(value));
+          }}
+          aria-label="Filter by song"
+        >
+          <option value="all">All songs</option>
+          <option value="none">No song</option>
+          {songs.map((song) => (
+            <option key={song.id} value={song.id}>
+              {song.title}
+            </option>
+          ))}
+        </select>
         <Segmented
           value={filter}
           onChange={(value) => setFilter(value)}
@@ -395,6 +430,14 @@ export default function MediaPage() {
           ]}
         />
       </div>
+
+      {typeof songFilter === 'number' ? (
+        <p className="media-song-hint">
+          <IconMusic size={12} />
+          Uploads land under <strong>{songs.find((song) => song.id === songFilter)?.title ?? 'this song'}</strong> – open
+          the song to see documents and the rest of its media.
+        </p>
+      ) : null}
 
       <div className="media-shell">
         <aside className="folder-rail">
@@ -662,6 +705,11 @@ export default function MediaPage() {
                   {item.title}
                 </div>
                 <div className="asset-sub truncate">{item.folderName ?? item.groupName ?? 'Unfiled'}</div>
+                {item.songTitle ? (
+                  <div className="asset-song truncate" title={`Song: ${item.songTitle}`}>
+                    <IconMusic size={10} /> {item.songTitle}
+                  </div>
+                ) : null}
                 <div className="asset-meta">
                   <span className="mono">
                     {item.width && item.height ? `${item.width}×${item.height}` : item.mime.split('/')[1]}
@@ -746,6 +794,7 @@ export default function MediaPage() {
                     : 'Size unknown'}
                 </span>
                 <span className="mono">in {activeMedia.usedIn} post(s)</span>
+                {activeMedia.songTitle ? <span className="mono">Song: {activeMedia.songTitle}</span> : null}
                 <span className="mono">since {formatDate(activeMedia.createdAt)}</span>
               </div>
             </div>
@@ -789,6 +838,20 @@ export default function MediaPage() {
                   {folders.map((folder) => (
                     <option key={folder.id} value={folder.id}>
                       {'\u00a0\u00a0'.repeat(folder.depth) + folder.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Song" hint={<span className="count">What is this asset for?</span>}>
+                <select
+                  className="select"
+                  value={edit.songId}
+                  onChange={(event) => setEdit({ ...edit, songId: event.target.value })}
+                >
+                  <option value="">No song</option>
+                  {songs.map((song) => (
+                    <option key={song.id} value={song.id}>
+                      {song.title}
                     </option>
                   ))}
                 </select>

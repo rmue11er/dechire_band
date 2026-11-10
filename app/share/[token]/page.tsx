@@ -68,6 +68,7 @@ export default async function SharedDocumentPage({ params }: Props) {
             <span className="doc-share-meta">
               {formatDate(document.updatedAt)}
               {profile.handle ? ` · @${profile.handle}` : ''}
+              {document.songTitle ? ` · ${document.songTitle}` : ''}
             </span>
           </div>
 

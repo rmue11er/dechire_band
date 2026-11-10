@@ -10,6 +10,7 @@ export const BACKUP_VERSION = 1;
 const TABLES = [
   'media_groups',
   'media_folders',
+  'songs',
   'media',
   'posts',
   'post_media',
@@ -71,6 +72,7 @@ export function backupResponse() {
     counts: {
       posts: countRows('posts'),
       media: countRows('media'),
+      songs: countRows('songs'),
       notes: countRows('notes'),
       designs: countRows('designs'),
       milestones: countRows('milestones'),
@@ -159,6 +161,7 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
       DELETE FROM milestones;
       DELETE FROM document_audio;
       DELETE FROM documents;
+      DELETE FROM songs;
       DELETE FROM snippets;
       DELETE FROM connections;
       DELETE FROM palette;
@@ -170,6 +173,7 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
     // parents before children, children before their parents for post_media
     insertAll('media_groups', data.media_groups);
     insertAll('media_folders', data.media_folders);
+    insertAll('songs', data.songs);
     insertAll('media', data.media);
     insertAll('posts', data.posts);
     insertAll('post_media', data.post_media);

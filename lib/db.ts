@@ -17,6 +17,18 @@ CREATE TABLE IF NOT EXISTS media_groups (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS songs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'idea',
+  song_key TEXT NOT NULL DEFAULT '',
+  bpm INTEGER,
+  duration INTEGER,
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS media_folders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   parent_id INTEGER,
@@ -69,6 +81,7 @@ CREATE TABLE IF NOT EXISTS media (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   group_id INTEGER,
   folder_id INTEGER,
+  song_id INTEGER,
   variant_label TEXT NOT NULL DEFAULT '',
   title TEXT NOT NULL,
   filename TEXT NOT NULL UNIQUE,
@@ -177,6 +190,7 @@ CREATE TABLE IF NOT EXISTS documents (
   kind TEXT NOT NULL DEFAULT 'other',
   status TEXT NOT NULL DEFAULT 'draft',
   folder_id INTEGER,
+  song_id INTEGER,
   share_token TEXT,
   content TEXT NOT NULL DEFAULT '',
   plain_text TEXT NOT NULL DEFAULT '',
@@ -434,9 +448,13 @@ function createConnection(): DatabaseSync {
   ensureColumn(db, 'connections', 'auto_publish', 'INTEGER NOT NULL DEFAULT 0');
   ensureColumn(db, 'connections', 'last_run_at', 'TEXT');
   ensureColumn(db, 'media', 'folder_id', 'INTEGER');
+  ensureColumn(db, 'media', 'song_id', 'INTEGER');
   ensureColumn(db, 'milestones', "checklist", "TEXT NOT NULL DEFAULT '[]'");
   ensureColumn(db, 'documents', 'folder_id', 'INTEGER');
+  ensureColumn(db, 'documents', 'song_id', 'INTEGER');
   ensureColumn(db, 'documents', 'share_token', 'TEXT');
+  ensureIndex(db, 'media', 'idx_media_song', 'CREATE INDEX idx_media_song ON media(song_id)');
+  ensureIndex(db, 'documents', 'idx_documents_song', 'CREATE INDEX idx_documents_song ON documents(song_id)');
   ensureIndex(db, 'documents', 'idx_documents_folder', 'CREATE INDEX idx_documents_folder ON documents(folder_id)');
   ensureIndex(
     db,

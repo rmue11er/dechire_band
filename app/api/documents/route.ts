@@ -1,11 +1,11 @@
 import { fail, ok, readJson } from '@/lib/api';
-import { createDocument, listDocFolders, listDocuments } from '@/lib/repo';
+import { createDocument, listDocFolders, listDocuments, listSongs } from '@/lib/repo';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  return ok({ documents: listDocuments(), folders: listDocFolders() });
+  return ok({ documents: listDocuments(), folders: listDocFolders(), songs: listSongs() });
 }
 
 export async function POST(request: Request) {
@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     title: title.slice(0, 160),
     kind: body.kind || 'other',
     folderId: body.folderId ? Number(body.folderId) : null,
+    songId: body.songId ? Number(body.songId) : null,
     content: String(body.content ?? '<p></p>'),
     plainText: String(body.plainText ?? ''),
     tags: Array.isArray(body.tags) ? body.tags.map(String) : [],

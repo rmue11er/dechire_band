@@ -21,6 +21,7 @@ import type {
   Profile,
   SchedulerRun,
   Snippet,
+  Song,
   Stats,
   TrashEntry,
 } from './types';
@@ -36,16 +37,20 @@ const parseList = (value: any, fallback: string[] = []): string[] => {
 
 const MEDIA_SELECT = `
   SELECT m.*, g.name AS group_name, g.kind AS group_kind, f.name AS folder_name,
+    s.title AS song_title,
     (SELECT COUNT(*) FROM post_media pm WHERE pm.media_id = m.id) AS used_in
   FROM media m
   LEFT JOIN media_groups g ON g.id = m.group_id
-  LEFT JOIN media_folders f ON f.id = m.folder_id`;
+  LEFT JOIN media_folders f ON f.id = m.folder_id
+  LEFT JOIN songs s ON s.id = m.song_id`;
 
 export function mapMedia(row: any): MediaItem {
   return {
     id: Number(row.id),
     groupId: row.group_id == null ? null : Number(row.group_id),
     folderId: row.folder_id == null ? null : Number(row.folder_id),
+    songId: row.song_id == null ? null : Number(row.song_id),
+    songTitle: row.song_title ?? null,
     folderName: row.folder_name ?? null,
     groupName: row.group_name ?? null,
     groupKind: row.group_kind ?? null,
@@ -62,6 +67,89 @@ export function mapMedia(row: any): MediaItem {
     createdAt: row.created_at,
     usedIn: Number(row.used_in ?? 0),
   };
+}
+
+/* ------------------------------------------------------------------- songs */
+
+function mapSong(row: any): Song {
+  return {
+    id: Number(row.id),
+    title: row.title ?? '',
+    status: (row.status ?? 'idea') as Song['status'],
+    songKey: row.song_key ?? '',
+    bpm: row.bpm == null ? null : Number(row.bpm),
+    duration: row.duration == null ? null : Number(row.duration),
+    notes: row.notes ?? '',
+    mediaCount: Number(row.media_count ?? 0),
+    docCount: Number(row.doc_count ?? 0),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+const SONG_SELECT = `
+  SELECT s.*,
+    (SELECT COUNT(*) FROM media m WHERE m.song_id = s.id) AS media_count,
+    (SELECT COUNT(*) FROM documents d WHERE d.song_id = s.id) AS doc_count
+  FROM songs s`;
+
+export function listSongs(): Song[] {
+  return queryAll(`${SONG_SELECT} ORDER BY s.updated_at DESC, s.id DESC`).map(mapSong);
+}
+
+export function getSong(id: number): Song | null {
+  const row = queryOne(`${SONG_SELECT} WHERE s.id = ?`, [id]);
+  return row ? mapSong(row) : null;
+}
+
+export function createSong(input: Record<string, any> = {}) {
+  const now = new Date().toISOString();
+  const result = execute(
+    `INSERT INTO songs (title, status, song_key, bpm, duration, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      String(input.title ?? 'Untitled song').slice(0, 160),
+      input.status ?? 'idea',
+      String(input.songKey ?? '').slice(0, 24),
+      input.bpm == null || input.bpm === '' ? null : Number(input.bpm),
+      input.duration == null || input.duration === '' ? null : Number(input.duration),
+      String(input.notes ?? '').slice(0, 4000),
+      now,
+      now,
+    ]
+  );
+  return getSong(Number(result.lastInsertRowid));
+}
+
+export function updateSong(id: number, patch: Record<string, any>) {
+  const sets: string[] = [];
+  const params: any[] = [];
+  const map: Record<string, string> = {
+    title: 'title',
+    status: 'status',
+    songKey: 'song_key',
+    bpm: 'bpm',
+    duration: 'duration',
+    notes: 'notes',
+  };
+  for (const [key, column] of Object.entries(map)) {
+    if (patch[key] !== undefined) {
+      sets.push(`${column} = ?`);
+      params.push(patch[key] === '' || patch[key] == null ? null : patch[key]);
+    }
+  }
+  if (!sets.length) return getSong(id);
+  sets.push('updated_at = ?');
+  params.push(new Date().toISOString(), id);
+  execute(`UPDATE songs SET ${sets.join(', ')} WHERE id = ?`, params);
+  return getSong(id);
+}
+
+/** Songs are a lens over the archive – deleting one never deletes assets. */
+export function deleteSong(id: number) {
+  execute('UPDATE media SET song_id = NULL WHERE song_id = ?', [id]);
+  execute('UPDATE documents SET song_id = NULL WHERE song_id = ?', [id]);
+  execute('DELETE FROM songs WHERE id = ?', [id]);
 }
 
 /* ------------------------------------------------------------------ media */
@@ -87,14 +175,16 @@ export function createMedia(input: {
   tags?: string[];
   groupId?: number | null;
   folderId?: number | null;
+  songId?: number | null;
   variantLabel?: string;
 }) {
   const result = execute(
-    `INSERT INTO media (group_id, folder_id, variant_label, title, filename, original_name, mime, size, width, height, alt, tags, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO media (group_id, folder_id, song_id, variant_label, title, filename, original_name, mime, size, width, height, alt, tags, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.groupId ?? null,
       input.folderId ?? null,
+      input.songId ?? null,
       input.variantLabel ?? '',
       input.title,
       input.filename,
@@ -120,6 +210,7 @@ export function updateMedia(
     tags?: string[];
     groupId?: number | null;
     folderId?: number | null;
+    songId?: number | null;
   }
 ) {
   const sets: string[] = [];
@@ -147,6 +238,10 @@ export function updateMedia(
   if (patch.folderId !== undefined) {
     sets.push('folder_id = ?');
     params.push(patch.folderId ?? null);
+  }
+  if (patch.songId !== undefined) {
+    sets.push('song_id = ?');
+    params.push(patch.songId ?? null);
   }
   if (!sets.length) return;
   params.push(id);
@@ -984,6 +1079,8 @@ function mapDocument(row: any): BandDocument {
     kind: (row.kind ?? 'other') as BandDocument['kind'],
     folderId: row.folder_id == null ? null : Number(row.folder_id),
     folderName: row.folder_name ?? null,
+    songId: row.song_id == null ? null : Number(row.song_id),
+    songTitle: row.song_title ?? null,
     shareToken: row.share_token ?? null,
     content: row.content ?? '',
     plainText: row.plain_text ?? '',
@@ -995,9 +1092,10 @@ function mapDocument(row: any): BandDocument {
 }
 
 const DOCUMENT_SELECT = `
-  SELECT d.*, f.name AS folder_name
+  SELECT d.*, f.name AS folder_name, s.title AS song_title
   FROM documents d
-  LEFT JOIN doc_folders f ON f.id = d.folder_id`;
+  LEFT JOIN doc_folders f ON f.id = d.folder_id
+  LEFT JOIN songs s ON s.id = d.song_id`;
 
 export function listDocuments(): BandDocument[] {
   return queryAll<any>(`${DOCUMENT_SELECT} ORDER BY d.updated_at DESC, d.id DESC`).map(mapDocument);
@@ -1045,12 +1143,13 @@ export function deleteDocFolder(id: number) {
 export function createDocument(input: Record<string, any> = {}) {
   const now = new Date().toISOString();
   const result = execute(
-    `INSERT INTO documents (title, kind, folder_id, content, plain_text, tags, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO documents (title, kind, folder_id, song_id, content, plain_text, tags, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.title ?? 'Untitled document',
       input.kind ?? 'other',
       input.folderId ?? null,
+      input.songId ?? null,
       input.content ?? '<p></p>',
       input.plainText ?? '',
       JSON.stringify(input.tags ?? []),
@@ -1068,6 +1167,7 @@ export function updateDocument(id: number, patch: Record<string, any>) {
     title: 'title',
     kind: 'kind',
     folderId: 'folder_id',
+    songId: 'song_id',
     content: 'content',
     plainText: 'plain_text',
   };
@@ -1117,6 +1217,7 @@ export function deleteDocument(id: number) {
       title: document.title,
       kind: document.kind,
       folderId: document.folderId,
+      songId: document.songId,
       content: document.content,
       plainText: document.plainText,
       tags: document.tags,

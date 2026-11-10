@@ -17,18 +17,20 @@ import { DOC_TEMPLATES } from '@/lib/docTemplates';
 import { DOC_KINDS, docKindLabel } from '@/lib/kinds';
 import { timeAgo } from '@/lib/format';
 import { toast } from '@/lib/toast';
-import type { BandDocument, DocFolder } from '@/lib/types';
+import type { BandDocument, DocFolder, Song } from '@/lib/types';
 
 type FolderFilter = 'all' | 'unfiled' | number;
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<BandDocument[]>([]);
   const [folders, setFolders] = useState<DocFolder[]>([]);
+  const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('all');
   const [folderFilter, setFolderFilter] = useState<FolderFilter>('all');
+  const [songFilter, setSongFilter] = useState<'all' | 'none' | number>('all');
   const [newOpen, setNewOpen] = useState(false);
   const [creating, setCreating] = useState<string | null>(null);
   const [folderModal, setFolderModal] = useState<{ folder: DocFolder | null } | null>(null);
@@ -43,8 +45,12 @@ export default function DocumentsPage() {
       const items: BandDocument[] = data.documents ?? [];
       setDocuments(items);
       setFolders(data.folders ?? []);
+      setSongs(data.songs ?? []);
       // Deep link from the release planner: /docs?doc=12
       const wanted = Number(new URLSearchParams(window.location.search).get('doc') ?? '');
+      const wantedSong = new URLSearchParams(window.location.search).get('song');
+      if (wantedSong === 'none') setSongFilter('none');
+      else if (wantedSong && Number(wantedSong) > 0) setSongFilter(Number(wantedSong));
       setSelectedId((current) =>
         Number.isFinite(wanted) && items.some((item) => item.id === wanted)
           ? wanted
@@ -66,11 +72,15 @@ export default function DocumentsPage() {
       if (kind !== 'all' && document.kind !== kind) return false;
       if (folderFilter === 'unfiled' && document.folderId) return false;
       if (typeof folderFilter === 'number' && document.folderId !== folderFilter) return false;
+      if (songFilter === 'none' && document.songId) return false;
+      if (typeof songFilter === 'number' && document.songId !== songFilter) return false;
       if (!query.trim()) return true;
-      const haystack = [document.title, document.plainText, document.tags.join(' ')].join(' ').toLowerCase();
+      const haystack = [document.title, document.plainText, document.songTitle ?? '', document.tags.join(' ')]
+        .join(' ')
+        .toLowerCase();
       return haystack.includes(query.toLowerCase());
     });
-  }, [documents, kind, folderFilter, query]);
+  }, [documents, kind, folderFilter, songFilter, query]);
 
   const counts = useMemo(() => {
     const perFolder = new Map<number, number>();
@@ -96,6 +106,7 @@ export default function DocumentsPage() {
           title: template.title,
           kind: template.kind,
           folderId: typeof folderFilter === 'number' ? folderFilter : null,
+          songId: typeof songFilter === 'number' ? songFilter : null,
           content: template.content,
           plainText,
           tags: [],
@@ -227,6 +238,24 @@ export default function DocumentsPage() {
               onChange={(event) => setQuery(event.target.value)}
             />
           </div>
+
+          <select
+            className="select docs-song-filter"
+            value={songFilter}
+            onChange={(event) => {
+              const value = event.target.value;
+              setSongFilter(value === 'all' || value === 'none' ? value : Number(value));
+            }}
+            aria-label="Filter by song"
+          >
+            <option value="all">All songs</option>
+            <option value="none">No song</option>
+            {songs.map((song) => (
+              <option key={song.id} value={song.id}>
+                {song.title}
+              </option>
+            ))}
+          </select>
 
           <div className="doc-folders">
             <div className="doc-folders-head">
@@ -373,6 +402,11 @@ export default function DocumentsPage() {
                   </p>
                   <div className="doc-item-meta">
                     <span className="chip">{docKindLabel(document.kind)}</span>
+                    {document.songTitle ? (
+                      <span className="doc-item-song" title={`Song: ${document.songTitle}`}>
+                        <IconMusic size={10} /> {document.songTitle}
+                      </span>
+                    ) : null}
                     {document.audio?.length ? (
                       <span className="doc-item-audio" title={`${document.audio.length} audio file(s)`}>
                         <IconMusic size={10} /> {document.audio.length}
@@ -392,6 +426,7 @@ export default function DocumentsPage() {
               key={activeDocument.id}
               document={activeDocument}
               folders={folders}
+              songs={songs}
               onSaved={handleSaved}
               onDeleted={handleDeleted}
             />

@@ -740,6 +740,20 @@ as a clip (export it to PNG first – ffmpeg has no SVG decoder), and rendering 
 ffmpeg on the server (`FFMPEG_PATH` overrides the binary). If ffmpeg is missing the page says so instead of
 failing silently.
 
+### 7.11 Songs (`/songs`) – the thread through the archive
+
+The song is the unit the band actually thinks in: a demo, its artwork, the lyrics sheet, the mix notes and
+the reel all belong to one title. `/songs` is deliberately small – one card per song with title, status
+(*Idea, Demo, Recording, Mix, Master, Released*), key, BPM, length, a short note and the number of linked media
+files and documents. Each card links straight to `/media?song=id` and `/docs?song=id`, so “continue working on
+this song” is one click.
+
+`media.song_id` and `documents.song_id` are nullable links (`ensureColumn` for older databases, indexed after
+the fact). The media library and document sidebar both have a song filter; the document editor has a `Song`
+select. Uploading while a song filter is active inherits that song. Deleting a song only clears the links –
+no asset and no document is deleted. The table is included in backup/restore and demo reset, and global ⌘K
+search finds songs by title, key or notes.
+
 ## 8. Design system
 
 ### Colours

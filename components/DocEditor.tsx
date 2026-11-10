@@ -66,6 +66,7 @@ import type {
   DocumentKind,
   MediaItem,
   Profile,
+  Song,
 } from '@/lib/types';
 
 type Status = 'idle' | 'dirty' | 'saving' | 'saved';
@@ -80,17 +81,20 @@ const slug = (value: string) =>
 export default function DocEditor({
   document: doc,
   folders,
+  songs,
   onSaved,
   onDeleted,
 }: {
   document: BandDocument;
   folders: DocFolder[];
+  songs: Song[];
   onSaved: (doc: BandDocument) => void;
   onDeleted: (id: number) => void;
 }) {
   const [title, setTitle] = useState(doc.title);
   const [kind, setKind] = useState<DocumentKind>(doc.kind);
   const [folderId, setFolderId] = useState<number | null>(doc.folderId);
+  const [songId, setSongId] = useState<number | null>(doc.songId);
   const [tags, setTags] = useState(doc.tags.join(', '));
   const [saveState, setSaveState] = useState<Status>('idle');
   const [savedAt, setSavedAt] = useState(doc.updatedAt);
@@ -169,6 +173,7 @@ export default function DocEditor({
     setTitle(doc.title);
     setKind(doc.kind);
     setFolderId(doc.folderId);
+    setSongId(doc.songId);
     setTags(doc.tags.join(', '));
     setSaveState('idle');
     setSavedAt(doc.updatedAt);
@@ -194,6 +199,7 @@ export default function DocEditor({
           title: title.trim() || 'Untitled document',
           kind,
           folderId,
+          songId,
           content: contentRef.current.html,
           plainText: contentRef.current.text,
           tags: tags
@@ -214,13 +220,13 @@ export default function DocEditor({
       setSaveState('dirty');
       toast(error.message ?? 'Failed to save', 'error');
     }
-  }, [doc.id, title, kind, folderId, tags, onSaved]);
+  }, [doc.id, title, kind, folderId, songId, tags, onSaved]);
 
   useEffect(() => {
     if (!dirtyRef.current) return;
     const timer = setTimeout(save, 900);
     return () => clearTimeout(timer);
-  }, [tick, title, kind, folderId, tags, save]);
+  }, [tick, title, kind, folderId, songId, tags, save]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -842,6 +848,24 @@ export default function DocEditor({
             {folders.map((folder) => (
               <option key={folder.id} value={folder.id}>
                 {folder.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="doc-field">
+          <span className="label">Song</span>
+          <select
+            className="select"
+            value={songId ?? ''}
+            onChange={(event) => {
+              setSongId(event.target.value ? Number(event.target.value) : null);
+              markDirty();
+            }}
+          >
+            <option value="">No song</option>
+            {songs.map((song) => (
+              <option key={song.id} value={song.id}>
+                {song.title}
               </option>
             ))}
           </select>

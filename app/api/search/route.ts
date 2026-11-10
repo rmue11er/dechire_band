@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export type SearchHit = {
-  kind: 'post' | 'media' | 'note' | 'document' | 'milestone' | 'design' | 'snippet';
+  kind: 'post' | 'media' | 'note' | 'document' | 'milestone' | 'design' | 'snippet' | 'song';
   id: number;
   title: string;
   subtitle: string;
@@ -49,6 +49,19 @@ export async function GET(request: Request) {
       title: row.title,
       subtitle: `Asset${row.variant_label ? ` · ${row.variant_label}` : ''}`,
       href: '/media',
+    });
+  }
+
+  for (const row of queryAll<any>(
+    'SELECT id, title, status FROM songs WHERE title LIKE ? OR notes LIKE ? OR song_key LIKE ? LIMIT 8',
+    [like, like, like]
+  )) {
+    hits.push({
+      kind: 'song',
+      id: Number(row.id),
+      title: row.title,
+      subtitle: `Song · ${row.status}`,
+      href: '/songs',
     });
   }
 

@@ -5,7 +5,7 @@ paperwork — and a small public one-pager that is configured from inside it.
 
 | | |
 |---|---|
-| **Band HQ** (internal) | Post planner with a real Instagram mockup, Canva-style design studio, media library with asset versions, notes, milestone calendar, documents (rider, contracts, orga), release waves, a beat-synced reel machine, exportable brand sheet, palette/CI editor |
+| **Band HQ** (internal) | Post planner with a real Instagram mockup, Canva-style design studio, media library with asset versions, songs as the thread through media and documents, notes, milestone calendar, documents (rider, contracts, orga), release waves, a beat-synced reel machine, exportable brand sheet, palette/CI editor |
 | **Public site** (`/site`) | A cinematic one-pager that reads like a letter: hero, "a note from us", a media corner, the feed, contact links. Every block can be switched off in `/website` |
 
 ![Public site – hero](docs/screenshots/site-hero.jpg)
@@ -160,6 +160,9 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 - Upload via button or **drag & drop** onto the window, images and videos.
 - **Asset groups = versions**: a logo exists as “White/transparent”, “Smoke”, “Sticker 1080×1080”,
   “Social avatar” and so on. Every version downloads on its own (`?download=1`) or via “download version” in the group dialog.
+- **Songs**: every file can point to one song from `/songs`. The toolbar has a song filter (`All songs`, `No song`,
+  one specific song); when a song is active, newly uploaded files inherit it. The detail dialog has a
+  `Song` select, cards show the linked song, and `/media?song=12` opens the library pre-filtered.
 - Search across title, version, tags and filename; filter by images / logos / video.
 - Detail dialog: title, version label, group, tags, alt text, dimensions, size, **where the asset is used**
   (click to open the post) and **replace file** – swap the file, every post keeps the reference.
@@ -189,6 +192,9 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   tighter line rhythm and **real song parts** instead of plain headings: every verse, chorus, bridge … is a
   block with a numbered label, its own colour-coded spine (chorus = accent, pre-chorus/bridge = second
   accent, intro/outro dotted, breakdown/solo black) and an optional repeat tag (`×2`, half-time …).
+- **Song link**: every document can point to a song (rider for a tour, lyrics sheet, mix notes …). The
+  sidebar filters by song, the list shows the song, and `/docs?song=12` opens the filtered set. New
+  documents created while a song filter is active inherit that song.
 - **Part bar**: one click inserts the next part at the cursor and numbers it (`Verse 1`, `Chorus 2` …).
   Click into a part and a second bar appears: change the type, rename it, tag it, jump out with **End part**
   or dissolve it with **Unwrap**. Old sheets built from headings get a **Convert headings** button.
@@ -426,7 +432,15 @@ One click builds a ZIP for promoters, blogs and playlist editors:
 press text rendered as printable HTML pages in the CI accent. Everything is generated from the profile,
 the media library and the document module, so the kit is never out of date.
 
-### 13. Reel Lab (`/reels`)
+### 13. Songs (`/songs`)
+- Every song has a title, status (Idea, Demo, Recording, Mix, Master, Released), key, BPM, length and notes.
+  The card shows how many media files and documents point at it and links straight to the filtered lists:
+  `/media?song=id` and `/docs?song=id`.
+- Media files and documents carry `song_id`. Deleting a song only removes the link – assets and documents stay.
+- In the media library and document list there is a **song filter**; the document editor has a `Song` select.
+  Global ⌘K search finds songs by title, key or notes.
+
+### 14. Reel Lab (`/reels`)
 The mini reel machine: clips from the library, one song, three steps, one MP4.
 - **Presets** – Still 8 s, Slow 15 s, Grain 20 s, Long 30 s. Each one sets length, grade, grain,
 vignette and motion in a click – warm or black and white, no strobe.
@@ -515,6 +529,7 @@ app/
   (hq)/media/page.tsx      Media library
   (hq)/notes/page.tsx      Notes
   (hq)/docs/page.tsx       Documents (rider, contracts, orga)
+  (hq)/songs/page.tsx      Songs – media/document links and filters
   (hq)/reels/page.tsx      Reel Lab – clips, beat cuts, text layer, ffmpeg export
   (hq)/website/page.tsx    Public site: blocks, letter, crew, media corner, live preview
   (hq)/brand/page.tsx      Brand sheet (CI guide, export)
@@ -578,6 +593,7 @@ docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + ngin
 | GET/PUT | `/api/palette` | Read / fully replace the CI palette |
 | GET/POST | `/api/milestones`, `/api/milestones/:id` | Calendar milestones (PATCH/DELETE on `:id`) |
 | GET/POST | `/api/documents`, `/api/documents/:id` | Documents (PATCH/DELETE on `:id`) |
+| GET/POST | `/api/songs`, `/api/songs/:id` | Songs, counts and links (PATCH/DELETE on `:id`) |
 | GET/POST | `/api/doc-folders`, `/api/doc-folders/:id` | Document folders (PATCH/DELETE on `:id`) |
 | POST/DELETE | `/api/documents/:id/share` | Create/rotate or revoke a public share token |
 | GET/POST | `/api/snippets`, `/api/snippets/:id` | Caption, hashtag and hook snippets |

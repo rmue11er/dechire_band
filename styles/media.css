@@ -701,3 +701,48 @@
     max-height: 260px;
   }
 }
+
+/* ------------------------------------------------------- song link */
+.media-song-filter {
+  min-width: 170px;
+  max-width: 220px;
+}
+
+.media-song-hint {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: -8px 0 14px;
+  font-size: 11.5px;
+  color: var(--muted-2);
+}
+
+.media-song-hint svg {
+  color: var(--accent);
+  flex: none;
+}
+
+.media-song-hint strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.asset-song {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.asset-song svg {
+  color: var(--accent);
+  flex: none;
+}
+
+@media (max-width: 720px) {
+  .media-song-filter {
+    max-width: none;
+    flex: 1 1 160px;
+  }
+}
