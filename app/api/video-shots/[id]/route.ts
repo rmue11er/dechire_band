@@ -1,5 +1,5 @@
-import { fail, ok, readJson, toInt } from '@/lib/api';
-import { deleteVideoShot, getVideoShot, updateVideoShot } from '@/lib/repo';
+import { fail, ok, readJson, toInt, toOptionalId } from '@/lib/api';
+import { deleteVideoShot, getMedia, getVideoShot, updateVideoShot } from '@/lib/repo';
 import { SHOT_STATUS } from '@/lib/videos';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +26,11 @@ export async function PATCH(request: Request, { params }: Ctx) {
   if (body.movement !== undefined) patch.movement = String(body.movement ?? '').slice(0, 80);
   if (body.lighting !== undefined) patch.lighting = String(body.lighting ?? '').slice(0, 120);
   if (typeof body.status === 'string' && STATUSES.has(body.status)) patch.status = body.status;
-  if (body.mediaId !== undefined) patch.mediaId = body.mediaId ? Number(body.mediaId) : null;
+  if (body.mediaId !== undefined) {
+    const mediaId = toOptionalId(body.mediaId);
+    if (mediaId === false || (mediaId !== null && !getMedia(mediaId))) return fail('Media not found');
+    patch.mediaId = mediaId;
+  }
   if (body.notes !== undefined) patch.notes = String(body.notes ?? '').slice(0, 2000);
 
   const shot = updateVideoShot(shotId, patch);

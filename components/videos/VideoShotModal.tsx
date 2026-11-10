@@ -55,8 +55,13 @@ export default function VideoShotModal({
 
   const allMedia = useMemo(() => {
     const known = new Set(media.map((item) => item.id));
-    return [...media, ...uploadedMedia.filter((item) => !known.has(item.id))];
-  }, [media, uploadedMedia]);
+    if (shot?.media && !known.has(shot.media.id)) known.add(shot.media.id);
+    return [
+      ...media,
+      ...(shot?.media && !media.some((item) => item.id === shot.media?.id) ? [shot.media] : []),
+      ...uploadedMedia.filter((item) => !known.has(item.id)),
+    ];
+  }, [media, shot, uploadedMedia]);
   const selectedMedia = allMedia.find((item) => item.id === Number(mediaId)) ?? null;
   const shotNumber = shot ? Math.max(1, shots.findIndex((entry) => entry.id === shot.id) + 1) : 0;
 

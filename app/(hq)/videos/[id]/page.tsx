@@ -30,6 +30,7 @@ import { formatDate } from '@/lib/format';
 import { guessPartKind } from '@/lib/kinds';
 import { toast } from '@/lib/toast';
 import {
+  blocksFromDocument,
   durationLabel,
   linesFromDocument,
   sectionLabel,
@@ -114,23 +115,30 @@ export default function VideoDetailPage() {
       setPeaks([]);
       setAnalysis(null);
       setAudioDuration(0);
+      setAnalysing(false);
+      setAudioError(false);
+      setPlaying(false);
       return;
     }
     let active = true;
+    setPeaks([]);
+    setAnalysis(null);
+    setAudioDuration(0);
     setAnalysing(true);
     setAudioError(false);
+    setPlaying(false);
     (async () => {
+      let context: AudioContext | null = null;
       try {
         const response = await fetch(url);
         const bytes = await response.arrayBuffer();
-        const context = new AudioContext();
+        context = new AudioContext();
         const buffer = await context.decodeAudioData(bytes);
         const result = analyseAudioBuffer(buffer);
         if (!active) return;
         setAnalysis(result);
         setPeaks(audioPeaks(buffer, 1400));
         setAudioDuration(buffer.duration);
-        await context.close();
       } catch {
         if (active) {
           setAudioError(true);
@@ -142,6 +150,7 @@ export default function VideoDetailPage() {
           probe.src = url;
         }
       } finally {
+        if (context) await context.close().catch(() => undefined);
         if (active) setAnalysing(false);
       }
     })();
@@ -151,10 +160,10 @@ export default function VideoDetailPage() {
   }, [project?.audioUrl]);
 
   const duration = useMemo(() => {
-    if (audioDuration > 0) return audioDuration;
-    const planned = project?.plannedDuration ?? 0;
+    const planned = shots.reduce((max, shot) => Math.max(max, shot.start + shot.duration), 0);
+    if (audioDuration > 0) return Math.max(audioDuration, planned);
     return Math.max(60, Math.ceil(planned));
-  }, [audioDuration, project?.plannedDuration]);
+  }, [audioDuration, shots]);
 
   useEffect(() => {
     if (time > duration) {
@@ -215,6 +224,11 @@ export default function VideoDetailPage() {
   };
 
   const saveShot = (saved: VideoShot) => {
+    if (saved.media) {
+      setMedia((current) =>
+        current.some((item) => item.id === saved.media?.id) ? current : [saved.media as MediaItem, ...current]
+      );
+    }
     setShots((current) => {
       const exists = current.some((shot) => shot.id === saved.id);
       return [...(exists ? current.map((shot) => (shot.id === saved.id ? saved : shot)) : [...current, saved])].sort(
@@ -266,7 +280,7 @@ export default function VideoDetailPage() {
       toast('Choose a treatment document', 'error');
       return;
     }
-    const lines = linesFromDocument(document).slice(0, 80);
+    const lines = blocksFromDocument(document).slice(0, 80);
     if (!lines.length) {
       toast('This document has no usable lines', 'error');
       return;
@@ -277,10 +291,10 @@ export default function VideoDetailPage() {
       const span = Math.max(lines.length, (audioDuration || 60) - base);
       const step = span / lines.length;
       const payload = lines.map((line, index) => ({
-        description: line,
+        description: line.text,
         start: Number((base + index * step).toFixed(2)),
         duration: Number(Math.max(1, step).toFixed(2)),
-        section: sectionsFromLine(line) ?? 'verse',
+        section: line.section ?? sectionsFromLine(line.text) ?? 'verse',
         status: 'idea',
         location: project?.location ?? '',
       }));
@@ -449,7 +463,7 @@ export default function VideoDetailPage() {
           <label className="video-library-toggle">
             <input
               type="checkbox"
-              checked={librarySongOnly}
+              checked={librarySongOnly && !!project.songId}
               disabled={!project.songId}
               onChange={(event) => setLibrarySongOnly(event.target.checked)}
             />
@@ -624,7 +638,12 @@ export default function VideoDetailPage() {
         onClose={() => setProjectModal(false)}
         onSaved={(video) => {
           setProject(video);
+          setImportDocId(video.treatmentDocId ? String(video.treatmentDocId) : '');
           setProjectModal(false);
+          fetch('/api/media')
+            .then((response) => response.json())
+            .then((data) => setMedia(data.media ?? []))
+            .catch(() => undefined);
         }}
       />
 

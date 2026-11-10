@@ -94,6 +94,16 @@ export default function DocumentsPage() {
 
   const activeDocument = documents.find((document) => document.id === selectedId) ?? null;
 
+  useEffect(() => {
+    if (!filtered.length) {
+      setSelectedId(null);
+      return;
+    }
+    setSelectedId((current) =>
+      current != null && filtered.some((document) => document.id === current) ? current : filtered[0].id
+    );
+  }, [filtered]);
+
   const createFromTemplate = async (templateId: string) => {
     const template = DOC_TEMPLATES.find((entry) => entry.id === templateId) ?? DOC_TEMPLATES[DOC_TEMPLATES.length - 1];
     setCreating(templateId);

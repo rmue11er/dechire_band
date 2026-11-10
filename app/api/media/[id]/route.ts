@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fail, ok, readJson, toInt } from '@/lib/api';
+import { fail, ok, readJson, toInt, toOptionalId } from '@/lib/api';
 import { UPLOAD_DIR } from '@/lib/db';
-import { deleteMedia, getMedia, mediaUsage, updateMedia } from '@/lib/repo';
+import { deleteMedia, getMedia, getSong, mediaUsage, updateMedia } from '@/lib/repo';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -30,7 +30,11 @@ export async function PATCH(request: Request, { params }: Ctx) {
   if (Array.isArray(body.tags)) patch.tags = body.tags.map(String);
   if (body.groupId !== undefined) patch.groupId = body.groupId ? Number(body.groupId) : null;
   if (body.folderId !== undefined) patch.folderId = body.folderId ? Number(body.folderId) : null;
-  if (body.songId !== undefined) patch.songId = body.songId ? Number(body.songId) : null;
+  if (body.songId !== undefined) {
+    const songId = toOptionalId(body.songId);
+    if (songId === false || (songId !== null && !getSong(songId))) return fail('Song not found');
+    patch.songId = songId;
+  }
 
   updateMedia(mediaId, patch);
   return ok({ media: getMedia(mediaId) });

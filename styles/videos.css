@@ -443,6 +443,10 @@
   transform: none;
 }
 
+.video-time-axis span:not(:first-child):last-child {
+  transform: translateX(-100%);
+}
+
 .video-playhead {
   position: absolute;
   top: 0;

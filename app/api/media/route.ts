@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { imageSize } from 'image-size';
-import { fail, ok, slugify } from '@/lib/api';
+import { fail, ok, slugify, toOptionalId } from '@/lib/api';
 import { UPLOAD_DIR } from '@/lib/db';
-import { createMedia, listFolders, listGroups, listMedia, listSongs } from '@/lib/repo';
+import { createMedia, getSong, listFolders, listGroups, listMedia, listSongs } from '@/lib/repo';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -72,7 +72,8 @@ export async function POST(request: Request) {
   const folderId =
     folderRaw && String(folderRaw) !== '' && String(folderRaw) !== 'null' ? Number(folderRaw) : null;
   const songRaw = form.get('songId');
-  const songId = songRaw && String(songRaw) !== '' && String(songRaw) !== 'null' ? Number(songRaw) : null;
+  const songId = toOptionalId(songRaw);
+  if (songId === false || (songId !== null && !getSong(songId))) return fail('Song not found');
   const titleField = String(form.get('title') ?? '').trim();
   const variantField = String(form.get('variantLabel') ?? '').trim();
   const altField = String(form.get('alt') ?? '').trim();
@@ -122,7 +123,7 @@ export async function POST(request: Request) {
       tags: [...tags, ...(kindField ? [kindField] : [])],
       groupId: Number.isFinite(groupId as number) ? groupId : null,
       folderId: Number.isFinite(folderId as number) ? folderId : null,
-      songId: Number.isFinite(songId as number) ? songId : null,
+      songId,
       variantLabel: incoming.length === 1 ? variantField : '',
     });
     created.push(id);

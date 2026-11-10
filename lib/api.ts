@@ -21,6 +21,16 @@ export function toInt(value: any, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+/**
+ * Parses an optional relation id from a request body.
+ * `null` means "no relation", `false` means "provided but not a valid id".
+ */
+export function toOptionalId(value: any): number | null | false {
+  if (value === null || value === undefined || value === '' || value === 'null') return null;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : false;
+}
+
 export function slugify(value: string) {
   return value
     .toLowerCase()

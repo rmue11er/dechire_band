@@ -137,9 +137,12 @@ export function updateSong(id: number, patch: Record<string, any>) {
     notes: 'notes',
   };
   for (const [key, column] of Object.entries(map)) {
-    if (patch[key] !== undefined) {
-      sets.push(`${column} = ?`);
+    if (patch[key] === undefined) continue;
+    sets.push(`${column} = ?`);
+    if (key === 'bpm' || key === 'duration') {
       params.push(patch[key] === '' || patch[key] == null ? null : patch[key]);
+    } else {
+      params.push(String(patch[key] ?? ''));
     }
   }
   if (!sets.length) return getSong(id);
@@ -243,9 +246,12 @@ export function updateVideoProject(id: number, patch: Record<string, any>) {
     notes: 'notes',
   };
   for (const [key, column] of Object.entries(map)) {
-    if (patch[key] !== undefined) {
-      sets.push(`${column} = ?`);
-      params.push(patch[key] === '' || patch[key] == null ? null : patch[key]);
+    if (patch[key] === undefined) continue;
+    sets.push(`${column} = ?`);
+    if (key === 'songId' || key === 'audioMediaId' || key === 'treatmentDocId') {
+      params.push(patch[key] ? Number(patch[key]) : null);
+    } else {
+      params.push(String(patch[key] ?? ''));
     }
   }
   if (!sets.length) return getVideoProject(id);

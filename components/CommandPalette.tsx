@@ -30,6 +30,8 @@ const KIND_LABEL: Record<string, string> = {
   milestone: 'Date',
   design: 'Design',
   snippet: 'Snippet',
+  song: 'Song',
+  video: 'Video',
   action: 'Go',
 };
 
@@ -115,7 +117,7 @@ export default function CommandPalette() {
           <input
             ref={inputRef}
             value={query}
-            placeholder="Search posts, assets, notes, documents, dates …"
+            placeholder="Search posts, assets, notes, documents, songs, videos …"
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onKeyDown}
           />

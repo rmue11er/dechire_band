@@ -143,7 +143,7 @@ export default function SongsPage() {
             Songs<span className="slash">/</span>Index
           </>
         }
-        sub="One place per song. Link media and documents here, then open the song when you want to keep working on it."
+        sub="One place per song. Link media, documents and music videos here, then open the song when you want to keep working on it."
         actions={
           <button type="button" className="btn btn-primary" onClick={openCreate}>
             <IconPlus size={15} /> New song
@@ -170,7 +170,7 @@ export default function SongsPage() {
         <EmptyState
           icon={<IconMusic size={24} />}
           title="No songs yet"
-          hint="Add the songs you are working on. Every media file and document can then point to one song."
+          hint="Add the songs you are working on. Every media file, document and music video can then point to one song."
           action={
             <button type="button" className="btn btn-primary btn-sm" onClick={openCreate}>
               <IconPlus size={14} /> Add the first song
