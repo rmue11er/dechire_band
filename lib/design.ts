@@ -131,12 +131,12 @@ export const TEXT_PRESETS: TextPreset[] = [
   {
     id: 'display',
     label: 'Display',
-    sample: 'FRACTURE',
+    sample: 'fracture',
     patch: {
       fontFamily: 'instrument',
       fontSize: 190,
       fontWeight: 400,
-      uppercase: true,
+      uppercase: false,
       letterSpacing: -4,
       lineHeight: 0.86,
       color: '#efe7da',
@@ -150,7 +150,7 @@ export const TEXT_PRESETS: TextPreset[] = [
       fontFamily: 'inter',
       fontSize: 140,
       fontWeight: 600,
-      uppercase: true,
+      uppercase: false,
       letterSpacing: 2,
       lineHeight: 0.95,
       color: '#efe7da',
@@ -159,7 +159,7 @@ export const TEXT_PRESETS: TextPreset[] = [
   {
     id: 'subhead',
     label: 'Subline',
-    sample: 'AUGSBURG',
+    sample: 'augsburg',
     patch: {
       fontFamily: 'space',
       fontSize: 64,
@@ -203,7 +203,7 @@ export const TEXT_PRESETS: TextPreset[] = [
   {
     id: 'mono',
     label: 'Mono / Label',
-    sample: 'déchire /// AUGSBURG',
+    sample: 'déchire /// augsburg',
     patch: {
       fontFamily: 'space',
       fontSize: 28,
@@ -274,13 +274,13 @@ export const TEXT_PRESETS: TextPreset[] = [
   },
   {
     id: 'capsnarrow',
-    label: 'Tight caps',
-    sample: 'DON’T LOOK AWAY',
+    label: 'Tight',
+    sample: 'don’t look away',
     patch: {
       fontFamily: 'inter',
       fontSize: 62,
       fontWeight: 700,
-      uppercase: true,
+      uppercase: false,
       letterSpacing: 1,
       lineHeight: 1.0,
       color: '#efe7da',
@@ -648,7 +648,7 @@ export const TEMPLATES: Template[] = [
         elements: [
           createTexture({ width: 1080, height: 1350 }, 'grain', { opacity: 0.34 }),
           createText({ width: 1080, height: 1350 }, TEXT_PRESETS[5], {
-            text: `new single /// ${dayLabel(5)}`,
+            text: `new single /// ${dayLabel(5).toLowerCase()}`,
             x: 72,
             y: 92,
             w: 760,
@@ -663,8 +663,8 @@ export const TEMPLATES: Template[] = [
             name: 'Akzentlinie',
             x: 72,
             y: 168,
-            w: 130,
-            h: 6,
+            w: 96,
+            h: 2,
             fillType: 'solid',
             fill: '#b9a5e8',
             gradientFrom: '#b9a5e8',
@@ -684,6 +684,16 @@ export const TEMPLATES: Template[] = [
             lineHeight: 0.92,
             letterSpacing: -6,
             color: '#efe7da',
+          }),
+          createText({ width: 1080, height: 1350 }, TEXT_PRESETS[4], {
+            text: 'the new record · four songs · 17 min',
+            x: 76,
+            y: 1130,
+            w: 760,
+            h: 46,
+            fontSize: 27,
+            letterSpacing: 0,
+            color: 'rgba(239,231,218,0.55)',
           }),
           createText({ width: 1080, height: 1350 }, TEXT_PRESETS[5], {
             text: 'déchire · post-hardcore · augsburg',
@@ -722,7 +732,7 @@ export const TEMPLATES: Template[] = [
           gradientFrom: '#b9a5e8',
           gradientTo: '#6b54a6',
           gradientAngle: 90,
-          strokeColor: 'rgba(185,165,232,0.3)',
+          strokeColor: 'rgba(239,231,218,0.14)',
           strokeWidth: 1,
           radius: 0,
         }) as ShapeElement,
@@ -735,10 +745,10 @@ export const TEMPLATES: Template[] = [
           align: 'center',
           fontSize: 22,
           letterSpacing: 5,
-          color: '#cfc2ea',
+          color: 'rgba(239,231,218,0.55)',
         }),
         createText({ width: 1080, height: 1350 }, TEXT_PRESETS[0], {
-          text: dayLabel(2),
+          text: dayLabel(2).toLowerCase(),
           x: 60,
           y: 400,
           w: 960,
@@ -750,7 +760,7 @@ export const TEMPLATES: Template[] = [
           color: '#efe7da',
         }),
         createText({ width: 1080, height: 1350 }, TEXT_PRESETS[0], {
-          text: 'AUGSBURG',
+          text: 'augsburg',
           x: 60,
           y: 742,
           w: 960,
@@ -759,6 +769,7 @@ export const TEMPLATES: Template[] = [
           fontSize: 132,
           lineHeight: 0.95,
           letterSpacing: 6,
+          uppercase: false,
           color: '#b9a5e8',
         }),
         baseElement({
@@ -817,10 +828,10 @@ export const TEMPLATES: Template[] = [
           type: 'shape',
           shape: 'line',
           name: 'Linie oben',
-          x: 380,
+          x: 430,
           y: 236,
-          w: 320,
-          h: 2,
+          w: 220,
+          h: 1,
           fillType: 'solid',
           fill: '#b9a5e8',
           gradientFrom: '#b9a5e8',
@@ -831,22 +842,22 @@ export const TEMPLATES: Template[] = [
           radius: 0,
         }) as ShapeElement,
         createText({ width: 1080, height: 1080 }, TEXT_PRESETS[3], {
-          text: '“I sharpened the edges\nuntil nothing could be saved.\nMaybe that was the plan.”',
+          text: '“there is a door in the dark\nand it opens from the inside.”',
           x: 130,
           y: 300,
           w: 820,
           h: 460,
-          fontSize: 70,
+          fontSize: 76,
           lineHeight: 1.26,
         }),
         baseElement({
           type: 'shape',
           shape: 'line',
           name: 'Linie unten',
-          x: 380,
+          x: 430,
           y: 792,
-          w: 320,
-          h: 2,
+          w: 220,
+          h: 1,
           fillType: 'solid',
           fill: '#b9a5e8',
           gradientFrom: '#b9a5e8',
@@ -911,6 +922,16 @@ export const TEMPLATES: Template[] = [
           uppercase: false,
           color: '#efe7da',
         }),
+        createText({ width: 1080, height: 1080 }, TEXT_PRESETS[4], {
+          text: 'heavyweight cotton · washed black',
+          x: 72,
+          y: 712,
+          w: 700,
+          h: 40,
+          fontSize: 28,
+          letterSpacing: 0,
+          color: 'rgba(239,231,218,0.55)',
+        }),
         createText({ width: 1080, height: 1080 }, TEXT_PRESETS[5], {
           text: 'déchire.band/shop',
           x: 72,
@@ -935,7 +956,7 @@ export const TEMPLATES: Template[] = [
       elements: [
         createTexture({ width: 1080, height: 1920 }, 'grain', { opacity: 0.3 }),
         createText({ width: 1080, height: 1920 }, TEXT_PRESETS[5], {
-          text: `${dayLabel(5)} /// 00:01`,
+          text: `${dayLabel(5).toLowerCase()} /// 00:01`,
           x: 80,
           y: 300,
           w: 920,
@@ -943,7 +964,7 @@ export const TEMPLATES: Template[] = [
           align: 'center',
           fontSize: 24,
           letterSpacing: 10,
-          color: '#cfc2ea',
+          color: 'rgba(239,231,218,0.5)',
         }),
         createText({ width: 1080, height: 1920 }, TEXT_PRESETS[0], {
           text: 'out\nnow',
@@ -1017,9 +1038,9 @@ export const TEMPLATES: Template[] = [
           shape: 'rect',
           name: 'Akzent',
           x: 80,
-          y: 332,
-          w: 260,
-          h: 12,
+          y: 352,
+          w: 180,
+          h: 2,
           fillType: 'solid',
           fill: '#b9a5e8',
           gradientFrom: '#b9a5e8',
@@ -1079,8 +1100,8 @@ export const TEMPLATES: Template[] = [
             gradientFrom: '#b9a5e8',
             gradientTo: '#6b54a6',
             gradientAngle: 90,
-            strokeColor: 'rgba(185,165,232,0.4)',
-            strokeWidth: 2,
+            strokeColor: 'rgba(239,231,218,0.2)',
+            strokeWidth: 1,
             radius: 0,
           }) as ShapeElement
         );
@@ -1165,11 +1186,11 @@ export const TEMPLATES: Template[] = [
             w: 1080,
             h: 1350,
             fillType: 'gradient',
-            fill: '#b9a5e8',
-            gradientFrom: '#2a201b',
-            gradientTo: '#080605',
+            fill: '#1a1918',
+            gradientFrom: '#262422',
+            gradientTo: '#080808',
             gradientAngle: 160,
-            strokeColor: '#b9a5e8',
+            strokeColor: '#1a1918',
             strokeWidth: 0,
             radius: 0,
           }) as ShapeElement
@@ -1221,8 +1242,8 @@ export const TEMPLATES: Template[] = [
           name: 'Linie',
           x: 64,
           y: 1196,
-          w: 92,
-          h: 3,
+          w: 72,
+          h: 2,
           fillType: 'solid',
           fill: '#b9a5e8',
           gradientFrom: '#b9a5e8',
@@ -1409,6 +1430,7 @@ export const TEMPLATES: Template[] = [
       return {
         background: { type: 'gradient', color: '#070707', from: '#121111', to: '#030303', angle: 200 },
         elements: [
+          createTexture(box, 'grain', { opacity: 0.22 }),
           createText(box, TEXT_PRESETS[0], {
             text: 'noise',
             x: -40,
@@ -1455,11 +1477,11 @@ export const TEMPLATES: Template[] = [
     build: () => {
       const box = { width: 1080, height: 1350 };
       const rows = [
-        { date: '11 NOV', city: 'AUGSBURG', venue: 'Kantine' },
-        { date: '18 NOV', city: 'MÜNCHEN', venue: 'Backstage' },
-        { date: '24 NOV', city: 'STUTTGART', venue: 'Club Zentral' },
-        { date: '02 DEC', city: 'NÜRNBERG', venue: 'MuZ' },
-        { date: '09 DEC', city: 'WIEN', venue: 'Chelsea' },
+        { date: '11 nov', city: 'augsburg', venue: 'Kantine' },
+        { date: '18 nov', city: 'münchen', venue: 'Backstage' },
+        { date: '24 nov', city: 'stuttgart', venue: 'Club Zentral' },
+        { date: '02 dec', city: 'nürnberg', venue: 'MuZ' },
+        { date: '09 dec', city: 'wien', venue: 'Chelsea' },
       ];
       const elements: DesignElement[] = [
         createTexture(box, 'grain', { opacity: 0.28 }),
@@ -1473,13 +1495,13 @@ export const TEMPLATES: Template[] = [
           letterSpacing: 4,
           color: '#b9a5e8',
         }),
-        createText(box, TEXT_PRESETS[10], {
+        createText(box, TEXT_PRESETS[0], {
           text: 'déchire',
           x: 76,
           y: 150,
           w: 940,
           h: 150,
-          fontSize: 120,
+          fontSize: 150,
           lineHeight: 0.95,
           letterSpacing: 2,
           uppercase: false,
@@ -1506,13 +1528,13 @@ export const TEMPLATES: Template[] = [
       rows.forEach((row, index) => {
         const y = 396 + index * 146;
         elements.push(
-          createText(box, TEXT_PRESETS[10], {
+          createText(box, TEXT_PRESETS[8], {
             text: row.date,
             x: 80,
             y,
             w: 190,
             h: 60,
-            fontSize: 46,
+            fontSize: 38,
             letterSpacing: 1,
             color: '#b9a5e8',
           }),
@@ -1524,6 +1546,7 @@ export const TEMPLATES: Template[] = [
             h: 60,
             fontSize: 46,
             letterSpacing: 1,
+            uppercase: false,
             color: '#efe7da',
           }),
           createText(box, TEXT_PRESETS[8], {
