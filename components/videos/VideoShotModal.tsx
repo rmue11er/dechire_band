@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { IconImage, IconTrash, IconX } from '@/components/icons';
 import MediaPicker from '@/components/MediaPicker';
 import { MediaThumb } from '@/components/MediaThumb';
+import ShotSketchPad from '@/components/videos/ShotSketchPad';
 import { Field, Modal } from '@/components/ui';
 import { toast } from '@/lib/toast';
 import {
@@ -49,6 +50,7 @@ export default function VideoShotModal({
   const [lighting, setLighting] = useState('');
   const [notes, setNotes] = useState('');
   const [mediaId, setMediaId] = useState('');
+  const [sketch, setSketch] = useState<string | null>(null);
   const [uploadedMedia, setUploadedMedia] = useState<MediaItem[]>([]);
   const [mediaPicker, setMediaPicker] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -80,6 +82,7 @@ export default function VideoShotModal({
       setLighting(shot.lighting);
       setNotes(shot.notes);
       setMediaId(shot.mediaId ? String(shot.mediaId) : '');
+      setSketch(shot.sketch);
       return;
     }
     const next = [...shots]
@@ -99,6 +102,7 @@ export default function VideoShotModal({
     setLighting('');
     setNotes('');
     setMediaId('');
+    setSketch(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, shot, playhead]);
 
@@ -135,6 +139,7 @@ export default function VideoShotModal({
             lighting,
             notes,
             mediaId: mediaId ? Number(mediaId) : null,
+            sketch,
           }),
         }
       );
@@ -199,6 +204,13 @@ export default function VideoShotModal({
               placeholder="Wide: singer alone in the empty hall, lights flicker on the first hit."
               onChange={(event) => setDescription(event.target.value)}
             />
+          </Field>
+
+          <Field
+            label="Frame-Skizze"
+            hint={<span className="count">Grob zeichnen – erscheint als Storyboard-Frame</span>}
+          >
+            <ShotSketchPad key={shot?.id ?? 'new'} value={sketch} onChange={setSketch} />
           </Field>
 
           <div className="video-form-row">

@@ -6,8 +6,12 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const STATUSES = new Set<string>(SHOT_STATUS.map((entry) => entry.value));
+const MAX_SKETCH_LENGTH = 900_000;
 
 type Ctx = { params: Promise<{ id: string }> };
+
+const cleanSketch = (value: any) =>
+  typeof value === 'string' && value.startsWith('data:image/png;base64,') ? value : null;
 
 const cleanShot = (input: Record<string, any>) => ({
   start: Math.max(0, Number(input.start) || 0),
@@ -20,8 +24,19 @@ const cleanShot = (input: Record<string, any>) => ({
   lighting: String(input.lighting ?? '').slice(0, 120),
   status: STATUSES.has(String(input.status)) ? String(input.status) : 'idea',
   mediaId: toOptionalId(input.mediaId) || null,
+  sketch: cleanSketch(input.sketch),
   notes: String(input.notes ?? '').slice(0, 2000),
 });
+
+const hasInvalidSketch = (inputs: Record<string, any>[]) =>
+  inputs.some((input) => {
+    if (input.sketch === undefined || input.sketch === null || input.sketch === '') return false;
+    return (
+      typeof input.sketch !== 'string' ||
+      !input.sketch.startsWith('data:image/png;base64,') ||
+      input.sketch.length > MAX_SKETCH_LENGTH
+    );
+  });
 
 const hasInvalidMedia = (inputs: Record<string, any>[]) =>
   inputs.some((input) => {
@@ -45,11 +60,13 @@ export async function POST(request: Request, { params }: Ctx) {
   if (Array.isArray(body.shots)) {
     if (!body.shots.length || body.shots.length > 80) return fail('Add 1–80 shots at a time');
     if (hasInvalidMedia(body.shots)) return fail('Media not found');
+    if (hasInvalidSketch(body.shots)) return fail('Invalid or too large sketch');
     const shots = bulkCreateVideoShots(videoId, body.shots.map(cleanShot));
     return ok({ shots }, 201);
   }
 
   if (hasInvalidMedia([body])) return fail('Media not found');
+  if (hasInvalidSketch([body])) return fail('Invalid or too large sketch');
   const shot = createVideoShot(videoId, cleanShot(body));
   return ok({ shot }, 201);
 }

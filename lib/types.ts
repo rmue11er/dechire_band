@@ -60,6 +60,8 @@ export interface VideoShot {
   status: ShotStatus;
   mediaId: number | null;
   media: MediaItem | null;
+  /** Small data-URL PNG drawn in the storyboard sketch pad. */
+  sketch: string | null;
   notes: string;
   createdAt: string;
   updatedAt: string;

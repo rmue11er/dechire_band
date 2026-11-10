@@ -21,30 +21,21 @@ import {
   IconVideo,
 } from '@/components/icons';
 import { MediaThumb } from '@/components/MediaThumb';
-import { Field, Modal, PageHead, Spinner } from '@/components/ui';
+import { PageHead, Spinner } from '@/components/ui';
 import VideoProjectModal from '@/components/videos/VideoProjectModal';
 import VideoShotModal from '@/components/videos/VideoShotModal';
 import VideoTimeline from '@/components/videos/VideoTimeline';
 import { analyseAudioBuffer, audioPeaks, type BeatAnalysis } from '@/lib/beats';
 import { formatDate } from '@/lib/format';
-import { guessPartKind } from '@/lib/kinds';
 import { toast } from '@/lib/toast';
 import {
-  blocksFromDocument,
   durationLabel,
-  linesFromDocument,
   sectionLabel,
   shotStatusLabel,
   timecode,
   videoStatusLabel,
 } from '@/lib/videos';
 import type { BandDocument, MediaItem, Song, VideoProject, VideoShot } from '@/lib/types';
-
-const sectionsFromLine = (line: string) => {
-  if (line.length > 40) return null;
-  if (!/(intro|verse|pre[- ]?chorus|chorus|bridge|breakdown|solo|outro)/i.test(line)) return null;
-  return guessPartKind(line);
-};
 
 export default function VideoDetailPage() {
   const params = useParams<{ id: string }>();
@@ -67,9 +58,6 @@ export default function VideoDetailPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [shotModal, setShotModal] = useState<{ shot: VideoShot | null } | null>(null);
   const [projectModal, setProjectModal] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
-  const [importDocId, setImportDocId] = useState('');
-  const [importing, setImporting] = useState(false);
   const [libraryQuery, setLibraryQuery] = useState('');
   const [librarySongOnly, setLibrarySongOnly] = useState(true);
   const [uploadingShot, setUploadingShot] = useState(false);
@@ -96,7 +84,6 @@ export default function VideoDetailPage() {
       setSongs(songData.songs ?? []);
       setMedia(mediaData.media ?? []);
       setDocuments(docsData.documents ?? []);
-      setImportDocId(videoData.video?.treatmentDocId ? String(videoData.video.treatmentDocId) : '');
     } catch {
       toast('Could not load the video project', 'error');
       router.push('/videos');
@@ -274,56 +261,6 @@ export default function VideoDetailPage() {
     }
   };
 
-  const importTreatment = async () => {
-    const document = documents.find((entry) => entry.id === Number(importDocId));
-    if (!document) {
-      toast('Choose a treatment document', 'error');
-      return;
-    }
-    const lines = blocksFromDocument(document).slice(0, 80);
-    if (!lines.length) {
-      toast('This document has no usable lines', 'error');
-      return;
-    }
-    setImporting(true);
-    try {
-      const base = shots.reduce((max, shot) => Math.max(max, shot.start + shot.duration), 0);
-      const span = Math.max(lines.length, (audioDuration || 60) - base);
-      const step = span / lines.length;
-      const payload = lines.map((line, index) => ({
-        description: line.text,
-        start: Number((base + index * step).toFixed(2)),
-        duration: Number(Math.max(1, step).toFixed(2)),
-        section: line.section ?? sectionsFromLine(line.text) ?? 'verse',
-        status: 'idea',
-        location: project?.location ?? '',
-      }));
-      const response = await fetch(`/api/videos/${videoId}/shots`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shots: payload }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? 'Could not import the treatment');
-      setShots((current) => [...current, ...(data.shots ?? [])].sort((a, b) => a.start - b.start));
-      if (!project?.treatmentDocId) {
-        const patch = await fetch(`/api/videos/${videoId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ treatmentDocId: document.id }),
-        });
-        const patched = await patch.json();
-        if (patch.ok) setProject(patched.video);
-      }
-      setImportOpen(false);
-      toast(`${data.shots?.length ?? 0} shots imported from “${document.title}”`);
-    } catch (error: any) {
-      toast(error.message ?? 'Could not import the treatment', 'error');
-    } finally {
-      setImporting(false);
-    }
-  };
-
   const removeProject = async () => {
     if (!project) return;
     if (!window.confirm(`Delete “${project.title}” and all ${shots.length} shots?`)) return;
@@ -339,8 +276,7 @@ export default function VideoDetailPage() {
   if (loading) return <Spinner label="Building the timeline" />;
   if (!project) return null;
 
-  const treatmentDocument = documents.find((entry) => entry.id === Number(importDocId)) ?? null;
-  const treatmentLines = treatmentDocument ? linesFromDocument(treatmentDocument) : [];
+  const notesDocument = documents.find((entry) => entry.id === project.treatmentDocId) ?? null;
 
   return (
     <div className="video-detail">
@@ -364,9 +300,6 @@ export default function VideoDetailPage() {
             </Link>
             <button type="button" className="btn btn-ghost" onClick={() => window.print()}>
               <IconFilm size={14} /> Storyboard drucken
-            </button>
-            <button type="button" className="btn btn-ghost" onClick={() => setImportOpen(true)}>
-              <IconDocument size={14} /> Aus Treatment
             </button>
             <button type="button" className="btn btn-ghost" onClick={() => setProjectModal(true)}>
               <IconPencil size={14} /> Projekt
@@ -402,11 +335,6 @@ export default function VideoDetailPage() {
         ) : (
           <span className="muted">No audio linked</span>
         )}
-        {project.treatmentDocId ? (
-          <Link href={`/docs?doc=${project.treatmentDocId}`}>
-            <IconDocument size={12} /> {project.treatmentTitle ?? 'Treatment'}
-          </Link>
-        ) : null}
       </div>
 
       {project.notes ? <p className="video-project-notes">{project.notes}</p> : null}
@@ -568,15 +496,10 @@ export default function VideoDetailPage() {
               <div className="video-empty">
                 <IconVideo size={24} />
                 <h3>No shots yet</h3>
-                <p>Start with a shot at the playhead, or import the treatment document as a first shot list.</p>
-                <div className="row wrap">
-                  <button type="button" className="btn btn-primary btn-sm" onClick={() => setShotModal({ shot: null })}>
-                    <IconPlus size={13} /> First shot
-                  </button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setImportOpen(true)}>
-                    <IconDocument size={13} /> Import treatment
-                  </button>
-                </div>
+                <p>Start with a shot at the playhead, then sketch the frame while the idea is fresh.</p>
+                <button type="button" className="btn btn-primary btn-sm" onClick={() => setShotModal({ shot: null })}>
+                  <IconPlus size={13} /> First shot
+                </button>
               </div>
             ) : (
               <div className="shot-list">
@@ -590,9 +513,25 @@ export default function VideoDetailPage() {
                     }}
                   >
                     <span className="shot-number mono">{String(index + 1).padStart(2, '0')}</span>
-                    <div className="shot-thumb">
-                      {shot.media ? <MediaThumb media={shot.media} className="shot-thumb-img" /> : <IconImage size={18} />}
-                    </div>
+                    <button
+                      type="button"
+                      className="shot-thumb"
+                      title={shot.sketch ? 'Skizze bearbeiten' : 'Frame skizzieren'}
+                      aria-label={shot.sketch ? 'Edit sketch' : 'Sketch frame'}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setSelectedId(shot.id);
+                        setShotModal({ shot });
+                      }}
+                    >
+                      {shot.sketch ? (
+                        <img src={shot.sketch} alt="" className="shot-thumb-img shot-thumb-sketch" />
+                      ) : shot.media ? (
+                        <MediaThumb media={shot.media} className="shot-thumb-img" />
+                      ) : (
+                        <IconImage size={18} />
+                      )}
+                    </button>
                     <div className="shot-main">
                       <div className="shot-top">
                         <span className="shot-time mono">
@@ -626,6 +565,24 @@ export default function VideoDetailPage() {
               </div>
             )}
           </section>
+
+          {notesDocument ? (
+            <section className="panel video-notes">
+              <div className="video-notes-head">
+                <div>
+                  <span className="label">Notizen</span>
+                  <p className="small muted">{notesDocument.title}</p>
+                </div>
+                <Link className="btn btn-sm btn-ghost" href={`/docs?doc=${notesDocument.id}`}>
+                  <IconDocument size={13} /> Dokument öffnen
+                </Link>
+              </div>
+              <div
+                className="prose video-notes-body"
+                dangerouslySetInnerHTML={{ __html: notesDocument.content || '<p>Keine Notizen hinterlegt.</p>' }}
+              />
+            </section>
+          ) : null}
         </div>
       </div>
 
@@ -638,7 +595,6 @@ export default function VideoDetailPage() {
         onClose={() => setProjectModal(false)}
         onSaved={(video) => {
           setProject(video);
-          setImportDocId(video.treatmentDocId ? String(video.treatmentDocId) : '');
           setProjectModal(false);
           fetch('/api/media')
             .then((response) => response.json())
@@ -658,66 +614,6 @@ export default function VideoDetailPage() {
         onSaved={saveShot}
         onDeleted={deleteShot}
       />
-
-      <Modal
-        open={importOpen}
-        onClose={() => setImportOpen(false)}
-        title="Aus Treatment importieren"
-        subtitle="Jeder Absatz wird ein Shot. Die Zeiten werden gleichmäßig über die Songlänge verteilt."
-        footer={
-          <>
-            <button type="button" className="btn btn-ghost" onClick={() => setImportOpen(false)}>
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={importTreatment}
-              disabled={importing || !treatmentDocument}
-            >
-              {importing ? 'Importing …' : `Import ${treatmentLines.length} shots`}
-            </button>
-          </>
-        }
-      >
-        <div className="video-treatment">
-          <Field label="Document">
-            <select
-              className="select"
-              value={importDocId}
-              onChange={(event) => setImportDocId(event.target.value)}
-            >
-              <option value="">Choose a treatment or outline …</option>
-              {documents.map((document) => (
-                <option key={document.id} value={document.id}>
-                  {document.title}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          {treatmentDocument ? (
-            <>
-              <p className="small muted">
-                {treatmentLines.length} lines · {audioDuration ? durationLabel(audioDuration) : 'timeline length 60 s'}
-              </p>
-              <div className="video-treatment-preview">
-                {treatmentLines.slice(0, 10).map((line, index) => (
-                  <div key={`${index}-${line}`}>
-                    <span className="mono">{String(index + 1).padStart(2, '0')}</span>
-                    <span className="truncate">{line}</span>
-                  </div>
-                ))}
-                {treatmentLines.length > 10 ? (
-                  <div className="video-treatment-more">+ {treatmentLines.length - 10} more</div>
-                ) : null}
-              </div>
-            </>
-          ) : (
-            <p className="small muted">Choose the document where the rough flow, shots and locations live.</p>
-          )}
-        </div>
-      </Modal>
     </div>
   );
 }

@@ -283,6 +283,7 @@ function mapVideoShot(row: any): VideoShot {
     status: (row.status ?? 'idea') as VideoShot['status'],
     mediaId: row.media_id == null ? null : Number(row.media_id),
     media,
+    sketch: row.sketch ?? null,
     notes: row.notes ?? '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -309,8 +310,8 @@ export function createVideoShot(videoId: number, input: Record<string, any> = {}
   const now = new Date().toISOString();
   const result = execute(
     `INSERT INTO video_shots (video_id, position, start_seconds, duration_seconds, section,
-       description, location, shot_type, movement, lighting, status, media_id, notes, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       description, location, shot_type, movement, lighting, status, media_id, sketch, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       videoId,
       Number(next?.position ?? 0),
@@ -324,6 +325,7 @@ export function createVideoShot(videoId: number, input: Record<string, any> = {}
       String(input.lighting ?? '').slice(0, 120),
       String(input.status ?? 'idea'),
       input.mediaId ? Number(input.mediaId) : null,
+      input.sketch ? String(input.sketch) : null,
       String(input.notes ?? '').slice(0, 2000),
       now,
       now,
@@ -356,12 +358,14 @@ export function updateVideoShot(id: number, patch: Record<string, any>) {
     lighting: 'lighting',
     status: 'status',
     mediaId: 'media_id',
+    sketch: 'sketch',
     notes: 'notes',
   };
   for (const [key, column] of Object.entries(map)) {
     if (patch[key] === undefined) continue;
     sets.push(`${column} = ?`);
     if (key === 'mediaId') params.push(patch[key] ? Number(patch[key]) : null);
+    else if (key === 'sketch') params.push(patch[key] ? String(patch[key]) : null);
     else if (key === 'start') params.push(Math.max(0, Number(patch[key])));
     else if (key === 'duration') params.push(Math.max(0.2, Number(patch[key])));
     else params.push(patch[key] ?? '');

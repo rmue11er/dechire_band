@@ -99,7 +99,7 @@ export default function VideoProjectModal({
         open={open}
         onClose={onClose}
         title={project ? 'Edit video' : 'New music video'}
-        subtitle="Song, audio, treatment and the shoot window – the plan lives on the next screen."
+        subtitle="Song, audio, notes and the shoot window – the plan lives on the next screen."
         footer={
           <>
             <button type="button" className="btn btn-ghost" onClick={onClose}>
@@ -180,13 +180,13 @@ export default function VideoProjectModal({
           </Field>
 
           <div className="video-form-row">
-            <Field label="Treatment document">
+            <Field label="Notizen-Dokument">
               <select
                 className="select"
                 value={treatmentDocId}
                 onChange={(event) => setTreatmentDocId(event.target.value)}
               >
-                <option value="">No document</option>
+                <option value="">Kein Dokument</option>
                 {documents.map((document) => (
                   <option key={document.id} value={document.id}>
                     {document.title}

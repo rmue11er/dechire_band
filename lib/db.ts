@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS video_shots (
   lighting TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'idea',
   media_id INTEGER,
+  sketch TEXT,
   notes TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
@@ -490,6 +491,7 @@ function createConnection(): DatabaseSync {
   ensureColumn(db, 'documents', 'folder_id', 'INTEGER');
   ensureColumn(db, 'documents', 'song_id', 'INTEGER');
   ensureColumn(db, 'documents', 'share_token', 'TEXT');
+  ensureColumn(db, 'video_shots', 'sketch', 'TEXT');
   ensureIndex(db, 'media', 'idx_media_song', 'CREATE INDEX idx_media_song ON media(song_id)');
   ensureIndex(db, 'documents', 'idx_documents_song', 'CREATE INDEX idx_documents_song ON documents(song_id)');
   ensureIndex(db, 'documents', 'idx_documents_folder', 'CREATE INDEX idx_documents_folder ON documents(folder_id)');

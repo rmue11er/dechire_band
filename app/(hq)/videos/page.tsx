@@ -141,7 +141,7 @@ export default function VideosPage() {
           hint={
             videos.length
               ? 'Change the search or song filter.'
-              : 'Start a project, link the song and treatment, then build the timeline shot by shot.'
+              : 'Start a project, link the song and notes, then build the timeline shot by shot.'
           }
           action={
             !videos.length ? (

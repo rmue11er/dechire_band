@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const STATUSES = new Set<string>(SHOT_STATUS.map((entry) => entry.value));
+const MAX_SKETCH_LENGTH = 900_000;
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -30,6 +31,19 @@ export async function PATCH(request: Request, { params }: Ctx) {
     const mediaId = toOptionalId(body.mediaId);
     if (mediaId === false || (mediaId !== null && !getMedia(mediaId))) return fail('Media not found');
     patch.mediaId = mediaId;
+  }
+  if (body.sketch !== undefined) {
+    if (body.sketch === null || body.sketch === '') {
+      patch.sketch = null;
+    } else if (
+      typeof body.sketch === 'string' &&
+      body.sketch.startsWith('data:image/png;base64,') &&
+      body.sketch.length <= MAX_SKETCH_LENGTH
+    ) {
+      patch.sketch = body.sketch;
+    } else {
+      return fail('Invalid or too large sketch');
+    }
   }
   if (body.notes !== undefined) patch.notes = String(body.notes ?? '').slice(0, 2000);
 
