@@ -4,8 +4,10 @@ import { createDocument, listDocFolders, listDocuments, listSongs } from '@/lib/
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function GET() {
-  return ok({ documents: listDocuments(), folders: listDocFolders(), songs: listSongs() });
+export async function GET(request: Request) {
+  const kind = new URL(request.url).searchParams.get('kind');
+  const documents = kind ? listDocuments().filter((document) => document.kind === kind) : listDocuments();
+  return ok({ documents, folders: listDocFolders(), songs: listSongs() });
 }
 
 export async function POST(request: Request) {

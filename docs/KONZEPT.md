@@ -703,7 +703,9 @@ three type styles (Redaction / Instrument Sans / DM Mono), left or centred, top/
 box. **Lyrics** are an ordered list of `{ text, start }` cues: paste one line per cue, then either tap Space
 with the song (the current line gets the current audio time) or set/nudge each cue against the playhead.
 The cue list shows a mini timeline with the playhead, a `+ Zeile` button appends one line, and
-*Weich einblenden* fades each cue in over 0.22 s instead of cutting it in. While lyrics exist they replace
+*Weich einblenden* fades each cue in over 0.22 s instead of cutting it in. A **lyrics-document picker** in
+the step loads every document of kind `lyrics` (`GET /api/documents?kind=lyrics`), lists its paragraphs as
+lines, and appends a clicked line as a cue – one line or the whole sheet. While lyrics exist they replace
 the hook in the preview. For export every cue is rasterised as its own
 transparent 1080×1920 PNG with `html-to-image` (fonts embedded) and overlaid with an ffmpeg `enable` window –
 so typography and colours stay in the app's design system instead of being reimplemented in `drawtext`.

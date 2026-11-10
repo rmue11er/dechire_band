@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import MediaPicker from '@/components/MediaPicker';
@@ -50,7 +51,7 @@ import {
 } from '@/lib/reels';
 import { formatBytes } from '@/lib/format';
 import { toast } from '@/lib/toast';
-import type { MediaItem } from '@/lib/types';
+import type { BandDocument, MediaItem } from '@/lib/types';
 
 interface ClipState {
   key: string;
@@ -120,6 +121,32 @@ const DEFAULT_TEXT: ReelText = {
   lyricFade: true,
 };
 
+const cleanLyricLine = (value: string) =>
+  String(value ?? '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120);
+
+/** Lyrics docs are paragraphs – `plainText` is already the clean line text. */
+function lyricLinesFromDocument(doc: BandDocument) {
+  const fromText = String(doc.plainText ?? '')
+    .split(/\r?\n+/)
+    .map(cleanLyricLine)
+    .filter(Boolean);
+  if (fromText.length) return fromText;
+  return [...String(doc.content ?? '').matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => cleanLyricLine(match[1]))
+    .filter(Boolean);
+}
+
 export default function ReelsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -144,6 +171,8 @@ export default function ReelsPage() {
   const [theater, setTheater] = useState(false);
   const [theaterGuides, setTheaterGuides] = useState(false);
   const [lyricsDraft, setLyricsDraft] = useState('');
+  const [lyricsDocs, setLyricsDocs] = useState<BandDocument[]>([]);
+  const [lyricsDocId, setLyricsDocId] = useState<number | null>(null);
   const [tapMode, setTapMode] = useState(false);
   const [tapIndex, setTapIndex] = useState(0);
 
@@ -172,12 +201,16 @@ export default function ReelsPage() {
       fetch('/api/media').then((response) => response.json()),
       fetch('/api/profile').then((response) => response.json()),
       fetch('/api/reels').then((response) => response.json()),
+      fetch('/api/documents?kind=lyrics').then((response) => response.json()),
     ])
-      .then(([mediaData, profileData, reelData]) => {
+      .then(([mediaData, profileData, reelData, documentData]) => {
         if (!mounted) return;
         setMedia(mediaData.media ?? []);
         setProfile(profileData.profile ?? null);
         setFfmpeg(reelData.ffmpeg ?? null);
+        const docs: BandDocument[] = documentData.documents ?? [];
+        setLyricsDocs(docs);
+        setLyricsDocId((current) => current ?? docs[0]?.id ?? null);
       })
       .catch(() => toast('Reel lab could not be loaded', 'error'))
       .finally(() => mounted && setLoading(false));
@@ -187,6 +220,12 @@ export default function ReelsPage() {
   }, []);
 
   const audioMedia = useMemo(() => media.find((item) => item.id === audioId) ?? null, [media, audioId]);
+
+  const lyricsDoc = useMemo(
+    () => lyricsDocs.find((doc) => doc.id === lyricsDocId) ?? null,
+    [lyricsDocs, lyricsDocId]
+  );
+  const lyricsDocLines = useMemo(() => (lyricsDoc ? lyricLinesFromDocument(lyricsDoc) : []), [lyricsDoc]);
 
   const trackBeats = useMemo(() => {
     if (!analysis) return [];
@@ -412,13 +451,43 @@ export default function ReelsPage() {
     tapIndexRef.current = 0;
   };
 
-  const addLyricLine = () => {
+  const appendLyricLine = (value: string) => {
+    const clean = cleanLyricLine(value);
+    if (!clean) return;
     setText((current) => {
       const lines = current.lyrics ?? [];
       const previous = lines[lines.length - 1]?.start ?? -0.5;
-      const start = Number(Math.min(Math.max(0.1, totalDuration - 0.1), previous + 1).toFixed(2));
-      return { ...current, lyrics: [...lines, { text: 'neue zeile', start }] };
+      const span = Math.max(1, totalDuration || target);
+      const start = Number(Math.min(Math.max(0.1, span - 0.1), Math.max(0.1, previous + 1)).toFixed(2));
+      return { ...current, lyrics: [...lines, { text: clean, start }] };
     });
+  };
+
+  const appendLyricsDocument = () => {
+    if (!lyricsDoc || !lyricsDocLines.length) return;
+    setText((current) => {
+      const existing = current.lyrics ?? [];
+      const span = Math.max(1, totalDuration || target);
+      const previous = existing[existing.length - 1]?.start ?? -0.5;
+      const base = existing.length ? Math.max(0.1, previous) : 0.1;
+      const slots = lyricsDocLines.length + (existing.length ? 1 : 0);
+      const step = (span - base) / Math.max(1, slots);
+      const added = lyricsDocLines.map((line, index) => ({
+        text: line,
+        start: Number(
+          Math.min(
+            span - 0.1,
+            Math.max(0.1, base + (existing.length ? index + 1 : index) * step)
+          ).toFixed(2)
+        ),
+      }));
+      return { ...current, lyrics: [...existing, ...added] };
+    });
+    setTapMode(false);
+  };
+
+  const addLyricLine = () => {
+    appendLyricLine('neue zeile');
   };
 
   const distributeLyrics = () => {
@@ -1131,6 +1200,67 @@ export default function ReelsPage() {
                     <IconTrash size={13} /> Leeren
                   </button>
                 ) : null}
+              </div>
+
+              <div className="reel-lyric-source">
+                <div className="reel-lyric-source-head">
+                  <div>
+                    <span className="label">Aus Lyrics-Dokument</span>
+                    <p className="small muted">
+                      Eine Zeile anklicken – sie wird direkt als Cue angelegt. Die Zeiten danach mit der
+                      Tap-Session setzen.
+                    </p>
+                  </div>
+                  {lyricsDocs.length ? (
+                    <select
+                      className="select"
+                      value={lyricsDocId ?? ''}
+                      onChange={(event) => setLyricsDocId(event.target.value ? Number(event.target.value) : null)}
+                      aria-label="Lyrics-Dokument wählen"
+                    >
+                      {lyricsDocs.map((doc) => (
+                        <option key={doc.id} value={doc.id}>
+                          {doc.title}
+                          {doc.songTitle ? ` · ${doc.songTitle}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
+                </div>
+
+                {lyricsDocs.length === 0 ? (
+                  <p className="small muted reel-lyric-source-empty">
+                    Noch kein Lyrics-Dokument gefunden. Lege eins unter{' '}
+                    <Link href="/docs">Documents</Link> an – es erscheint dann hier Zeile für Zeile.
+                  </p>
+                ) : lyricsDoc && lyricsDocLines.length ? (
+                  <>
+                    <div className="reel-lyric-source-list">
+                      {lyricsDocLines.map((line, index) => (
+                        <button
+                          key={`${lyricsDoc.id}-${index}-${line}`}
+                          type="button"
+                          onClick={() => appendLyricLine(line)}
+                          title="Als Cue hinzufügen"
+                        >
+                          <span className="mono">{String(index + 1).padStart(2, '0')}</span>
+                          <span className="truncate">{line}</span>
+                          <IconPlus size={12} />
+                        </button>
+                      ))}
+                    </div>
+                    <div className="reel-lyric-source-foot">
+                      <span className="mono small muted">{lyricsDocLines.length} Zeilen</span>
+                      <button type="button" className="btn btn-sm btn-ghost" onClick={appendLyricsDocument}>
+                        <IconPlus size={13} /> Alle Zeilen übernehmen
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="small muted reel-lyric-source-empty">
+                    Dieses Dokument enthält noch keine Textzeilen.
+                  </p>
+                )}
               </div>
 
               {tapMode ? (

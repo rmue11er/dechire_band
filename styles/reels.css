@@ -1105,3 +1105,96 @@
   line-height: 1.5;
   color: var(--muted-2);
 }
+
+/* ------------------------------------------------- lyrics from documents */
+.reel-lyric-source {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.reel-lyric-source-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.reel-lyric-source-head .select {
+  min-width: 190px;
+  max-width: 100%;
+  margin-left: auto;
+}
+
+.reel-lyric-source-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.reel-lyric-source-list button {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.reel-lyric-source-list button:last-child {
+  border-bottom: 0;
+}
+
+.reel-lyric-source-list button .mono {
+  font-size: 9px;
+  color: var(--muted-2);
+}
+
+.reel-lyric-source-list button svg {
+  color: var(--muted-2);
+  transition: color 0.12s ease, transform 0.12s ease;
+}
+
+.reel-lyric-source-list button:hover {
+  background: var(--accent-soft);
+}
+
+.reel-lyric-source-list button:hover svg {
+  color: var(--accent);
+  transform: scale(1.15);
+}
+
+.reel-lyric-source-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reel-lyric-source-empty {
+  margin: 0;
+}
+
+@media (max-width: 620px) {
+  .reel-lyric-source-head .select {
+    margin-left: 0;
+    width: 100%;
+  }
+}

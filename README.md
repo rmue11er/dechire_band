@@ -454,7 +454,9 @@ default start. No strobe, no zoom punch – the cut is the effect.
 left/centre, top/middle/low. It is laid out inside Meta's safe zones (top 14 %, bottom 35 %, 6 % sides)
 and rasterised to a transparent 1080×1920 PNG with `html-to-image` – what you see is the ffmpeg overlay.
 - **Lyrics in time** – paste one line per cue, start a tap session and hit Space when each line begins;
-  or set/nudge every cue against the playhead. The cue list shows a mini timeline with the playhead,
+  or set/nudge every cue against the playhead. `GET /api/documents?kind=lyrics` feeds a picker in the
+  lyrics step: choose a lyrics sheet and **click single lines** to append them as cues (or take the whole
+  sheet). The cue list shows a mini timeline with the playhead,
   `+ Zeile` appends a line and *Weich einblenden* fades each cue in over 0.22 s. The preview switches
   lyrics with the song, and the export rasterises one transparent PNG per cue and overlays it with
   `enable='between(t,…)'`. While lyrics exist they replace the hook; the kicker/sub/handle stay available
