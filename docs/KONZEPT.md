@@ -718,8 +718,16 @@ per clip: scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,
           format=yuv420p,settb=AVTB,setpts=PTS-STARTPTS
 concat -> grade (eq/hue) -> noise (grain) -> vignette -> frame bars -> timed lyric overlays -> fade out
 audio:  atrim, afade in/out, loudnorm=I=-14:TP=-1:LRA=11, aresample=48000, alimiter
-output: libx264 -crf 18 -preset medium -tune grain -r 30, aac 192k, +faststart
+output: libx264 -preset slow -crf 21 -maxrate 12M -bufsize 24M -profile:v high -level 4.2,
+        -pix_fmt yuv420p -g 60 -keyint_min 60 -sc_threshold 0 -flags +cgop,
+        aac 128k 48 kHz stereo, -movflags +faststart
 ```
+
+The encode is deliberately an **Instagram delivery file, not a master**: Meta's reel specs allow H.264 or
+HEVC, 23–60 fps, a maximum of 25 Mbps VBR, AAC 48 kHz/128 kbps and 300 MB per file, and recommend 9:16.
+We stay at 12 Mbps VBR with a 2 s closed GOP and CRF 21, so a 15 s reel lands around 15–25 MB instead of
+hundreds of MB – quick to upload, and Instagram still has headroom for its own re-encode. The UI shows the
+actual size after the render.
 
 Photos are fed with `-loop 1 -framerate 30` and get the Ken Burns move through `zoompan`; a cover JPEG is
 grabbed from the finished file. Both the reel and the cover become media rows (tags `reel`, `export`,

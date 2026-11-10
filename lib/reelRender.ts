@@ -8,6 +8,16 @@ import { REEL_FPS, REEL_H, REEL_W, type ReelPlan } from './reels';
 
 const FFMPEG = process.env.FFMPEG_PATH || 'ffmpeg';
 
+/**
+ * Instagram Reels delivery profile (Meta reel specifications):
+ * MP4/H.264 High, 4:2:0, 23–60 fps, VBR max 25 Mbps, AAC 48 kHz / 128 kbps,
+ * max 300 MB. We stay well below that so the upload is quick and Instagram's
+ * own re-encode still has headroom: 12 Mbps video, 2 s closed GOP.
+ */
+const IG_MAXRATE = '12M';
+const IG_BUFSIZE = '24M';
+const IG_AUDIO_BITRATE = '128k';
+
 let statusCache: { ok: boolean; version?: string; error?: string } | null = null;
 
 /** Is ffmpeg available on this machine? Cached – the UI asks once per page load. */
@@ -62,6 +72,7 @@ export interface RenderResult {
   coverId: number | null;
   duration: number;
   filename: string;
+  bytes: number;
 }
 
 export interface RenderOverlayCue {
@@ -206,6 +217,11 @@ export async function renderReel(
       label = 'outv';
     }
 
+    // JPEG sources are full-range yuvj420p. Instagram wants 4:2:0 limited-range
+    // BT.709, so convert explicitly instead of only retagging the pixel format.
+    filters.push(`[${label}]scale=out_range=tv:out_color_matrix=bt709,format=yuv420p[delivery]`);
+    label = 'delivery';
+
     const audioFade = Math.min(0.8, duration * 0.2);
     filters.push(
       `[${audioIndex}:a]atrim=duration=${duration.toFixed(3)},asetpts=PTS-STARTPTS,` +
@@ -235,19 +251,45 @@ export async function renderReel(
       '-c:v',
       'libx264',
       '-preset',
-      'medium',
+      'slow',
       '-crf',
-      '18',
-      '-tune',
-      'grain',
+      '21',
+      '-maxrate',
+      IG_MAXRATE,
+      '-bufsize',
+      IG_BUFSIZE,
+      '-profile:v',
+      'high',
+      '-level',
+      '4.2',
       '-pix_fmt',
       'yuv420p',
+      '-g',
+      '60',
+      '-keyint_min',
+      '60',
+      '-sc_threshold',
+      '0',
+      '-flags',
+      '+cgop',
+      '-x264-params',
+      'aq-mode=3',
+      '-colorspace',
+      'bt709',
+      '-color_primaries',
+      'bt709',
+      '-color_trc',
+      'bt709',
+      '-color_range',
+      'tv',
       '-c:a',
       'aac',
       '-b:a',
-      '192k',
+      IG_AUDIO_BITRATE,
       '-ar',
       '48000',
+      '-ac',
+      '2',
       '-movflags',
       '+faststart',
       outputPath,
@@ -333,7 +375,7 @@ export async function renderReel(
             /* a missing cover must not fail the render */
           }
 
-          resolve({ mediaId, coverId, duration, filename: outputName });
+          resolve({ mediaId, coverId, duration, filename: outputName, bytes: size });
         } catch (error: any) {
           reject(error);
         }

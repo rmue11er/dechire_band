@@ -13,6 +13,7 @@ export interface ReelJob {
   mediaId?: number;
   coverId?: number | null;
   filename?: string;
+  bytes?: number;
   error?: string;
 }
 
@@ -50,6 +51,7 @@ export function finishReelJob(id: string, result: RenderResult) {
     mediaId: result.mediaId,
     coverId: result.coverId,
     filename: result.filename,
+    bytes: result.bytes,
   });
 }
 

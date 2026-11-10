@@ -48,6 +48,7 @@ import {
   type ReelText,
   type ReelTextStyle,
 } from '@/lib/reels';
+import { formatBytes } from '@/lib/format';
 import { toast } from '@/lib/toast';
 import type { MediaItem } from '@/lib/types';
 
@@ -75,6 +76,7 @@ interface ReelJobView {
   mediaId?: number;
   coverId?: number | null;
   filename?: string;
+  bytes?: number;
   error?: string;
 }
 
@@ -1631,7 +1633,7 @@ export default function ReelsPage() {
         open={exportOpen}
         onClose={closeExport}
         title="Reel rendern"
-        subtitle="1080 × 1920 · 30 fps · H.264/AAC · faststart"
+        subtitle="Instagram-Reel · 1080 × 1920 · 30 fps · H.264/AAC · 12 Mbps VBR"
         footer={
           job?.status === 'done' ? (
             <>
@@ -1672,6 +1674,11 @@ export default function ReelsPage() {
                   {job.duration.toFixed(1)} s · Cover {job.coverId ? 'erzeugt' : 'nicht erzeugt'} · Video liegt
                   unter Media → Videos.
                 </p>
+                {job.bytes ? (
+                  <p className="small muted">
+                    {formatBytes(job.bytes)} · 1080 × 1920 · 30 fps · H.264/AAC · Instagram-tauglich
+                  </p>
+                ) : null}
                 <p className="small muted">
                   {text.lyrics.length
                     ? `${text.lyrics.length} Lyrics-Zeilen`

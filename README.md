@@ -457,7 +457,11 @@ and rasterised to a transparent 1080×1920 PNG with `html-to-image` – what you
   deliberate image, not a random frame.
 - **Export** – `POST /api/reels` validates the plan and renders in a background job with progress:
   trim/crop/motion per clip, concat, grade, grain, vignette, frame bars, timed lyric PNGs, fade-out,
-  `loudnorm I=-14`, AAC 48 kHz, H.264 CRF 18, medium preset, `-tune grain`, 1080×1920 @ 30 fps, `+faststart`; a cover JPEG is grabbed from
+  `loudnorm I=-14`, then an **Instagram Reel delivery profile**: 1080×1920 @ 30 fps, H.264 High 4.2,
+  yuv420p/4:2:0, BT.709, CRF 21 capped at **12 Mbps VBR** (`-maxrate 12M -bufsize 24M`), 2 s closed GOP
+  (`-g 60 -keyint_min 60 -sc_threshold 0 -flags +cgop`), AAC 48 kHz stereo **128 kbps**, `+faststart`.
+  That is well inside Meta's limits (max 25 Mbps, max 300 MB) and avoids the multi-hundred-MB files that
+  `-crf 18 -tune grain` produced. The result screen shows the actual file size. A cover JPEG is grabbed from
   the result. Both appear in the media library, and *In den Planner* creates a reel draft with the hook as
   caption. Clips must be raster photos (PNG/JPG/WebP) or videos – SVG artwork has to be exported to PNG first.
   Needs **ffmpeg** on the server (`FFMPEG_PATH` if it lives outside `PATH`).
