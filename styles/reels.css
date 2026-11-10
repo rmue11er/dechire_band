@@ -90,10 +90,29 @@
   background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 0.85) 100%);
 }
 
+/* Cinema window: 4:3 or 16:9 inside the 9:16 frame. The bars stay black. */
+.reel-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: #000;
+}
+
+.reel-mask.top {
+  top: 0;
+}
+
+.reel-mask.bottom {
+  bottom: 0;
+}
+
 /* ------------------------------------------------------------ text overlay */
 
 .reel-overlay {
   position: absolute;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   font-family: var(--font-sans);
@@ -198,6 +217,7 @@
 .reel-guides {
   position: absolute;
   inset: 0;
+  z-index: 3;
   pointer-events: none;
 }
 
@@ -1008,4 +1028,80 @@
     order: -1;
     flex-basis: 100%;
   }
+}
+
+.reel-lyric-bar {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  height: 26px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.reel-lyric-bar button {
+  min-width: 0;
+  flex: 0 0 auto;
+  border: 0;
+  border-right: 1px solid rgba(8, 8, 8, 0.55);
+  background: rgba(239, 231, 218, 0.08);
+  color: var(--muted-2);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.reel-lyric-bar button:hover {
+  background: rgba(239, 231, 218, 0.16);
+  color: var(--text);
+}
+
+.reel-lyric-bar button.on {
+  background: var(--accent);
+  color: #111110;
+}
+
+@keyframes reel-lyric-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.reel-overlay.is-lyric .reel-hook {
+  animation: reel-lyric-in 0.22s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reel-overlay.is-lyric .reel-hook {
+    animation: none;
+  }
+}
+
+.reel-mark {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-family: var(--font-display, 'Redaction', Georgia, serif);
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  color: rgba(247, 243, 236, 0.62);
+}
+
+.reel-mark-e {
+  color: var(--accent);
+}
+
+.reel-look-hint {
+  margin: 5px 0 0;
+  max-width: 52ch;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--muted-2);
 }

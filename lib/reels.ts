@@ -21,7 +21,8 @@ export const REEL_SAFE = {
 export const REEL_MAX_SECONDS = 60;
 
 export type ReelMotion = 'none' | 'in' | 'out';
-export type ReelGrade = 'none' | 'warm' | 'mono';
+export type ReelGrade = 'none' | 'warm' | 'mono' | 'bleach';
+export type ReelFrame = 'full' | '4:3' | '16:9';
 export type ReelTextStyle = 'serif' | 'sans' | 'mono';
 export type ReelTextPlace = 'top' | 'middle' | 'low';
 
@@ -36,6 +37,8 @@ export interface ReelClip {
 
 export interface ReelLook {
   grade: ReelGrade;
+  /** Full-bleed 9:16 or a cinema window with black bars. */
+  frame: ReelFrame;
   /** 0–30, maps to ffmpeg `noise=alls`. */
   grain: number;
   /** 0–1, maps to ffmpeg `vignette`. */
@@ -53,8 +56,12 @@ export interface ReelText {
   align: 'left' | 'center';
   place: ReelTextPlace;
   showHandle: boolean;
+  /** Small déchire wordmark in the top-right corner. */
+  showMark: boolean;
   /** Timed lyric cues in playback order. Empty = use the static hook. */
   lyrics: ReelLyric[];
+  /** Soft fade each cue in/out instead of a hard cut. */
+  lyricFade: boolean;
 }
 
 export interface ReelLyric {
@@ -138,9 +145,23 @@ export const REEL_PRESETS: ReelPreset[] = [
 export const REEL_DURATIONS = [8, 15, 20, 30, 45, 60];
 
 export const GRADE_LABEL: Record<ReelGrade, string> = {
-  none: 'Raw',
-  warm: 'Warm',
+  none: 'Neutral',
+  warm: 'Ember',
   mono: 'Mono',
+  bleach: 'Bleach',
+};
+
+export const GRADE_HINT: Record<ReelGrade, string> = {
+  none: 'Nur Licht und Kontrast – die Farben bleiben, wie sie gefilmt wurden.',
+  warm: 'Warme Schatten, weniger Sättigung, kein Farbstich – der ruhige Hausstandard.',
+  mono: 'Hartes Schwarzweiß, mehr Korn, null Ablenkung.',
+  bleach: 'Ausgeblichen und hart: fast farblos, tiefe Schwarztöne, mehr Kontrast.',
+};
+
+export const FRAME_LABEL: Record<ReelFrame, string> = {
+  full: 'Vollbild',
+  '4:3': '4:3',
+  '16:9': '16:9',
 };
 
 /**

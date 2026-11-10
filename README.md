@@ -440,20 +440,25 @@ default start. No strobe, no zoom punch – the cut is the effect.
 left/centre, top/middle/low. It is laid out inside Meta's safe zones (top 14 %, bottom 35 %, 6 % sides)
 and rasterised to a transparent 1080×1920 PNG with `html-to-image` – what you see is the ffmpeg overlay.
 - **Lyrics in time** – paste one line per cue, start a tap session and hit Space when each line begins;
-  or set/nudge every cue against the playhead. The preview switches lyrics with the song, and the export
-  rasterises one transparent PNG per cue and overlays it with `enable='between(t,…)'`. While lyrics exist
-  they replace the hook; the kicker/sub/handle stay available as the quiet frame around them.
+  or set/nudge every cue against the playhead. The cue list shows a mini timeline with the playhead,
+  `+ Zeile` appends a line and *Weich einblenden* fades each cue in over 0.22 s. The preview switches
+  lyrics with the song, and the export rasterises one transparent PNG per cue and overlays it with
+  `enable='between(t,…)'`. While lyrics exist they replace the hook; the kicker/sub/handle stay available
+  as the quiet frame around them.
 - **Preview** – the real 9:16 frame, scaled: media layers switch at the cuts, the song plays in sync,
   safe-zone guides and the live text sit on top. *Groß* opens a full-screen theatre with a scrubber,
   single-frame steps, an optional safe-zone overlay and *Als Cover* – good for checking a frame before
   trusting the export. Grain, vignette and grade are approximated in CSS.
-- **Look** – Raw/Warm/Mono, grain, vignette, fade-out. *Warm* is the default: desaturated, slightly warm
-shadows, no colour cast. Beat flash is gone; the cut is the effect. The **cover frame** is set from the
-playhead (or stays at the default 0.6 s) so the feed thumbnail is a deliberate image, not a random frame.
+- **Look** – four grades with a one-line explanation: *Neutral*, *Ember* (the house default: desaturated,
+  slightly warm shadows), *Mono* and *Bleach* (pulled colour, high contrast). *Rahmen* switches between
+  full 9:16 and a 4:3/16:9 film window with black bars; *Wortmarke* adds the small `déchire` with its sulfur é
+  top right. Grain, vignette and fade-out as before. Beat flash is gone; the cut is the effect. The
+  **cover frame** is set from the playhead (or stays at the default 0.6 s) so the feed thumbnail is a
+  deliberate image, not a random frame.
 - **Export** – `POST /api/reels` validates the plan and renders in a background job with progress:
-trim/crop/motion per clip, concat, grade, grain, vignette, timed lyric PNGs, fade-out,
-`loudnorm I=-14`, AAC 48 kHz, H.264 CRF 18, medium preset, `-tune grain`, 1080×1920 @ 30 fps, `+faststart`; a cover JPEG is grabbed from
-the result. Both appear in the media library, and *In den Planner* creates a reel draft with the hook as
+  trim/crop/motion per clip, concat, grade, grain, vignette, frame bars, timed lyric PNGs, fade-out,
+  `loudnorm I=-14`, AAC 48 kHz, H.264 CRF 18, medium preset, `-tune grain`, 1080×1920 @ 30 fps, `+faststart`; a cover JPEG is grabbed from
+  the result. Both appear in the media library, and *In den Planner* creates a reel draft with the hook as
   caption. Clips must be raster photos (PNG/JPG/WebP) or videos – SVG artwork has to be exported to PNG first.
   Needs **ffmpeg** on the server (`FFMPEG_PATH` if it lives outside `PATH`).
 

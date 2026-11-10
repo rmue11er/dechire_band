@@ -27,7 +27,15 @@ function hookSize(text: ReelText, longest: number) {
  * is scaled down by CSS, for the export the very same markup is rasterised
  * into a transparent PNG and overlaid by ffmpeg.
  */
-export function ReelOverlay({ text, handle }: { text: ReelText; handle?: string }) {
+export function ReelOverlay({
+  text,
+  handle,
+  lyric = false,
+}: {
+  text: ReelText;
+  handle?: string;
+  lyric?: boolean;
+}) {
   const lines = text.hook
     .split('\n')
     .map((line) => line.trim())
@@ -40,7 +48,9 @@ export function ReelOverlay({ text, handle }: { text: ReelText; handle?: string 
 
   return (
     <div
-      className={`reel-overlay style-${text.style} align-${text.align} place-${text.place}`}
+      className={`reel-overlay style-${text.style} align-${text.align} place-${text.place}${
+        lyric ? ' is-lyric' : ''
+      }`}
       style={{
         top: REEL_SAFE.top,
         bottom: REEL_SAFE.bottom,
@@ -59,6 +69,11 @@ export function ReelOverlay({ text, handle }: { text: ReelText; handle?: string 
         ) : null}
         {sub ? <span className="reel-sub">{sub}</span> : null}
       </div>
+      {text.showMark ? (
+        <span className="reel-mark" aria-hidden="true">
+          d<span className="reel-mark-e">é</span>chire
+        </span>
+      ) : null}
       {text.showHandle && shownHandle ? (
         <span className="reel-handle">{shownHandle.startsWith('@') ? shownHandle : `@${shownHandle}`}</span>
       ) : null}

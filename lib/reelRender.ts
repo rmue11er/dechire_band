@@ -53,6 +53,7 @@ function gradeChain(grade: ReelPlan['look']['grade']) {
     return 'eq=contrast=1.03:saturation=0.72:brightness=-0.012,colorbalance=rs=0.03:gs=0.005:bs=-0.025';
   }
   if (grade === 'mono') return 'hue=s=0,eq=contrast=1.08:brightness=-0.02';
+  if (grade === 'bleach') return 'hue=s=0.35,eq=contrast=1.18:brightness=-0.03';
   return '';
 }
 
@@ -131,7 +132,16 @@ export async function renderReel(
     cues.forEach((cue, index) => {
       const cuePath = path.join(tmp, `lyric-${index}.png`);
       fs.writeFileSync(cuePath, Buffer.from(cue.png.split(',')[1], 'base64'));
-      inputArgs.push('-loop', '1', '-framerate', String(REEL_FPS), '-i', cuePath);
+      inputArgs.push(
+        '-loop',
+        '1',
+        '-framerate',
+        String(REEL_FPS),
+        '-t',
+        Math.max(0.1, cue.end - cue.start).toFixed(3),
+        '-i',
+        cuePath
+      );
     });
 
     const audioIndex = clips.length + (overlayIndex == null ? 0 : 1) + cues.length;
@@ -152,6 +162,17 @@ export async function renderReel(
       label = 'graded';
     }
 
+    const frameRatio =
+      plan.look.frame === '4:3' ? 4 / 3 : plan.look.frame === '16:9' ? 16 / 9 : null;
+    if (frameRatio) {
+      const bar = Math.round((REEL_H - REEL_W / frameRatio) / 2);
+      filters.push(
+        `[${label}]drawbox=x=0:y=0:w=iw:h=${bar}:color=black@1:t=fill,` +
+          `drawbox=x=0:y=${REEL_H - bar}:w=iw:h=${bar}:color=black@1:t=fill[framed]`
+      );
+      label = 'framed';
+    }
+
     if (overlayIndex != null) {
       filters.push(`[${label}][${overlayIndex}:v]overlay=0:0:format=auto[texted]`);
       label = 'texted';
@@ -160,9 +181,23 @@ export async function renderReel(
     const firstCueIndex = clips.length + (overlayIndex == null ? 0 : 1);
     cues.forEach((cue, index) => {
       const nextLabel = `lyric${index}`;
-      filters.push(
-        `[${label}][${firstCueIndex + index}:v]overlay=0:0:format=auto:enable='between(t,${cue.start.toFixed(3)},${cue.end.toFixed(3)})'[${nextLabel}]`
-      );
+      if (plan.text.lyricFade !== false) {
+        const cueDuration = Math.max(0.1, cue.end - cue.start);
+        const fade = Math.min(0.24, cueDuration / 4);
+        filters.push(
+          `[${firstCueIndex + index}:v]format=rgba,` +
+            `fade=t=in:st=0:d=${fade.toFixed(3)}:alpha=1,` +
+            `fade=t=out:st=${(cueDuration - fade).toFixed(3)}:d=${fade.toFixed(3)}:alpha=1,` +
+            `setpts=PTS-STARTPTS+${cue.start.toFixed(3)}/TB[lyricart${index}]`
+        );
+        filters.push(
+          `[${label}][lyricart${index}]overlay=0:0:format=auto:enable='between(t,${cue.start.toFixed(3)},${cue.end.toFixed(3)})':eof_action=pass[${nextLabel}]`
+        );
+      } else {
+        filters.push(
+          `[${label}][${firstCueIndex + index}:v]overlay=0:0:format=auto:enable='between(t,${cue.start.toFixed(3)},${cue.end.toFixed(3)})'[${nextLabel}]`
+        );
+      }
       label = nextLabel;
     });
 

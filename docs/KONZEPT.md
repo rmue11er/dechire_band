@@ -672,12 +672,18 @@ frame to 1080×1920, draws the safe zones as guides, defaults to 15 s, caps expo
 text element inside that inner box. Music is expected to be the band's own or licensed material.
 
 **The plan model** (`lib/reels.ts`) is deliberately small: clips `{ mediaId, start, duration, motion }`,
-one audio window `{ mediaId, start, duration }`, the look (`grade`, `grain`, `vignette`, `fadeOut`,
+one audio window `{ mediaId, start, duration }`, the look (`grade`, `frame`, `grain`, `vignette`, `fadeOut`,
 `beatCut`, `accent`), the text layer and the beat positions. Presets are just patches
 (*Still* 8 s, *Slow* 15 s, *Grain* 20 s, *Long* 30 s). `planClipLengths()` splits the target
 duration either evenly or snapped to the beat grid – with a minimum shot length, so a beat cut never
 produces a 0.2 s flash frame. All presets stay grey and quiet (warm or mono grade, more grain, stronger
 vignette); no strobe, the cut does the work.
+
+Four grades with a one-line explanation in the UI: *Neutral* (nothing touched), *Ember* (desaturated,
+slightly warm – the house default), *Mono* (true black and white) and *Bleach* (pulled colour, high contrast –
+print-like). `frame` adds a cinema window: *Vollbild* keeps the whole 9:16 image, *4:3* and *16:9* draw black
+bars top and bottom so the reel reads like a film still. The optional *Wortmarke* places a small
+`déchire` with its sulfur é top right.
 
 **Beat tracking in the browser** (`lib/beats.ts`): the audio file is fetched and decoded with
 `decodeAudioData`, then analysed in plain arithmetic – RMS envelope at 100 fps, a 3-tap smooth, half-wave
@@ -696,7 +702,9 @@ X – so the final frame can be judged before the ffmpeg pass.
 three type styles (Redaction / Instrument Sans / DM Mono), left or centred, top/middle/low inside the safe
 box. **Lyrics** are an ordered list of `{ text, start }` cues: paste one line per cue, then either tap Space
 with the song (the current line gets the current audio time) or set/nudge each cue against the playhead.
-While lyrics exist they replace the hook in the preview. For export every cue is rasterised as its own
+The cue list shows a mini timeline with the playhead, a `+ Zeile` button appends one line, and
+*Weich einblenden* fades each cue in over 0.22 s instead of cutting it in. While lyrics exist they replace
+the hook in the preview. For export every cue is rasterised as its own
 transparent 1080×1920 PNG with `html-to-image` (fonts embedded) and overlaid with an ffmpeg `enable` window –
 so typography and colours stay in the app's design system instead of being reimplemented in `drawtext`.
 
@@ -708,7 +716,7 @@ one `-filter_complex`:
 per clip: scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,
           setsar=1,fps=30[,zoompan=z='min(1+0.0011*on,1.12)':d=1],
           format=yuv420p,settb=AVTB,setpts=PTS-STARTPTS
-concat -> eq (grade) -> noise (grain) -> vignette -> timed lyric overlays -> fade out
+concat -> grade (eq/hue) -> noise (grain) -> vignette -> frame bars -> timed lyric overlays -> fade out
 audio:  atrim, afade in/out, loudnorm=I=-14:TP=-1:LRA=11, aresample=48000, alimiter
 output: libx264 -crf 18 -preset medium -tune grain -r 30, aac 192k, +faststart
 ```

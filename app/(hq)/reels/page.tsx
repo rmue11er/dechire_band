@@ -29,6 +29,8 @@ import {
 } from '@/components/icons';
 import { analyseAudioBuffer, audioPeaks, type BeatAnalysis } from '@/lib/beats';
 import {
+  FRAME_LABEL,
+  GRADE_HINT,
   GRADE_LABEL,
   lyricIndexAt,
   lyricWindow,
@@ -37,6 +39,7 @@ import {
   planClipLengths,
   REEL_DURATIONS,
   REEL_PRESETS,
+  type ReelFrame,
   type ReelGrade,
   type ReelLook,
   type ReelMotion,
@@ -95,6 +98,7 @@ const sourceDuration = (url: string) =>
 
 const DEFAULT_LOOK: ReelLook = {
   grade: 'warm',
+  frame: 'full',
   grain: 18,
   vignette: 0.55,
   fadeOut: true,
@@ -109,7 +113,9 @@ const DEFAULT_TEXT: ReelText = {
   align: 'left',
   place: 'low',
   showHandle: true,
+  showMark: true,
   lyrics: [],
+  lyricFade: true,
 };
 
 export default function ReelsPage() {
@@ -153,6 +159,7 @@ export default function ReelsPage() {
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
+  const frameExportRef = useRef<HTMLDivElement>(null);
   const lyricExportRef = useRef<HTMLDivElement>(null);
   const tapIndexRef = useRef(0);
   const pollRef = useRef(false);
@@ -403,6 +410,15 @@ export default function ReelsPage() {
     tapIndexRef.current = 0;
   };
 
+  const addLyricLine = () => {
+    setText((current) => {
+      const lines = current.lyrics ?? [];
+      const previous = lines[lines.length - 1]?.start ?? -0.5;
+      const start = Number(Math.min(Math.max(0.1, totalDuration - 0.1), previous + 1).toFixed(2));
+      return { ...current, lyrics: [...lines, { text: 'neue zeile', start }] };
+    });
+  };
+
   const distributeLyrics = () => {
     const span = Math.max(1, totalDuration || target);
     const step = span / Math.max(1, text.lyrics.length);
@@ -490,10 +506,31 @@ export default function ReelsPage() {
 
   const renderOverlay = async () => {
     if (text.lyrics.length) return null;
-    if (!text.hook.trim() && !text.kicker.trim() && !text.sub.trim()) return null;
+    if (
+      !text.hook.trim() &&
+      !text.kicker.trim() &&
+      !text.sub.trim() &&
+      !text.showMark &&
+      !text.showHandle
+    ) {
+      return null;
+    }
     if (!exportRef.current) return null;
     const { toPng } = await import('html-to-image');
     return toPng(exportRef.current, {
+      width: 1080,
+      height: 1920,
+      pixelRatio: 1,
+      cacheBust: true,
+      backgroundColor: 'transparent',
+    });
+  };
+
+  const renderFrameOverlay = async () => {
+    if (!text.showMark && !text.showHandle) return null;
+    if (!frameExportRef.current) return null;
+    const { toPng } = await import('html-to-image');
+    return toPng(frameExportRef.current, {
       width: 1080,
       height: 1920,
       pixelRatio: 1,
@@ -542,7 +579,7 @@ export default function ReelsPage() {
     setJob(null);
     try {
       const overlays = await renderLyricOverlays();
-      const overlay = text.lyrics.length ? null : await renderOverlay();
+      const overlay = text.lyrics.length ? await renderFrameOverlay() : await renderOverlay();
       const response = await fetch('/api/reels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1023,9 +1060,13 @@ export default function ReelsPage() {
                 <div>
                   <div className="label">Lyrics im Takt</div>
                   <p className="small muted">
-                    Text einfügen, dann beim Hören jede Zeile antippen. Leertaste setzt die nächste Zeile.
+                    Eine Zeile = ein Cue. Text einfügen, dann beim Hören jede Zeile antippen – oder Zeiten
+                    von Hand setzen.
                   </p>
                 </div>
+                {text.lyrics.length ? (
+                  <span className="mono small muted">{text.lyrics.length} cues</span>
+                ) : null}
                 {text.lyrics.length ? (
                   <button
                     type="button"
@@ -1037,6 +1078,14 @@ export default function ReelsPage() {
                     {tapMode ? 'Tap-Session stoppen' : 'Tap-Session'}
                   </button>
                 ) : null}
+                <label className="reel-toggle">
+                  <input
+                    type="checkbox"
+                    checked={text.lyricFade}
+                    onChange={(event) => setText((current) => ({ ...current, lyricFade: event.target.checked }))}
+                  />
+                  <span>Weich einblenden</span>
+                </label>
               </div>
 
               <textarea
@@ -1050,6 +1099,9 @@ export default function ReelsPage() {
               <div className="row wrap" style={{ gap: 8 }}>
                 <button type="button" className="btn btn-sm btn-primary" onClick={applyLyrics}>
                   <IconPlus size={13} /> Zeilen übernehmen
+                </button>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={addLyricLine}>
+                  <IconPlus size={13} /> Zeile
                 </button>
                 {text.lyrics.length ? (
                   <button
@@ -1090,6 +1142,28 @@ export default function ReelsPage() {
                     Der Song läuft. Drück die Leertaste genau dann, wenn die Zeile beginnt. Escape beendet die
                     Session.
                   </p>
+                </div>
+              ) : null}
+
+              {text.lyrics.length ? (
+                <div className="reel-lyric-bar" aria-label="Lyric-Timeline">
+                  {text.lyrics.map((line, index) => {
+                    const cue = lyricWindow(text.lyrics, index, totalDuration || target);
+                    const span = Math.max(0.1, cue.end - cue.start);
+                    const width = Math.max(2, (span / Math.max(0.1, totalDuration || target)) * 100);
+                    return (
+                      <button
+                        key={`${index}-${line.start}`}
+                        type="button"
+                        className={lyricIndexAt(text.lyrics, time) === index ? 'on' : ''}
+                        style={{ width: `${width}%` }}
+                        onClick={() => seekTo(line.start)}
+                        title={`${clock(line.start)} · ${line.text}`}
+                      >
+                        {index + 1}
+                      </button>
+                    );
+                  })}
                 </div>
               ) : null}
 
@@ -1161,8 +1235,9 @@ export default function ReelsPage() {
                 <div className="reel-hint">
                   <IconSparkles size={14} />
                   <span>
-                    Tipp: Song zuerst wählen, dann Zeilen einfügen und die Tap-Session starten. Die Zeilen
-                    erscheinen automatisch im Stil aus dem Look-Tab.
+                    Jede nicht-leere Zeile wird ein eigener Cue. Du kannst beliebig viele anlegen – entweder
+                    den ganzen Text einfügen und übernehmen, oder einzelne Zeilen mit <strong>+ Zeile</strong>{' '}
+                    ergänzen.
                   </span>
                 </div>
               )}
@@ -1266,7 +1341,7 @@ export default function ReelsPage() {
               <div className="reel-look-row">
                 <Field label="Look">
                   <div className="reel-chips">
-                    {(['none', 'warm', 'mono'] as ReelGrade[]).map((value) => (
+                    {(['none', 'warm', 'mono', 'bleach'] as ReelGrade[]).map((value) => (
                       <button
                         key={value}
                         type="button"
@@ -1277,6 +1352,7 @@ export default function ReelsPage() {
                       </button>
                     ))}
                   </div>
+                  <p className="reel-look-hint">{GRADE_HINT[look.grade]}</p>
                 </Field>
                 <label className="reel-toggle">
                   <input
@@ -1293,6 +1369,36 @@ export default function ReelsPage() {
                     onChange={(event) => setLook((current) => ({ ...current, fadeOut: event.target.checked }))}
                   />
                   <span>Ausblenden</span>
+                </label>
+              </div>
+
+              <div className="reel-look-row">
+                <Field label="Rahmen">
+                  <div className="reel-chips">
+                    {(['full', '4:3', '16:9'] as ReelFrame[]).map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={look.frame === value ? 'on' : ''}
+                        onClick={() => setLook((current) => ({ ...current, frame: value }))}
+                      >
+                        {FRAME_LABEL[value]}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="reel-look-hint">
+                    {look.frame === 'full'
+                      ? 'Vollbild auf 9:16 – maximales Bild, kein Filmfenster.'
+                      : `Schwarze Balken oben und unten – das Bild wird zum ${look.frame}-Filmfenster.`}
+                  </p>
+                </Field>
+                <label className="reel-toggle">
+                  <input
+                    type="checkbox"
+                    checked={text.showMark}
+                    onChange={(event) => setText((current) => ({ ...current, showMark: event.target.checked }))}
+                  />
+                  <span>Wortmarke</span>
                 </label>
               </div>
 
@@ -1322,6 +1428,10 @@ export default function ReelsPage() {
                 />
                 <em className="mono">{Math.round(look.vignette * 100)} %</em>
               </label>
+              <p className="reel-look-hint">
+                Korn 0–10 bleibt clean, ab 18 wird es Filmkorn. Vignette dunkelt die Ränder ab und hält
+                den Blick in der Mitte.
+              </p>
 
               <div className="reel-cover-row">
                 <div>
@@ -1476,21 +1586,40 @@ export default function ReelsPage() {
       {/* transparent text layer – rasterised for the ffmpeg overlay */}
       <div className="reel-export-holder" aria-hidden="true">
         {text.lyrics.length ? (
-          <div ref={lyricExportRef}>
-            {normaliseLyrics(text.lyrics, totalDuration).map((line, index) => (
-              <div
-                key={`${line.start}-${index}`}
-                data-lyric-frame
-                className="reel-frame reel-overlay-frame"
-                style={{ position: 'absolute', top: index * 1920, left: 0 }}
-              >
-                <ReelOverlay
-                  text={{ ...text, kicker: '', sub: '', hook: line.text }}
-                  handle={profile?.handle}
-                />
-              </div>
-            ))}
-          </div>
+          <>
+            <div
+              className="reel-frame reel-overlay-frame"
+              ref={frameExportRef}
+              style={{ position: 'absolute', top: 0, left: 0 }}
+            >
+              <ReelOverlay
+                text={{ ...text, kicker: '', sub: '', hook: '' }}
+                handle={profile?.handle}
+              />
+            </div>
+            <div ref={lyricExportRef}>
+              {normaliseLyrics(text.lyrics, totalDuration).map((line, index) => (
+                <div
+                  key={`${line.start}-${index}`}
+                  data-lyric-frame
+                  className="reel-frame reel-overlay-frame"
+                  style={{ position: 'absolute', top: index * 1920, left: 0 }}
+                >
+                  <ReelOverlay
+                    text={{
+                      ...text,
+                      kicker: '',
+                      sub: '',
+                      hook: line.text,
+                      showMark: false,
+                      showHandle: false,
+                    }}
+                    handle={profile?.handle}
+                  />
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           <div className="reel-frame reel-overlay-frame" ref={exportRef}>
             <ReelOverlay text={text} handle={profile?.handle} />

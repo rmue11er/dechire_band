@@ -17,6 +17,7 @@ export interface StageClip {
 function cssFilter(grade: ReelLook['grade']) {
   if (grade === 'warm') return 'sepia(0.08) saturate(0.68) contrast(1.03) brightness(0.97)';
   if (grade === 'mono') return 'grayscale(1) contrast(1.08) brightness(0.95)';
+  if (grade === 'bleach') return 'grayscale(0.35) contrast(1.18) brightness(0.94) saturate(0.55)';
   return 'none';
 }
 
@@ -81,13 +82,24 @@ export function ReelStage({
   }, [clips, time, playing, active]);
 
   const grainOpacity = Math.min(0.4, look.grain / 30 * 0.42);
+  const frameRatio =
+    look.frame === '4:3' ? 4 / 3 : look.frame === '16:9' ? 16 / 9 : null;
+  const frameBar = frameRatio ? Math.round((1920 - 1080 / frameRatio) / 2) : 0;
   const lyrics = text.lyrics ?? [];
   const lyricIndex = lyricIndexAt(lyrics, time);
   const activeLyric = lyricIndex >= 0 ? lyrics[lyricIndex] : null;
-  const displayText = activeLyric
-    ? { ...text, kicker: '', sub: '', hook: activeLyric.text }
-    : text;
-  const hideText = lyrics.length > 0 && !activeLyric;
+  // Lyrics replace the copy, but the mark and handle stay as a quiet frame.
+  const frameText = lyrics.length ? { ...text, kicker: '', sub: '', hook: '' } : text;
+  const lyricText = activeLyric
+    ? {
+        ...text,
+        kicker: '',
+        sub: '',
+        hook: activeLyric.text,
+        showMark: false,
+        showHandle: false,
+      }
+    : null;
 
   return (
     <div className="reel-stage-frame" ref={wrapRef}>
@@ -135,7 +147,28 @@ export function ReelStage({
           aria-hidden="true"
         />
 
-        {hideText ? null : <ReelOverlay text={displayText} handle={handle} />}
+        {frameBar > 0 ? (
+          <>
+            <span className="reel-mask top" style={{ height: frameBar }} aria-hidden="true" />
+            <span className="reel-mask bottom" style={{ height: frameBar }} aria-hidden="true" />
+          </>
+        ) : null}
+
+        {lyrics.length ? (
+          <>
+            <ReelOverlay text={frameText} handle={handle} />
+            {lyricText ? (
+              <ReelOverlay
+                key={`lyric-${lyricIndex}`}
+                text={lyricText}
+                handle={handle}
+                lyric={Boolean(activeLyric) && text.lyricFade !== false}
+              />
+            ) : null}
+          </>
+        ) : (
+          <ReelOverlay text={text} handle={handle} />
+        )}
 
         {guides ? (
           <div className="reel-guides" aria-hidden="true">
