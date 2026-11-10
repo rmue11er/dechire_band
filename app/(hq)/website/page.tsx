@@ -603,19 +603,19 @@ export default function WebsitePage() {
                   className="input"
                   style={{ maxWidth: 130 }}
                   value={draft.accentHex}
-                  placeholder="#b9a5e8"
+                  placeholder="#a49c92"
                   onChange={(event) => patch({ accentHex: event.target.value })}
                 />
                 <input
                   type="color"
                   aria-label="Accent colour"
-                  value={/^#[0-9a-f]{6}$/i.test(draft.accentHex) ? draft.accentHex : '#b9a5e8'}
+                  value={/^#[0-9a-f]{6}$/i.test(draft.accentHex) ? draft.accentHex : '#a49c92'}
                   onChange={(event) => patch({ accentHex: event.target.value })}
                   style={{ width: 42, height: 34, background: 'none', border: '0' }}
                 />
               </div>
               <div className="web-colour-row">
-                {['#b9a5e8', '#c86a4a', '#7e9c94', '#8792a6', '#c0455a', '#efe7da'].map((hex) => (
+                {['#a49c92', '#6f6a64', '#474b44', '#e7e0d6'].map((hex) => (
                   <button
                     key={hex}
                     type="button"

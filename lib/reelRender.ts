@@ -34,10 +34,6 @@ function sourcePath(mediaId: number) {
   return { media, absolute };
 }
 
-function hexColour(value: string) {
-  return /^#[0-9a-f]{6}$/i.test(value) ? `0x${value.slice(1).toUpperCase()}` : '0xB9A5E8';
-}
-
 function clipFilter(motion: ReelPlan['clips'][number]['motion'], index: number) {
   const zoom =
     motion === 'in'
@@ -54,12 +50,9 @@ function clipFilter(motion: ReelPlan['clips'][number]['motion'], index: number) 
 
 function gradeChain(grade: ReelPlan['look']['grade']) {
   if (grade === 'warm') {
-    return 'eq=contrast=1.04:saturation=0.9:brightness=-0.012,colorbalance=rs=0.05:gs=0.01:bs=-0.05';
+    return 'eq=contrast=1.03:saturation=0.72:brightness=-0.012,colorbalance=rs=0.03:gs=0.005:bs=-0.025';
   }
-  if (grade === 'mono') return 'hue=s=0,eq=contrast=1.1:brightness=-0.02';
-  if (grade === 'faded') {
-    return "eq=contrast=0.94:saturation=0.72:brightness=0.02,curves=all='0/0.06 0.5/0.5 1/0.94'";
-  }
+  if (grade === 'mono') return 'hue=s=0,eq=contrast=1.08:brightness=-0.02';
   return '';
 }
 
@@ -72,7 +65,7 @@ export interface RenderResult {
 
 /**
  * Renders the plan with ffmpeg: crop/fit + optional push-in, global grade,
- * grain, vignette, beat flashes, text overlay PNG, loudness-normalised song,
+ * grain, vignette, text overlay PNG, loudness-normalised song,
  * cover frame – all in one pass.
  */
 export async function renderReel(
@@ -141,19 +134,6 @@ export async function renderReel(
     if (overlayIndex != null) {
       filters.push(`[${label}][${overlayIndex}:v]overlay=0:0:format=auto[texted]`);
       label = 'texted';
-    }
-
-    const flashes = plan.look.flash
-      ? plan.beats
-          .filter((beat) => beat > 0.7 && beat < duration - 0.55)
-          .slice(0, 64)
-          .map((beat) => `between(t,${beat.toFixed(3)},${(beat + 0.09).toFixed(3)})`)
-      : [];
-    if (flashes.length) {
-      filters.push(
-        `[${label}]drawbox=x=0:y=0:w=iw:h=ih:color=${hexColour(plan.look.accent)}@0.10:t=fill:enable='${flashes.join('+')}'[flashed]`
-      );
-      label = 'flashed';
     }
 
     if (plan.look.fadeOut) {

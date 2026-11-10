@@ -375,7 +375,7 @@ export function search(input: SearchInput): SearchResult {
     if (token === 'split') scheme = 'split';
   }
 
-  const seed = hexToOklch(isHex(input.seedHex) ? input.seedHex : '#b9a5e8');
+  const seed = hexToOklch(isHex(input.seedHex) ? input.seedHex : '#a49c92');
   const baseHue = hueHint ?? seed.h;
 
   /**
@@ -562,7 +562,7 @@ const SET_TUNING: Record<Mood, { l: number; c: number }> = {
  * accent and the signal colour.
  */
 export function generatePalette(seedHex: string, mood: Mood, scheme: Scheme): GeneratedPalette {
-  const seed = hexToOklch(isHex(seedHex) ? seedHex : '#b9a5e8');
+  const seed = hexToOklch(isHex(seedHex) ? seedHex : '#a49c92');
   const activeScheme: Scheme = scheme === 'any' ? 'analogous' : scheme;
   const harmony = harmonyHues(seed.h, activeScheme, seed);
   const neighbours = harmony.filter((hue) => hueDistance(hue, seed.h) > 4);

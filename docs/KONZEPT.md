@@ -14,8 +14,8 @@ From the brief:
 2. **Media library** – all media organised; when the logo is needed somewhere,
    grab the right **version** (transparent, white, sticker, square …) straight away.
 3. **Notes** – another tool with *solid formatting options*.
-4. Colour world: warm black instead of blue-black, one muted ember accent, almost no colour – dark and
-   warm, not cold and corporate; a hint of 80s/90s texture, never a costume.
+4. Colour world: warm black, soot and ash, one light smoke grey as accent – almost no hue at all. Dark,
+   heavy, but never cold-corporate. A hint of 80s/90s texture (grain, low light), never a costume.
 
 Quality goals derived from that:
 
@@ -214,8 +214,8 @@ portable document, not a pile of pixels.
 
 ### 6.3 Tools
 
-- **Text**: 6 presets, 9 fonts (Anton, Bebas Neue, Archivo Black, Oswald, Inter, Playfair Display,
-  Space Mono + two system stacks), size, weight, tracking, line height, alignment,
+- **Text**: 6 presets, **three fonts** – Instrument Serif (voice), Inter (body), Space Mono (meta).
+  Size, weight, tracking, line height, alignment,
   uppercase, italic, outline, five shadow modes, text background as a “pill”.
 - **Shapes**: rectangle, circle, triangle, diamond, star, burst, cross, slash, line, frame, tape.
   Solid or gradient with an angle, stroke, corner radius. Stars/bursts/cross/slash via `clip-path`
@@ -242,15 +242,14 @@ portable document, not a pile of pixels.
 ### 6.5 Templates & formats
 
 - Formats: feed 1:1 (1080×1080), feed 4:5 (1080×1350), story 9:16 (1080×1920).
-- 12 templates, all in the dark warm language: *Release*, *Show*, *Zitat*, *Merch*, *Story*, *Statement*,
-  *Porträt* plus *Nähe* (portrait, dark veil, whisper in Cormorant), *Notiz* (tape, date, handwriting),
-  *Elegie* (empty black, Instrument Serif, two hairlines), *Lärm* (display type running off both edges) and
-  *Termine* (condensed rows with accent rules). Marketing shouting was removed on purpose: serif instead of
-  caps, fewer decorations, one accent, grain over glow.
-- **Type voice** (all self-hosted via `@fontsource`): Cormorant Garamond, Bodoni Moda, EB Garamond,
-  Instrument Serif, Spectral, Special Elite, Caveat, Archivo Narrow – 17 families total. Text presets
-  *Whisper / Elegy / Typewriter / Diary / Tight caps* encode the intent, so a design reads emotional before
-  anyone touches a slider.
+- 12 templates, all in the same quiet language: *Release*, *Show*, *Quote*, *Merch*, *Story*,
+  *Statement*, *Portrait* plus *Close* (portrait, dark veil, whisper in Instrument Serif italic),
+  *Note* (date, lowercase), *Elegy* (empty black, serif, two hairlines), *Noise* (display type
+  running off both edges) and *Dates* (plain rows, accent rules). Decorations were removed on purpose:
+  serif instead of caps, no tape, no badges, no halftone, one accent.
+- **Type voice** (all self-hosted via `@fontsource`): Instrument Serif, Inter, Space Mono – **three
+  families total**. The presets *Display / Whisper / Elegy / Note / Type / Tight* encode the intent, so a
+  design reads emotional before anyone touches a slider.
 
 ### 6.5a Free stock photos
 
@@ -503,15 +502,15 @@ sleeve spine, the monospaced uppercase labels, the neon accent outline and the s
 
 - **Warm black, not UI black.** `#080607`, bone text at 86 %, grain and a vignette. No scanlines, no progress
   bar, no hairline at the top of the page.
-- **Serif is the voice.** Playfair italic carries the tagline, the section labels ("a note from us", "say hi"),
-  the captions and the signature; Anton is reserved for the name, the link list and the footer field.
-  **No monospaced labels anywhere** – that alone removed the terminal/technical read.
+- **Serif is the voice.** Instrument Serif carries the name, the tagline, the section labels
+  ("a note from us", "say hi"), the captions and the signature; Inter is reserved for the micro
+  labels and the small print. **No second display face.**
 - **One accent** (`--site-accent`): the `*marked*` words in the letter and the quiet label lines. Nothing
   glows, nothing is outlined in colour.
 - **A face in the hero**: one photo as a taped print next to the name instead of decorative effects. The
   hero background photo stays at 12 % as depth only.
 - **No props**: no spine, no stamp, no margin print, no paper sheet, no cursor light, no crew list, no names.
-- **The letter is the page** – 54 ch of `Playfair` on black, then the band's photos as the same taped prints
+- **The letter is the page** – 54 ch of `Instrument Serif` on black, then the band's photos as the same taped prints
   the feed wall uses (paper, tape, own angle, developing into colour on hover).
 - **Say hi** is a large italic press line next to plain display-face links – the numbered receipt is gone.
 - **Backend follows the page**: no crew editor, the signature has its own field, `showMedia` gates the prints
@@ -673,27 +672,27 @@ frame to 1080×1920, draws the safe zones as guides, defaults to 15 s, caps expo
 text element inside that inner box. Music is expected to be the band's own or licensed material.
 
 **The plan model** (`lib/reels.ts`) is deliberately small: clips `{ mediaId, start, duration, motion }`,
-one audio window `{ mediaId, start, duration }`, the look (`grade`, `grain`, `vignette`, `fadeOut`, `flash`,
+one audio window `{ mediaId, start, duration }`, the look (`grade`, `grain`, `vignette`, `fadeOut`,
 `beatCut`, `accent`), the text layer and the beat positions. Presets are just patches
-(*Nacht* 8 s, *Herz* 15 s, *Keller* 20 s, *Heimweg* 30 s). `planClipLengths()` splits the target
+(*Still* 8 s, *Slow* 15 s, *Grain* 20 s, *Long* 30 s). `planClipLengths()` splits the target
 duration either evenly or snapped to the beat grid – with a minimum shot length, so a beat cut never
-produces a 0.2 s flash frame. All presets stay dark and warm (grade, more grain, stronger vignette) and
-leave the beat flash off by default – the strobe is there if wanted, not the default.
+produces a 0.2 s flash frame. All presets stay grey and quiet (warm or mono grade, more grain, stronger
+vignette); no strobe, the cut does the work.
 
 **Beat tracking in the browser** (`lib/beats.ts`): the audio file is fetched and decoded with
 `decodeAudioData`, then analysed in plain arithmetic – RMS envelope at 100 fps, a 3-tap smooth, half-wave
 rectified flux, autocorrelation over 70–170 BPM for the tempo, a phase search over one bar for the grid and a
 2 s loudness jump for the drop. No library, no upload, ~100 ms for a 4-minute track. The result drives the
-cut plan, the default start point (a little before the drop), the waveform ticks and the beat flashes.
+cut plan, the default start point (a little before the drop) and the waveform ticks.
 
 **Preview** (`components/reels/ReelStage.tsx`): the real 1080×1920 frame, transformed down to the panel
 width. One media layer per clip, only the active one visible; a 60 ms interval reads `audio.currentTime`,
 advances the playhead, switches layers at the cuts and keeps each video within 0.35 s of its planned
-position. Grade is a CSS filter, grain an inline SVG turbulence, vignette a radial gradient, flashes a
-`var(--accent)` overlay – close enough to judge the edit before any encoding happens.
+position. Grade is a CSS filter, grain an inline SVG turbulence, vignette a radial gradient – close enough
+to judge the edit before any encoding happens.
 
 **Text layer** (`ReelOverlay.tsx`): kicker, hook (auto-sized by line length, 1–3 lines), sub line and handle,
-three type styles (Anton / Playfair italic / Space Mono), left or centred, top/middle/low inside the safe
+three type styles (Instrument Serif / Inter / Space Mono), left or centred, top/middle/low inside the safe
 box. For export the exact same markup is rasterised with `html-to-image` (`toPng` at 1080×1920, transparent,
 fonts embedded) and handed to ffmpeg as a PNG overlay – so typography and colours stay in the app's design
 system instead of being reimplemented in `drawtext`.
@@ -706,8 +705,7 @@ one `-filter_complex`:
 per clip: scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,
           setsar=1,fps=30[,zoompan=z='min(1+0.0011*on,1.12)':d=1],
           format=yuv420p,settb=AVTB,setpts=PTS-STARTPTS
-concat -> eq (grade) -> noise (grain) -> vignette -> overlay (text PNG)
-       -> drawbox flashes with enable='between(t,…)+…' -> fade out
+concat -> eq (grade) -> noise (grain) -> vignette -> overlay (text PNG) -> fade out
 audio:  atrim, afade in/out, loudnorm=I=-14:TP=-1:LRA=11, aresample=48000, alimiter
 output: libx264 -crf 20 -preset veryfast -r 30, aac 192k, +faststart
 ```
@@ -733,32 +731,32 @@ failing silently.
 | `--panel` | `#110e0c` | Cards, panels |
 | `--text` | `#ece4d8` | Body copy |
 | `--muted` | `#9a8d81` | Secondary text |
-| `--accent` | `#b87a63` | Muted ember, interaction, focus (profile accent) |
-| `--accent-rgb` | `184 122 99` | Same colour as `r g b` – every translucent tint uses `rgb(var(--accent-rgb) / x)`, so a new accent reaches every surface |
+| `--accent` | `#a49c92` | Light smoke grey, interaction, focus (profile accent) |
+| `--accent-rgb` | `164 156 146` | Same colour as `r g b` – every translucent tint uses `rgb(var(--accent-rgb) / x)`, so a new accent reaches every surface |
 | `--accent-2` | derived | **Second working colour** (`profile.accent_2_hex`, *Auto* = sibling tone, hue +26°): page kickers, panel icons, `scheduled` badges, meta labels, document kicker, milestone dates, selection, `.chip.secondary` – plus gradients and two-tone rules |
 | `--accent-2-deep` / `--accent-2-soft` | derived | Depth + tint of the second colour |
 | `--accent-deep` | `#6e3b2c` | Gradients, depth |
 | `--ok / --warn / --danger` | `#8aa891 / #c9a06a / #b25b60` | Status |
 
-### CI palette “Ascheglut”
+### CI palette “Ash”
 
 Emotional post-hardcore means: **no agency CI, no colour that wants attention**. The
-palette stays inside one warm, dark room – soot, ash, bone, a muted ember for
-the few places that need an accent, and a dark rust that only shows up in print.
-Darker accents beat louder ones: the light is low on purpose, but it is not lost.
+palette is a warm black room – soot, ash, bone and one light smoke grey for the few
+places that need an accent. Rust and wound stay in the print layer. Darker beats louder:
+the light is low on purpose, but it is not lost.
 
 | Name | Hex | Role | Emotion / use |
 | --- | --- | --- | --- |
-| Night | `#0a0807` | Base | Stage, ground, “everything off” |
-| Soot | `#141110` | Base | Panels, shadows with warmth |
-| Ash | `#231c18` | Deep | Gradients, depth layering |
-| Umbra | `#33261f` | Deep | Second depth for vignettes and paper |
-| Ember | `#b87a63` | Primary | The only real accent: buttons, kickers, embers |
-| Rust | `#6e3b2c` | Warm | Amps, dust, print ink |
-| Bone | `#e9e0d2` | Paper | Warm white for type on dark |
-| Wound | `#5f2a2e` | Signal | Emotion, errors, the quiet wound |
-| Moss | `#5e6b5a` | Calm | Cold counterweight, melancholy |
-| Smoke | `#8d8178` | Neutral | Secondary text, distance |
+| Night | `#080808` | Base | Stage, ground, “everything off” |
+| Soot | `#111010` | Base | Panels, shadows |
+| Ash | `#1a1918` | Deep | Gradients, depth layering |
+| Umbra | `#262422` | Deep | Second depth for vignettes |
+| Smoke | `#a49c92` | Primary | The only accent: buttons, kickers, focus |
+| Steel | `#6f6a64` | Neutral | Secondary text, distance |
+| Bone | `#e7e0d6` | Paper | Warm white for type on dark |
+| Rust | `#553b34` | Warm | Print only |
+| Wound | `#43282b` | Signal | Print only, errors |
+| Moss | `#474b44` | Calm | Cold counterweight, melancholy |
 
 **Technically** the palette lives in the `palette` table (name, hex, role, position).
 `PaletteProvider` loads it client-side and distributes it via context to every `ColorField` picker;
@@ -790,8 +788,8 @@ the dashboard all change with one colour now.
 
 - Grotesk stack (Inter/SF/Helvetica), headlines 800–900 with negative tracking,
   mono labels in uppercase with wide letter-spacing – zine/poster feel without kitsch.
-- Background: one ember glow + fine SVG noise overlay (fixed, pointer-events: none).
-- Cards with 1 px lines in ember alpha, hover lift, soft drop shadows.
+- Background: one soft smoke glow + fine SVG noise overlay (fixed, pointer-events: none).
+- Cards with 1 px lines in smoke alpha, hover lift, soft drop shadows.
 - Consistent “///” separators, status pills, locked lowercase for meta information.
 
 ### Interaction
@@ -899,7 +897,7 @@ site         (id=1, published, band_name, tagline, manifesto JSON (the letter),
 - [x] Design studio: text, shapes, stickers, textures, media, layers, templates, 3 formats.
 - [x] Move, resize, rotate, snapping, undo/redo, duplicate, lock, hide.
 - [x] PNG export at 2× resolution, save to the library, straight to a draft post.
-- [x] CI palette “Ascheglut” definable in one place, visible as its own row in every colour picker.
+- [x] CI palette “Ash” definable in one place, visible as its own row in every colour picker.
 - [x] Interface accent colour changeable in the settings, applied instantly and persisted with the profile.
 - [x] Calendar with milestones (type, note, done), month navigation, selected day and upcoming list.
 - [x] Documents: technical rider and other templates, tables, autosave, folders, public share links, print-to-PDF and HTML export.
@@ -915,4 +913,4 @@ site         (id=1, published, band_name, tagline, manifesto JSON (the letter),
 - [x] Manual performance numbers and best-weekday insight from real data.
 - [x] Public one-pager (`/site`) that reads like a letter: hero, letter + crew, media corner, feed strip, links,
       footer — every block switchable in `/website` with a live desktop/mobile preview, plus a pre-launch gate.
-- [x] Warm black/ember design, responsive down to mobile.
+- [x] Warm black/smoke design, responsive down to mobile.

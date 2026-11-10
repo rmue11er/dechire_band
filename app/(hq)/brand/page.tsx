@@ -152,30 +152,26 @@ export default function BrandSheetPage() {
             <div className="bs-section-head">
               <span className="bs-num">03</span>
               <h2>Typography</h2>
-              <p>Two display faces, one text face, one mono. Nothing else.</p>
+              <p>Three fonts: the voice, the body, the meta. Nothing else.</p>
             </div>
             <div className="bs-type">
               <div className="bs-type-row">
-                <span className="bs-type-label">Display · Anton</span>
+                <span className="bs-type-label">Voice · Instrument Serif</span>
                 <span className="bs-sample display">déchire</span>
               </div>
               <div className="bs-type-row">
-                <span className="bs-type-label">Headline · Bebas Neue</span>
-                <span className="bs-sample headline">FRACTURE // 2026</span>
-              </div>
-              <div className="bs-type-row">
-                <span className="bs-type-label">Editorial · Playfair Display</span>
-                <span className="bs-sample editorial">Until the noise takes over.</span>
+                <span className="bs-type-label">Voice italic · Instrument Serif</span>
+                <span className="bs-sample editorial">dark, heavy, but not lost.</span>
               </div>
               <div className="bs-type-row">
                 <span className="bs-type-label">Body · Inter</span>
                 <span className="bs-sample body">
-                  Emotional Post-Hardcore aus Augsburg. Dunkel, düster, aber nicht verloren – und immer auf Augenhöhe mit dem Raum.
+                  Emotional post-hardcore from Augsburg. Dark, heavy, but not lost – and always at eye level with the room.
                 </span>
               </div>
               <div className="bs-type-row">
-                <span className="bs-type-label">Mono · Space Mono</span>
-                <span className="bs-sample mono-label">POST-HARDCORE /// AUGSBURG · 2026</span>
+                <span className="bs-type-label">Meta · Space Mono</span>
+                <span className="bs-sample mono-label">post-hardcore /// augsburg · 2026</span>
               </div>
             </div>
           </section>
@@ -192,7 +188,7 @@ export default function BrandSheetPage() {
                 <ul>
                   <li>Keep lots of black. The image breathes through the empty space.</li>
                   <li>Use one CI colour as the accent, everything else stays dark.</li>
-                  <li>Set headlines in Anton or Bebas, uppercase, tight tracking.</li>
+                  <li>Set headlines in Instrument Serif or Inter, keep them lowercase and give them room.</li>
                   <li>Keep an 8 % safe margin in stories and reels.</li>
                   <li>Use the original logo version for every format.</li>
                 </ul>
@@ -200,7 +196,7 @@ export default function BrandSheetPage() {
               <div className="bs-rule-col dont">
                 <strong>Don’t</strong>
                 <ul>
-                  <li>No second accent colour next to lavender.</li>
+                  <li>No second accent colour next to smoke grey.</li>
                   <li>No white boxes behind the logo.</li>
                   <li>No soft shadows, no glow, no neon.</li>
                   <li>No body copy below 14 px or below 9 pt in print.</li>

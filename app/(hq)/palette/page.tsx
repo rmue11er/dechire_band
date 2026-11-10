@@ -259,7 +259,7 @@ export default function PaletteLabPage() {
                   <input
                     className="input"
                     value={query}
-                    placeholder="pastel purple · muted moss · warm rust · complement of lavender"
+                    placeholder="smoke grey · steel · moss · bone"
                     onChange={(event) => setQuery(event.target.value)}
                   />
                 </span>

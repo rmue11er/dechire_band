@@ -50,7 +50,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   showFeed: true,
   showConnect: true,
   showFooter: true,
-  feedTitle: 'AUS DEM PROBERAUM',
+  feedTitle: 'FROM THE ROOM',
   teaserUrl: '',
   showTeaser: true,
   links: [],

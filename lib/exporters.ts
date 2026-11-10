@@ -87,7 +87,7 @@ HOW TO POST
 5. Add music → search for "${post.songTitle || '—'}"
 6. Use the alt text from "post.json" (Advanced → Write alt text)
 
-danke fürs zuhören. /// déchire
+thank you for listening. /// déchire
 `;
 }
 

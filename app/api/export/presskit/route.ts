@@ -46,14 +46,14 @@ const DOC_CSS = `
   .mast span { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
   h1 { font-family: Georgia, serif; font-weight: 400; font-size: 38px; line-height: 1.1; margin: 0 0 6px; }
   h2 { margin: 28px 0 8px; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; }
-  h2::before { content: '/// '; color: var(--accent, #6b54a6); }
+  h2::before { content: '/// '; color: var(--accent, #a49c92); }
   h3 { margin: 20px 0 6px; font-size: 15px; }
   p { margin: 0 0 12px; }
   .lede { color: var(--muted); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; }
   table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
   th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
   th { background: #14101a; color: #f4f1ea; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
-  blockquote { margin: 16px 0; padding: 12px 16px; border-left: 3px solid var(--accent, #6b54a6); background: rgba(0,0,0,.03); }
+  blockquote { margin: 16px 0; padding: 12px 16px; border-left: 3px solid var(--accent, #a49c92); background: rgba(0,0,0,.03); }
   ul, ol { padding-left: 20px; }
   mark { background: rgba(185,165,232,.4); }
   footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid var(--line);
@@ -131,7 +131,7 @@ export async function GET() {
   const archive = createZip();
   const stamp = new Date().toISOString().slice(0, 10);
   const bandName = profile.bandName || 'déchire';
-  const accent = profile.accentHex || '#b9a5e8';
+  const accent = profile.accentHex || '#a49c92';
   const website = profile.website || '';
 
   const paragraphs = String(profile.bio ?? '')

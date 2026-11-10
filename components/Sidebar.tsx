@@ -116,7 +116,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-foot">
-        <strong>Dunkel. Ehrlich. Nah.</strong>
+        <strong>Dark. Honest. Close.</strong>
         <span className="mono">POST-HARDCORE /// AUGSBURG</span>
         <div className="sidebar-links">
           <a className="mono" href="/site" target="_blank" rel="noreferrer">

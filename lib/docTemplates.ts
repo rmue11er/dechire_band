@@ -152,13 +152,13 @@ ${table(
     hint: 'Short and long bio for promoters and press',
     content: `
 <h2>Short (50 words)</h2>
-<p>déchire machen emotionalen Post-Hardcore aus Augsburg. Dunkel, düster, aber nicht verloren – Musik für den Moment, in dem man merkt, dass man angekommen ist.</p>
+<p>déchire play emotional post-hardcore from Augsburg. Dark, heavy, but not lost – songs for the moment you realise you are still here.</p>
 <h2>Long (150 words)</h2>
-<p>déchire kommen aus einem Proberaum in Augsburg: kein Plan, kein Budget, dafür ein geliehener Amp und sehr viel Ungeduld. Auch Jahre später klingt die Band wie dieser Raum – schwere Gitarren, eine Stimme zwischen Singen und Schreien, Songs, die kaputtgehen, bevor sie sich bequem einrichten.</p>
-<p>Mit <strong>Fracture</strong> ist die bislang direkteste Aufnahme entstanden: drei Minuten, die zwei Jahre gekostet haben. Es geht um den Moment, in dem etwas bricht – und um die Entscheidung, die Stücke zu behalten.</p>
-<p>Live spielt die Band fast das ganze Album, ohne Playback, ohne Klick. Kein großes Programm, keine große Produktion. Nur der Raum, die Songs und die Leute davor.</p>
+<p>déchire started in a practice room in Augsburg: no plan, no budget, a borrowed amp and a lot of impatience. Years later the band still sounds like that room – heavy guitars, a voice between singing and screaming, songs that fall apart before they get comfortable.</p>
+<p>With <strong>Fracture</strong> they recorded the most direct thing so far: three minutes that took two years. It is about the moment something breaks – and the decision to keep the pieces.</p>
+<p>Live the band plays almost the whole record, without playback, without a click. No big production. Just the room, the songs and the people in front of them.</p>
 <h2>Quotes</h2>
-<blockquote>“Dunkel, düster, aber nicht verloren.”</blockquote>
+<blockquote>“Dark, heavy, but not lost.”</blockquote>
 <h2>Links</h2>
 <p>Instagram: @dechire.band · Music: dechire.band/links · Booking: booking@dechire.band</p>
 `.trim(),

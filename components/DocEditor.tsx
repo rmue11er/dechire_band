@@ -107,7 +107,7 @@ export default function DocEditor({
   const [audioOpen, setAudioOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [origin, setOrigin] = useState('');
-  const ciPrimary = palette.find((color) => color.role === 'primary')?.hex ?? '#6b54a6';
+  const ciPrimary = palette.find((color) => color.role === 'primary')?.hex ?? '#a49c92';
   const band = profile?.bandName ?? 'déchire';
 
   useEffect(() => {
@@ -590,10 +590,10 @@ export default function DocEditor({
     const accent = token('--accent', ciPrimary);
     const accent2 = token('--accent-2', ciPrimary);
     const accentDeep = token('--accent-deep', ciPrimary);
-    const accentRgb = token('--accent-rgb', '185 165 232');
-    const tagline = profile?.bio?.split('\n')[0] || 'Post-Hardcore /// Augsburg';
+    const accentRgb = token('--accent-rgb', '164 156 146');
+    const tagline = profile?.bio?.split('\n')[0] || 'emotional post-hardcore /// augsburg';
     const mono = 'ui-monospace, "SF Mono", Menlo, monospace';
-    const display = '"Anton", "Impact", sans-serif';
+    const display = '"Instrument Serif", Georgia, serif';
     const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -603,16 +603,16 @@ export default function DocEditor({
   @page { margin: 14mm; }
   * { box-sizing: border-box; }
   :root { --accent: ${accent}; --accent-2: ${accent2}; --accent-deep: ${accentDeep}; --accent-rgb: ${accentRgb}; --mark: ${strength}; }
-  body { margin: 0; padding: 26px 16px 48px; background: #14111c; color: #1d1826; font: 14.5px/1.72 "Inter", "Helvetica Neue", Arial, sans-serif; }
-  .sheet { position: relative; overflow: hidden; max-width: 820px; margin: 0 auto; background: #f4f1ea; background-image: radial-gradient(rgb(20 16 26 / .045) .5px, transparent .6px); background-size: 3px 3px; box-shadow: 0 26px 60px -30px rgba(0, 0, 0, .8); }
-  .mast { position: relative; overflow: hidden; padding: 22px 34px 0; background: #0b0a10; color: #f6f2ff; }
+  body { margin: 0; padding: 26px 16px 48px; background: #151413; color: #1d1b19; font: 14.5px/1.72 "Inter", "Helvetica Neue", Arial, sans-serif; }
+  .sheet { position: relative; overflow: hidden; max-width: 820px; margin: 0 auto; background: #f4f1ea; background-image: radial-gradient(rgb(21 20 19 / .045) .5px, transparent .6px); background-size: 3px 3px; box-shadow: 0 26px 60px -30px rgba(0, 0, 0, .8); }
+  .mast { position: relative; overflow: hidden; padding: 22px 34px 0; background: #0b0b0a; color: #f5f1ea; }
   .photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; opacity: var(--mark); filter: grayscale(1) contrast(1.1) brightness(1.05); }
-  .veil { position: absolute; inset: 0; background: linear-gradient(100deg, rgb(11 10 16 / .95) 0%, rgb(11 10 16 / .82) 42%, rgb(11 10 16 / .52) 100%); }
+  .veil { position: absolute; inset: 0; background: linear-gradient(100deg, rgb(11 11 10 / .95) 0%, rgb(11 11 10 / .82) 42%, rgb(11 11 10 / .52) 100%); }
   .mast-inner { position: relative; z-index: 2; display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding-bottom: 14px; }
   .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
   .brand img { width: 40px; height: 40px; object-fit: cover; border-radius: 3px; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); }
   .wordmark { display: grid; gap: 5px; }
-  .wordmark strong { font-family: ${display}; font-weight: 400; font-size: 27px; line-height: .9; letter-spacing: .015em; text-transform: uppercase; color: #fbf8ff; }
+  .wordmark strong { font-family: ${display}; font-weight: 400; font-size: 27px; line-height: .9; letter-spacing: .015em; color: #faf7f1; }
   .wordmark em { font-style: normal; font-family: ${mono}; font-size: 8px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent); opacity: .85; }
   .mast-meta { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 0 13px; border-top: 1px solid rgba(255, 255, 255, .12); font-family: ${mono}; font-size: 8.5px; letter-spacing: .18em; text-transform: uppercase; color: rgba(255, 255, 255, .62); }
   .mast-meta .kind { color: var(--accent); }
@@ -620,18 +620,18 @@ export default function DocEditor({
   .body { position: relative; padding: 30px 34px 44px; }
   .kicker { display: inline-flex; align-items: baseline; gap: 8px; font-family: ${mono}; font-size: 9px; letter-spacing: .26em; text-transform: uppercase; color: var(--accent-deep); }
   .kicker b { font-family: ${display}; font-weight: 400; font-size: 11px; letter-spacing: 0; color: var(--accent-2); }
-  h1 { margin: 9px 0 0; font-family: ${display}; font-weight: 400; font-size: 36px; line-height: 1.02; letter-spacing: .005em; text-transform: uppercase; color: #100d16; }
+  h1 { margin: 9px 0 0; font-family: ${display}; font-weight: 400; font-size: 36px; line-height: 1.05; letter-spacing: .005em; color: #141311; }
   .rule { display: block; width: 64px; height: 4px; margin: 16px 0 24px; background: linear-gradient(90deg, var(--accent-deep), var(--accent-2)); }
-  .body h2 { display: flex; align-items: baseline; gap: 11px; margin: 30px 0 10px; font-size: 11.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #100d16; }
+  .body h2 { display: flex; align-items: baseline; gap: 11px; margin: 30px 0 10px; font-size: 11.5px; font-weight: 800; letter-spacing: .14em; color: #141311; }
   .body h2::before { content: ''; width: 3px; height: 13px; border-radius: 1px; background: linear-gradient(180deg, var(--accent-deep), var(--accent-2)); transform: translateY(2px); }
-  .body h2::after { content: ''; flex: 1 1 auto; height: 1px; transform: translateY(-2px); background: linear-gradient(90deg, rgb(16 13 22 / .18), rgb(16 13 22 / 0)); }
-  .body h1 { font-family: ${display}; font-weight: 400; font-size: 22px; letter-spacing: .01em; text-transform: uppercase; }
-  .body h3 { margin: 20px 0 6px; font-size: 14px; color: #14101c; }
+  .body h2::after { content: ''; flex: 1 1 auto; height: 1px; transform: translateY(-2px); background: linear-gradient(90deg, rgb(20 19 17 / .18), rgb(20 19 17 / 0)); }
+  .body h1 { font-family: ${display}; font-weight: 400; font-size: 22px; letter-spacing: .01em; }
+  .body h3 { margin: 20px 0 6px; font-size: 14px; color: #161514; }
   .body p { margin: 0 0 11px; }
   .sheet.lyrics .body { font-size: 15px; line-height: 1.85; }
   .sheet.lyrics .body p { margin: 0 0 3px; }
-  .doc-section { position: relative; margin: 28px 0 0; padding: 12px 0 2px 17px; border-left: 2px solid rgb(16 13 22 / .22); }
-  .doc-section::before { content: attr(data-label); display: block; margin: 0 0 7px; font-family: ${mono}; font-size: 8.5px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: rgb(16 13 22 / .55); }
+  .doc-section { position: relative; margin: 28px 0 0; padding: 12px 0 2px 17px; border-left: 2px solid rgb(20 19 17 / .22); }
+  .doc-section::before { content: attr(data-label); display: block; margin: 0 0 7px; font-family: ${mono}; font-size: 8.5px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: rgb(20 19 17 / .55); }
   .doc-section[data-tag]:not([data-tag=''])::after { content: attr(data-tag); position: absolute; top: 10px; right: 0; padding: 1px 6px; border: 1px solid rgb(var(--accent-rgb) / .45); border-radius: 2px; font-family: ${mono}; font-size: 8px; letter-spacing: .12em; color: var(--accent-deep); }
   .doc-section[data-part='chorus'] { border-left-color: var(--accent); border-left-width: 3px; background: linear-gradient(90deg, rgb(var(--accent-rgb) / .09), transparent 62%); }
   .doc-section[data-part='chorus']::before { color: var(--accent-deep); }
@@ -641,23 +641,23 @@ export default function DocEditor({
   .doc-section[data-part='bridge']::before { color: var(--accent-2); }
   .doc-section[data-part='bridge'] { border-left-style: dashed; }
   .doc-section[data-part='intro'],
-  .doc-section[data-part='outro'] { border-left-style: dotted; border-left-color: rgb(16 13 22 / .34); }
+  .doc-section[data-part='outro'] { border-left-style: dotted; border-left-color: rgb(20 19 17 / .34); }
   .doc-section[data-part='breakdown'],
-  .doc-section[data-part='solo'] { border-left-color: #100d16; }
-  .body strong { color: #0d0a12; }
+  .doc-section[data-part='solo'] { border-left-color: #141311; }
+  .body strong { color: #0d0d0c; }
   .body a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 2px; }
   .body ul, .body ol { padding-left: 20px; }
   .body li::marker { color: var(--accent-deep); }
-  .body blockquote { margin: 16px 0; padding: 12px 16px; border-left: 3px solid var(--accent-2); background: rgb(var(--accent-rgb) / .08); font-style: italic; color: #2f283c; }
-  .body mark { background: rgb(var(--accent-rgb) / .38); color: #241d31; }
-  .body code { padding: 1px 5px; border-radius: 3px; background: rgb(16 13 22 / .07); font-family: ${mono}; font-size: .86em; }
-  .body pre { padding: 13px 15px; border: 1px solid rgb(16 13 22 / .16); border-radius: 4px; background: rgb(16 13 22 / .045); overflow-x: auto; }
-  .body hr { margin: 24px 0; border: 0; border-top: 1px solid rgb(16 13 22 / .16); }
-  .body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12.5px; border: 1px solid rgb(16 13 22 / .2); }
-  .body th, .body td { border: 1px solid rgb(16 13 22 / .18); padding: 8px 11px; text-align: left; vertical-align: top; }
-  .body th { background: #100d16; border-color: #100d16; font-family: ${mono}; font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; color: #f4f1ea; }
+  .body blockquote { margin: 16px 0; padding: 12px 16px; border-left: 3px solid var(--accent-2); background: rgb(var(--accent-rgb) / .08); font-style: italic; color: #3a3633; }
+  .body mark { background: rgb(var(--accent-rgb) / .38); color: #262321; }
+  .body code { padding: 1px 5px; border-radius: 3px; background: rgb(20 19 17 / .07); font-family: ${mono}; font-size: .86em; }
+  .body pre { padding: 13px 15px; border: 1px solid rgb(20 19 17 / .16); border-radius: 4px; background: rgb(20 19 17 / .045); overflow-x: auto; }
+  .body hr { margin: 24px 0; border: 0; border-top: 1px solid rgb(20 19 17 / .16); }
+  .body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12.5px; border: 1px solid rgb(20 19 17 / .2); }
+  .body th, .body td { border: 1px solid rgb(20 19 17 / .18); padding: 8px 11px; text-align: left; vertical-align: top; }
+  .body th { background: #141311; border-color: #141311; font-family: ${mono}; font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; color: #f4f1ea; }
   .body th * { color: #f4f1ea; }
-  .body tbody tr:nth-child(even) td { background: rgb(16 13 22 / .035); }
+  .body tbody tr:nth-child(even) td { background: rgb(20 19 17 / .035); }
   .body table p { margin: 0; }
   .body img.doc-img { display: block; height: auto; margin: 18px auto; border-radius: 3px; box-shadow: 0 12px 26px -18px rgba(0, 0, 0, .8); page-break-inside: avoid; }
   .body img.doc-img[data-align="left"] { float: left; margin: 4px 20px 14px 0; }
@@ -668,12 +668,12 @@ export default function DocEditor({
   .body .doc-icon svg { width: var(--ico, 16px); height: var(--ico, 16px); fill: currentColor; }  .body ul[data-type="taskList"] { list-style: none; padding-left: 0; }
   .body ul[data-type="taskList"] li { display: flex; gap: 8px; align-items: flex-start; }
   .body ul[data-type="taskList"] input { accent-color: var(--accent-deep); }
-  .demos { display: grid; gap: 10px; margin: 30px 0 0; padding-top: 16px; border-top: 1px dashed rgb(16 13 22 / .26); }
+  .demos { display: grid; gap: 10px; margin: 30px 0 0; padding-top: 16px; border-top: 1px dashed rgb(20 19 17 / .26); }
   .demos-title { font-family: ${mono}; font-size: 8.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent-deep); }
   .demos figure { margin: 0; }
-  .demos figcaption { margin-bottom: 5px; font-size: 11.5px; font-weight: 700; color: #14101c; }
+  .demos figcaption { margin-bottom: 5px; font-size: 11.5px; font-weight: 700; color: #161514; }
   .demos audio { width: 100%; height: 36px; filter: grayscale(1) contrast(.9); }
-  .foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 40px; padding-top: 12px; border-top: 1px solid rgb(16 13 22 / .18); font-family: ${mono}; font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase; color: rgb(16 13 22 / .5); }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 40px; padding-top: 12px; border-top: 1px solid rgb(20 19 17 / .18); font-family: ${mono}; font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase; color: rgb(20 19 17 / .5); }
   .foot span:first-child::before { content: ''; display: inline-block; width: 5px; height: 5px; margin-right: 8px; background: var(--accent-2); vertical-align: 1px; }
   @media print { body { padding: 0; background: #fff; } .sheet { max-width: none; box-shadow: none; } }
 </style>
@@ -1110,7 +1110,7 @@ export default function DocEditor({
               )}
               <span className="doc-sheet-wordmark">
                 <strong>{band}</strong>
-                <em>{profile?.bio?.split('\n')[0] || 'Post-Hardcore /// Augsburg'}</em>
+                <em>{profile?.bio?.split('\n')[0] || 'emotional post-hardcore /// augsburg'}</em>
               </span>
             </div>
           </div>

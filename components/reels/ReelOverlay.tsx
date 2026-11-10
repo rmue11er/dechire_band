@@ -3,18 +3,18 @@
 import { REEL_SAFE, type ReelText } from '@/lib/reels';
 
 function hookSize(text: ReelText, longest: number) {
-  if (text.style === 'block') {
+  if (text.style === 'serif') {
     if (longest <= 10) return 168;
     if (longest <= 16) return 138;
     if (longest <= 24) return 112;
     if (longest <= 34) return 92;
     return 76;
   }
-  if (text.style === 'serif') {
-    if (longest <= 14) return 140;
-    if (longest <= 22) return 116;
-    if (longest <= 32) return 96;
-    return 80;
+  if (text.style === 'sans') {
+    if (longest <= 10) return 132;
+    if (longest <= 18) return 104;
+    if (longest <= 28) return 84;
+    return 68;
   }
   if (longest <= 14) return 96;
   if (longest <= 24) return 80;

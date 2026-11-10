@@ -88,12 +88,10 @@ const sourceDuration = (url: string) =>
 
 const DEFAULT_LOOK: ReelLook = {
   grade: 'warm',
-  grain: 16,
-  vignette: 0.5,
+  grain: 18,
+  vignette: 0.55,
   fadeOut: true,
-  flash: false,
   beatCut: true,
-  accent: '#b87a63',
 };
 
 const DEFAULT_TEXT: ReelText = {
@@ -155,8 +153,6 @@ export default function ReelsPage() {
         setMedia(mediaData.media ?? []);
         setProfile(profileData.profile ?? null);
         setFfmpeg(reelData.ffmpeg ?? null);
-        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-        if (/^#[0-9a-f]{6}$/i.test(accent)) setLook((current) => ({ ...current, accent }));
       })
       .catch(() => toast('Reel lab could not be loaded', 'error'))
       .finally(() => mounted && setLoading(false));
@@ -341,7 +337,6 @@ export default function ReelsPage() {
       grade: preset.grade,
       grain: preset.grain,
       vignette: preset.vignette,
-      flash: preset.flash,
       fadeOut: preset.fadeOut,
     }));
     setClips((current) => current.map((clip) => ({ ...clip, motion: preset.motion })));
@@ -853,7 +848,7 @@ export default function ReelsPage() {
                   <input
                     className="input"
                     value={text.kicker}
-                    placeholder="Neue Single"
+                    placeholder="new single"
                     onChange={(event) => setText((current) => ({ ...current, kicker: event.target.value }))}
                   />
                 </Field>
@@ -861,7 +856,7 @@ export default function ReelsPage() {
                   <input
                     className="input"
                     value={text.sub}
-                    placeholder="überall, wo du hörst"
+                    placeholder="out everywhere"
                     onChange={(event) => setText((current) => ({ ...current, sub: event.target.value }))}
                   />
                 </Field>
@@ -883,8 +878,8 @@ export default function ReelsPage() {
                   <div className="reel-chips">
                     {(
                       [
-                        ['block', 'Block'],
                         ['serif', 'Serif'],
+                        ['sans', 'Sans'],
                         ['mono', 'Mono'],
                       ] as [ReelTextStyle, string][]
                     ).map(([value, label]) => (
@@ -943,7 +938,7 @@ export default function ReelsPage() {
               <div className="reel-look-row">
                 <Field label="Look">
                   <div className="reel-chips">
-                    {(['none', 'warm', 'mono', 'faded'] as ReelGrade[]).map((value) => (
+                    {(['none', 'warm', 'mono'] as ReelGrade[]).map((value) => (
                       <button
                         key={value}
                         type="button"
@@ -962,14 +957,6 @@ export default function ReelsPage() {
                     onChange={(event) => setText((current) => ({ ...current, showHandle: event.target.checked }))}
                   />
                   <span>Handle zeigen</span>
-                </label>
-                <label className="reel-toggle">
-                  <input
-                    type="checkbox"
-                    checked={look.flash}
-                    onChange={(event) => setLook((current) => ({ ...current, flash: event.target.checked }))}
-                  />
-                  <span>Blitz auf Beat</span>
                 </label>
                 <label className="reel-toggle">
                   <input

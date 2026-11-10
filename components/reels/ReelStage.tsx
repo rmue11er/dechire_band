@@ -15,13 +15,12 @@ export interface StageClip {
 }
 
 function cssFilter(grade: ReelLook['grade']) {
-  if (grade === 'warm') return 'sepia(0.14) saturate(0.9) contrast(1.04) brightness(0.97)';
-  if (grade === 'mono') return 'grayscale(1) contrast(1.1) brightness(0.95)';
-  if (grade === 'faded') return 'sepia(0.22) saturate(0.72) contrast(0.94) brightness(1.03)';
+  if (grade === 'warm') return 'sepia(0.08) saturate(0.68) contrast(1.03) brightness(0.97)';
+  if (grade === 'mono') return 'grayscale(1) contrast(1.08) brightness(0.95)';
   return 'none';
 }
 
-/** The 9:16 stage: media layers, grade, grain, text, beat flashes, safe zones. */
+/** The 9:16 stage: media layers, grade, grain, text, safe zones. */
 export function ReelStage({
   clips,
   time,
@@ -81,7 +80,6 @@ export function ReelStage({
     }
   }, [clips, time, playing, active]);
 
-  const flash = look.flash && beats.some((beat) => time >= beat && time < beat + 0.1);
   const grainOpacity = Math.min(0.4, look.grain / 30 * 0.42);
 
   return (
@@ -129,7 +127,6 @@ export function ReelStage({
           style={{ opacity: look.vignette }}
           aria-hidden="true"
         />
-        <span className={`reel-flash ${flash ? 'on' : ''}`} aria-hidden="true" />
 
         <ReelOverlay text={text} handle={handle} />
 

@@ -11,7 +11,7 @@ paperwork — and a small public one-pager that is configured from inside it.
 ![Public site – hero](docs/screenshots/site-hero.jpg)
 
 Everything is local: **SQLite via the built-in `node:sqlite`** (no database server, no native dependencies),
-uploads on disk, no cloud, no external services. Warm black, bone, ember – almost no colour. Emotional post-hardcore from Augsburg.
+uploads on disk, no cloud, no external services. Warm black, bone, smoke grey – almost no colour. Emotional post-hardcore from Augsburg.
 
 ---
 
@@ -56,8 +56,9 @@ npm run typecheck    # tsc --noEmit
 no second hue in the chrome, no drop shadows. Contrast comes from hairlines, type and space.
 `styles/shell.css` is loaded last and restates the shell plus every shared component, so page styles never fight it.
 
-- **Display voice**: page titles in Anton, uppercase and tight; micro labels in monospace with wide tracking and a
-  `///` accent tick. Dashboard figures use the poster face too, so numbers read like a gig flyer, not a BI tool.
+- **Display voice**: page titles in the serif voice (Instrument Serif), lowercase and roomy; micro labels in
+  Inter or Space Mono with wide tracking and a `///` accent tick. Dashboard figures use the same face, so
+  numbers read like a poster, not a BI tool.
 - **Shell**: a 246 px sidebar with numbered entries (`01 … 11`), grouped by `/// STUDIO` / `/// SETUP`, a quick-jump
   field that forwards `⌘K` to the command palette, and a slim sticky **context bar** on every page
   (`déchire /// MEDIA` · date · `⌘K`). Content is capped at 1560 px and centred; a 2 px accent strip sits at the
@@ -101,9 +102,9 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 - **Canva feel without the cloud**: canvas with selection frame, 8 resize handles, rotation handle,
   smart snapping to edges, centre and other elements (with guide lines).
 - **Tools**:
-  - **Text** in 6 presets (Display, Headline, Subline, Quote, Body, Mono) with 9 fonts,
-    weight, size, tracking, line height, alignment, uppercase, italic, outline,
-    shadow effects (Glow, Hard Shadow, Colour Echo) and text background.
+  - **Text** in 6 presets (Display, Headline, Label, Quote, Body, Meta) with **three fonts only**:
+    Instrument Serif (voice), Inter (body) and Space Mono (meta). Weight, size, tracking, line height,
+    alignment, uppercase, italic, outline, shadow effects and text background stay available.
   - **Shapes**: rectangle, circle, triangle, diamond, star, burst, cross, slash, line, frame, tape –
     with solid fill, gradient (adjustable angle), stroke and corner radius.
   - **Media**: images from the library or direct upload, with fill/fit,
@@ -111,18 +112,17 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   - **Extras**: 10 stickers (asterisk, spark, bolt, arrow, X, brackets, dots, wave, heart, circle)
     and 6 textures (grain, halftone, scanlines, stripes, grid, vignette) with blend modes.
   - **Layers**: list with visibility, lock, order and delete.
-- **12 templates, all dark and warm**: *Release* (serif type instead of a poster shout), *Show* (date +
-  city, print frame), *Zitat* (song line, two hairlines), *Merch* (50 Stück, dark), *Story* (Jetzt draußen),
-  *Statement* (Instrument Serif, no paper flash), *Porträt* (photo, warm grade, lowercase wordmark),
-  *Nähe* (full-bleed portrait, Cormorant whisper), *Notiz* (tape, handwriting), *Elegie* (almost empty black),
-  *Lärm* (type bleeding off the story edges) and *Termine* (Augsburg, München, Stuttgart …).
+- **12 templates, all grey, dark and quiet**: *Release* (serif type instead of a poster shout), *Show* (date +
+  city, thin frame), *Quote* (song line, two hairlines), *Merch* (type only), *Story* (out now),
+  *Statement* (Instrument Serif, no texture), *Portrait* (photo, desaturated grade, lowercase wordmark),
+  *Close* (full-bleed portrait, whisper), *Note* (one note, no tape), *Elegy* (almost empty black),
+  *Noise* (type running off the edges) and *Dates* (Augsburg, Munich, Stuttgart …).
   Templates are drawn in the CI placeholder and are **re-coloured to the live accent** on the way in
   (`recolourDesign()` in `lib/studio.ts`) – change the accent in Settings and every new design, every preview
   and every existing design (via *Directions → Brand accent*) follows.
-- **17 fonts, all self-hosted** – beside the poster faces (Anton, Bebas, Archivo Black, Oswald) the post-hardcore
-  voice: **Cormorant Garamond**, **Bodoni Moda**, **EB Garamond**, **Instrument Serif**, **Spectral**,
-  **Special Elite** (typewriter), **Caveat** (handwriting), **Archivo Narrow**. New text presets *Whisper,
-  Elegy, Typewriter, Diary, Tight caps*.
+- **Three fonts, all self-hosted**: **Instrument Serif** (the voice – headlines, lyrics, quotes),
+  **Inter** (body, captions, UI) and **Space Mono** (meta, labels, dates). No font carousel: everything in the
+  studio, the documents, the reels and the public site uses this set.
 - **Free photos in the studio** (`Stock` tab): search **Openverse** (WordPress/Automattic) filtered to
   **CC0 / public domain only** – usable commercially, **no credit and no payment**. Clicking a result downloads
   the file server-side (`/api/stock/import`), stores it in the media library with `stock`, licence and provider
@@ -150,7 +150,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   back to *Unfiled*. Uploads land in the folder you have open. Any file can also be re-filed from its detail dialog
   (`Folder` select, indented tree).
 - Upload via button or **drag & drop** onto the window, images and videos.
-- **Asset groups = versions**: a logo exists as “White/transparent”, “Ember”, “Sticker 1080×1080”,
+- **Asset groups = versions**: a logo exists as “White/transparent”, “Smoke”, “Sticker 1080×1080”,
   “Social avatar” and so on. Every version downloads on its own (`?download=1`) or via “download version” in the group dialog.
 - Search across title, version, tags and filename; filter by images / logos / video.
 - Detail dialog: title, version label, group, tags, alt text, dimensions, size, **where the asset is used**
@@ -226,10 +226,10 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 
 ### 7. Colour lab (`/palette`)
 The band's palette is not guessed any more – it is searched. Everything runs in **OKLCH**, so “pastel”,
-“muted” or “a sibling of our ember” are numbers instead of vibes (`lib/colorlab.ts`).
+“muted” or “a sibling of our smoke” are numbers instead of vibes (`lib/colorlab.ts`).
 
 - **Guided search**: type what you mean – `pastel purple`, `muted moss`, `warm rust`,
-  `complement of ember` – and the query is parsed into hue family + mood + harmony. Chips for
+  `complement of smoke` – and the query is parsed into hue family + mood + harmony. Chips for
   mood (pastel, muted, dark, bright, neon, earthy, vintage) and harmony (analogous, complementary,
   split, triad, tetrad, mono), plus lightness/chroma sliders when you want to drive it yourself.
 - **Scoring**: every candidate is ranked against the palette you already have – hue relationship to the
@@ -269,7 +269,7 @@ as a screen: no paper sheet, no stamps, no badges, no scanlines, no mono labels,
 - **Hero** – the band name in the display face, letter by letter out of the dark, with a soft second print
   underneath it (wet ink, not neon). Beside it **one photo as a taped print**, the tagline in serif italic,
   `@handle` and a quiet `read the note ↓`. Nothing else.
-- **A note from us** – the letter itself: `Playfair` body on black, 54 ch, 1.7 leading, `*word*` marked with
+- **A note from us** – the letter itself: `Instrument Serif` body on black, 54 ch, 1.7 leading, `*word*` marked with
   the accent, italic signature. Right beside it the band's photos as taped prints (paper, tape strip, own
   angle, grayscale that develops into colour on hover). No crew list, no roles, no names.
 - **From the feed** – the same taped-print language as a wall of flyers, made from published posts.
@@ -326,7 +326,7 @@ does not come back) or **reset** (wipe + demo data again).
 - **⌘K / Ctrl+K** opens a command palette that searches posts, assets, notes, documents, milestones,
   designs and snippets and jumps straight there.
 
-### CI palette “Ascheglut”
+### CI palette “Ash”
 The band colours live in the database (`palette`) and are managed through `/api/palette`.
 In settings you can change name, hex value, role and order, add new colours
 and restore the defaults. Every colour picker in the design studio shows the CI as its own
@@ -334,19 +334,19 @@ row “Band CI” above the neutral tones – with names as tooltips.
 
 | Name | Hex | Role |
 | --- | --- | --- |
-| Night | `#0a0807` | Base |
-| Soot | `#141110` | Base |
-| Ash | `#231c18` | Deep |
-| Umbra | `#33261f` | Deep |
-| Ember | `#b87a63` | Primary |
-| Rust | `#6e3b2c` | Warm |
-| Bone | `#e9e0d2` | Paper |
-| Wound | `#5f2a2e` | Signal |
-| Moss | `#5e6b5a` | Calm |
-| Smoke | `#8d8178` | Neutral |
+| Night | `#080808` | Base |
+| Soot | `#111010` | Base |
+| Ash | `#1a1918` | Deep |
+| Umbra | `#262422` | Deep |
+| Smoke | `#a49c92` | Primary |
+| Steel | `#6f6a64` | Neutral |
+| Bone | `#e7e0d6` | Paper |
+| Rust | `#553b34` | Warm (print only) |
+| Wound | `#43282b` | Signal (print only) |
+| Moss | `#474b44` | Calm |
 
-The accent is a muted ember, not a signal colour: enough presence for buttons and kickers, but it never
-shouts. Everything else stays between soot, ash and bone – the few colours that exist are warm and dark.
+The accent is a light smoke grey, not a colour: enough for buttons, kickers and focus, but the page
+stays monochrome. Rust and wound only appear in printed artwork – the screen has no hue to argue about.
 
 ### Interface accent colour
 
@@ -417,21 +417,23 @@ the media library and the document module, so the kit is never out of date.
 
 ### 13. Reel Lab (`/reels`)
 The mini reel machine: clips from the library, one song, three steps, one MP4.
-- **Presets** – Nacht 8 s, Herz 15 s, Keller 20 s, Heimweg 30 s. Each one sets length, grade, grain,
-vignette, motion and the beat flash in a click – all warm, dark, without strobe.
+- **Presets** – Still 8 s, Slow 15 s, Grain 20 s, Long 30 s. Each one sets length, grade, grain,
+vignette and motion in a click – warm or black and white, no strobe.
 - **Clips** – 1–12 videos or photos, reorderable, each with a trim offset and a motion
 (*still / push / pull*). Videos are cropped to 9:16 (`force_original_aspect_ratio=increase,crop`), photos
 get a Ken Burns move through `zoompan`.
 - **Beat cuts** – the track is decoded in the browser: RMS envelope → onset flux → autocorrelation → BPM,
-phase search → beat grid, 2 s loudness jump → drop. Cuts snap to that grid, the drop becomes the default
-start, and *Blitz auf Beat* flashes the CI accent on every beat.
-- **Text layer** – kicker, hook (1–3 lines, auto-sized), sub line and handle; Block/Serif/Mono,
+phase search → beat grid, 2 s loudness jump → drop. Cuts snap to that grid and the drop becomes the
+default start. No strobe, no zoom punch – the cut is the effect.
+- **Text layer** – kicker, hook (1–3 lines, auto-sized), sub line and handle; Serif/Sans/Mono,
 left/centre, top/middle/low. It is laid out inside Meta's safe zones (top 14 %, bottom 35 %, 6 % sides)
 and rasterised to a transparent 1080×1920 PNG with `html-to-image` – what you see is the ffmpeg overlay.
 - **Preview** – the real 9:16 frame, scaled: media layers switch at the cuts, the song plays in sync,
 safe-zone guides and the live text sit on top. Grain, vignette and grade are approximated in CSS.
+- **Look** – Raw/Warm/Mono, grain, vignette, fade-out. *Warm* is the default: desaturated, slightly warm
+shadows, no colour cast. Beat flash is gone; the cut is the effect.
 - **Export** – `POST /api/reels` validates the plan and renders in a background job with progress:
-trim/crop/motion per clip, concat, grade, grain, vignette, overlay PNG, beat flashes, fade-out,
+trim/crop/motion per clip, concat, grade, grain, vignette, overlay PNG, fade-out,
 `loudnorm I=-14`, AAC 48 kHz, H.264 CRF 20, 1080×1920 @ 30 fps, `+faststart`; a cover JPEG is grabbed from
 the result. Both appear in the media library, and *In den Planner* creates a reel draft with the hook as
   caption. Clips must be raster photos (PNG/JPG/WebP) or videos – SVG artwork has to be exported to PNG first.
@@ -468,7 +470,7 @@ The PNG snapshot of the feed is generated client-side via `html-to-image`.
 | ZIP export | `archiver` (v8) |
 | Image dimensions | `image-size` |
 | Design export | `html-to-image` (PNG snapshot of the canvas, 2× resolution) |
-| Fonts | `@fontsource` (Anton, Bebas Neue, Archivo Black, Oswald, Inter, Playfair Display, Space Mono – bundled locally) |
+| Fonts | `@fontsource` (Instrument Serif, Inter, Space Mono – three families, bundled locally) |
 | Styling | hand-written CSS design system in `styles/` (no Tailwind, no runtime) |
 
 ### Project structure

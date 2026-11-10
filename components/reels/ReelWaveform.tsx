@@ -43,7 +43,7 @@ export function ReelWaveform({
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, width, height);
 
-      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#b9a5e8';
+      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#a49c92';
 
       // selection band
       const from = duration > 0 ? (start / duration) * width : 0;

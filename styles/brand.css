@@ -51,10 +51,10 @@
 .bs-avatar.placeholder {
   display: grid;
   place-items: center;
-  font-family: 'Anton', sans-serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 34px;
-  color: #08070b;
-  background: #b9a5e8;
+  color: #0b0b0a;
+  background: var(--accent, #a49c92);
 }
 
 .bs-brand-text {
@@ -63,7 +63,7 @@
 }
 
 .bs-name {
-  font-family: 'Anton', sans-serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 40px;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -105,7 +105,7 @@
   font-family: 'Space Mono', monospace;
   font-size: 11px;
   letter-spacing: 0.12em;
-  color: #b9a5e8;
+  color: var(--accent, #a49c92);
 }
 
 .bs-section-head h2 {
@@ -173,11 +173,11 @@
   display: grid;
   gap: 6px;
   font-size: 13px;
-  color: #cfc6e4;
+  color: #a39c92;
 }
 
 .bs-rules-inline li::marker {
-  color: #b9a5e8;
+  color: var(--accent, #a49c92);
 }
 
 /* palette ----------------------------------------------------------------- */
@@ -264,20 +264,20 @@
 }
 
 .bs-sample.display {
-  font-family: 'Anton', sans-serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 66px;
   line-height: 0.95;
   letter-spacing: 0.015em;
 }
 
 .bs-sample.headline {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 46px;
   letter-spacing: 0.04em;
 }
 
 .bs-sample.editorial {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 30px;
   color: #e6dcff;
@@ -287,7 +287,7 @@
   font-family: 'Inter', sans-serif;
   font-size: 16px;
   line-height: 1.6;
-  color: #cfc6e4;
+  color: #a39c92;
   max-width: 62ch;
 }
 
@@ -295,7 +295,7 @@
   font-family: 'Space Mono', monospace;
   font-size: 12px;
   letter-spacing: 0.24em;
-  color: #b9a5e8;
+  color: var(--accent, #a49c92);
 }
 
 /* rules ------------------------------------------------------------------- */
@@ -337,7 +337,7 @@
   gap: 7px;
   font-size: 13px;
   line-height: 1.5;
-  color: #cfc6e4;
+  color: #a39c92;
 }
 
 .bs-foot {

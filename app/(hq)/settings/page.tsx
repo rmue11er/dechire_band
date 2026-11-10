@@ -201,7 +201,7 @@ export default function SettingsPage() {
   const addColor = () => {
     setPalette((current) => [
       ...current,
-      { name: `Color ${current.length + 1}`, hex: '#b9a5e8', role: 'custom' },
+      { name: `Color ${current.length + 1}`, hex: '#a49c92', role: 'custom' },
     ]);
   };
 
@@ -1148,8 +1148,8 @@ export default function SettingsPage() {
         <div className="panel-body">
           <p className="palette-intro">
             These colors now appear in <strong>every color picker</strong> of the design studio – as “Band CI”
-            above the neutral tones. Define once, stay consistent: lavender as the core, bone as paper, rust and
-            wound for emotion, moss and fog as the cool counterweight.
+            above the neutral tones. Define once, stay consistent: smoke as the accent, bone as paper,
+            rust and wound for print, moss and steel as the cool counterweight.
           </p>
 
           <div className="palette-editor">

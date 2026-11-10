@@ -2,24 +2,23 @@ import type { PaletteColor } from './types';
 import { hexToOklch, oklchToHex } from './colorlab';
 
 /**
- * CI “Ascheglut” – emotional post-hardcore from Augsburg.
+ * CI “Ash” – emotional post-hardcore from Augsburg.
  *
- * Warm black instead of blue-black, bone paper, one muted ember accent and a
- * dark rust that only shows up in print. Everything else is ash, smoke, moss
- * and a wound that never quite closes. No candy colours – the room is dark and
- * that is where the songs live.
+ * Almost no colour. Warm black, soot, ash, bone – and one light smoke grey as
+ * the only accent. Dark rust and a muted wound live in the print layer, not in
+ * the UI. The room stays dark; the light is low, not gone.
  */
 export const DEFAULT_PALETTE: PaletteColor[] = [
-  { name: 'Night', hex: '#0a0807', role: 'base' },
-  { name: 'Soot', hex: '#141110', role: 'base' },
-  { name: 'Ash', hex: '#231c18', role: 'deep' },
-  { name: 'Umbra', hex: '#33261f', role: 'deep' },
-  { name: 'Ember', hex: '#b87a63', role: 'primary' },
-  { name: 'Rust', hex: '#6e3b2c', role: 'warm' },
-  { name: 'Bone', hex: '#e9e0d2', role: 'paper' },
-  { name: 'Wound', hex: '#5f2a2e', role: 'signal' },
-  { name: 'Moss', hex: '#5e6b5a', role: 'calm' },
-  { name: 'Smoke', hex: '#8d8178', role: 'neutral' },
+  { name: 'Night', hex: '#080808', role: 'base' },
+  { name: 'Soot', hex: '#111010', role: 'base' },
+  { name: 'Ash', hex: '#1a1918', role: 'deep' },
+  { name: 'Umbra', hex: '#262422', role: 'deep' },
+  { name: 'Smoke', hex: '#a49c92', role: 'primary' },
+  { name: 'Steel', hex: '#6f6a64', role: 'neutral' },
+  { name: 'Bone', hex: '#e7e0d6', role: 'paper' },
+  { name: 'Rust', hex: '#553b34', role: 'warm' },
+  { name: 'Wound', hex: '#43282b', role: 'signal' },
+  { name: 'Moss', hex: '#474b44', role: 'calm' },
 ];
 
 export const PALETTE_ROLES = [
@@ -55,7 +54,7 @@ export const isLightHex = (value: string) => {
 /* ------------------------------------------------- app accent (UI colour) */
 
 const toRgb = (hex: string) => {
-  const value = isHex(hex) ? hex.trim() : '#b87a63';
+  const value = isHex(hex) ? hex.trim() : '#a49c92';
   return {
     r: Number.parseInt(value.slice(1, 3), 16),
     g: Number.parseInt(value.slice(3, 5), 16),
@@ -79,7 +78,7 @@ const rgbTriple = (hex: string) => {
   return `${r} ${g} ${b}`;
 };
 
-export const DEFAULT_ACCENT = '#b87a63';
+export const DEFAULT_ACCENT = '#a49c92';
 
 /**
  * Second CI colour. `null` = derived from the primary accent: a *visible*
@@ -92,7 +91,7 @@ function siblingAccent(hex: string) {
   const { l, c, h } = hexToOklch(hex);
   return oklchToHex({
     l: Math.min(0.94, l * 1.04 + 0.03),
-    c: Math.max(0.035, c * 0.82),
+    c: Math.max(0.006, c * 0.82),
     h: (h + 26) % 360,
   });
 }

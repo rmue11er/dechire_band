@@ -4,28 +4,28 @@
    ============================================================ */
 
 :root {
-  --ink: #070605;
-  --ink-2: #0b0908;
-  --panel: #110e0c;
-  --panel-2: #171311;
-  --panel-3: #201a16;
-  --line: rgba(214, 188, 166, 0.12);
-  --line-strong: rgba(214, 188, 166, 0.28);
-  --text: #ece4d8;
-  --muted: #9a8d81;
-  --muted-2: #6f655c;
-  --accent: #b87a63;
-  --accent-rgb: 184 122 99;
-  --accent-2: #8a6a58;
-  --accent-2-rgb: 138 106 88;
-  --accent-2-deep: #5a4034;
+  --ink: #080808;
+  --ink-2: #0b0b0b;
+  --panel: #0f0f0e;
+  --panel-2: #151413;
+  --panel-3: #1c1a18;
+  --line: rgba(200, 193, 184, 0.12);
+  --line-strong: rgba(200, 193, 184, 0.26);
+  --text: #e7e0d6;
+  --muted: #9c948b;
+  --muted-2: #6f6a64;
+  --accent: #a49c92;
+  --accent-rgb: 164 156 146;
+  --accent-2: #7f7871;
+  --accent-2-rgb: 127 120 113;
+  --accent-2-deep: #56514c;
   --accent-2-soft: rgb(var(--accent-2-rgb) / 0.14);
-  --accent-deep: #6e3b2c;
+  --accent-deep: #6f6a64;
   --accent-soft: rgb(var(--accent-rgb) / 0.12);
-  --accent-glow: rgb(var(--accent-rgb) / 0.28);
-  --ok: #8aa891;
-  --warn: #c9a06a;
-  --danger: #b25b60;
+  --accent-glow: rgb(var(--accent-rgb) / 0.24);
+  --ok: #8a968a;
+  --warn: #b5a48c;
+  --danger: #a3656a;
   --radius: 16px;
   --radius-sm: 10px;
   --radius-lg: 24px;
@@ -467,15 +467,15 @@ button {
 
 .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #14100d;
+  color: #141312;
   border-color: transparent;
   box-shadow: var(--shadow-accent);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #d0a68f, #8a5a45);
+  background: linear-gradient(135deg, #b6aea4, #8d867f);
   border-color: transparent;
-  box-shadow: 0 26px 60px -22px rgba(140, 90, 60, 0.7);
+  box-shadow: 0 26px 60px -22px rgba(60, 56, 52, 0.7);
 }
 
 .btn-ghost {
@@ -965,13 +965,13 @@ button {
   border-left: 3px solid var(--accent);
   margin: 1.2em 0;
   padding: 2px 0 2px 16px;
-  color: #cfc2b4;
+  color: #cbc3b8;
   font-style: italic;
 }
 
 .prose mark {
   background: var(--accent);
-  color: #14100d;
+  color: #141312;
   padding: 0 3px;
   border-radius: 3px;
 }
@@ -983,11 +983,11 @@ button {
   border: 1px solid var(--line);
   padding: 1px 5px;
   border-radius: 5px;
-  color: #dccdbd;
+  color: #d6cec2;
 }
 
 .prose pre {
-  background: #0d0a09;
+  background: #0c0b0a;
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 14px;

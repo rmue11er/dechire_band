@@ -7,7 +7,7 @@ import ToastHost from '@/components/ToastHost';
 
 export const metadata: Metadata = {
   title: 'déchire · Band HQ',
-  description: 'Emotional Post-Hardcore aus Augsburg – Planung, Medien, Texte. Dunkel, warm, ohne großes Programm.',
+  description: 'Emotional post-hardcore from Augsburg – planning, media, words. Dark, quiet, no big production.',
 };
 
 /** The internal workspace: sidebar, palette, toasts – everything the public site skips. */

@@ -126,6 +126,16 @@ const elementColors = (element: DesignElement): string[] => {
 };
 
 /** Replaces every lavender CI colour with the given accent – one click, whole design. */
+/** One element with its CI placeholder colours moved onto the live accent. */
+export function recolourElement<T extends DesignElement>(element: T, accent: string): T {
+  const next: any = { ...element };
+  elementColors(element).forEach((key) => {
+    const value = (element as any)[key];
+    if (typeof value === 'string') next[key] = mapBrandColor(value, accent);
+  });
+  return next as T;
+}
+
 export function recolourDesign(design: Design, accent: string): Design {
   const background = design.background;
   return {
@@ -136,14 +146,7 @@ export function recolourDesign(design: Design, accent: string): Design {
       from: mapBrandColor(background.from, accent),
       to: mapBrandColor(background.to, accent),
     },
-    elements: design.elements.map((element) => {
-      const next: any = { ...element };
-      elementColors(element).forEach((key) => {
-        const value = (element as any)[key];
-        if (typeof value === 'string') next[key] = mapBrandColor(value, accent);
-      });
-      return next as DesignElement;
-    }),
+    elements: design.elements.map((element) => recolourElement(element, accent)),
   };
 }
 

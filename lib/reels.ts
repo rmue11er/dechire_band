@@ -21,8 +21,8 @@ export const REEL_SAFE = {
 export const REEL_MAX_SECONDS = 60;
 
 export type ReelMotion = 'none' | 'in' | 'out';
-export type ReelGrade = 'none' | 'warm' | 'mono' | 'faded';
-export type ReelTextStyle = 'block' | 'serif' | 'mono';
+export type ReelGrade = 'none' | 'warm' | 'mono';
+export type ReelTextStyle = 'serif' | 'sans' | 'mono';
 export type ReelTextPlace = 'top' | 'middle' | 'low';
 
 export interface ReelClip {
@@ -41,12 +41,8 @@ export interface ReelLook {
   /** 0–1, maps to ffmpeg `vignette`. */
   vignette: number;
   fadeOut: boolean;
-  /** Accent flash on every detected beat. */
-  flash: boolean;
   /** Cut the clips on the beat grid instead of equal shares. */
   beatCut: boolean;
-  /** Accent used for flashes – read from the CI at build time. */
-  accent: string;
 }
 
 export interface ReelText {
@@ -81,57 +77,52 @@ export interface ReelPreset {
   grain: number;
   vignette: number;
   motion: ReelMotion;
-  flash: boolean;
   fadeOut: boolean;
 }
 
 export const REEL_PRESETS: ReelPreset[] = [
   {
-    id: 'nacht',
-    label: 'Nacht',
-    hint: '8 s, ein Bild, kaum Bewegung',
+    id: 'still',
+    label: 'Still',
+    hint: '8 s · one shot, barely moves',
     duration: 8,
+    grade: 'warm',
+    grain: 20,
+    vignette: 0.55,
+    motion: 'in',
+    fadeOut: true,
+  },
+  {
+    id: 'slow',
+    label: 'Slow',
+    hint: '15 s · calm cuts, warm picture',
+    duration: 15,
+    grade: 'warm',
+    grain: 16,
+    vignette: 0.5,
+    motion: 'in',
+    fadeOut: true,
+  },
+  {
+    id: 'grain',
+    label: 'Grain',
+    hint: '20 s · black and white, more texture',
+    duration: 20,
+    grade: 'mono',
+    grain: 24,
+    vignette: 0.62,
+    motion: 'out',
+    fadeOut: true,
+  },
+  {
+    id: 'long',
+    label: 'Long',
+    hint: '30 s · slow arc, room to breathe',
+    duration: 30,
     grade: 'warm',
     grain: 18,
     vignette: 0.55,
     motion: 'in',
-    flash: false,
-    fadeOut: true,
-  },
-  {
-    id: 'herz',
-    label: 'Herz',
-    hint: '15 s, ruhiger Schnitt, warmes Bild',
-    duration: 15,
-    grade: 'warm',
-    grain: 14,
-    vignette: 0.5,
-    motion: 'in',
-    flash: false,
-    fadeOut: true,
-  },
-  {
-    id: 'keller',
-    label: 'Keller',
-    hint: '20 s, körniges Schwarzweiß',
-    duration: 20,
-    grade: 'mono',
-    grain: 22,
-    vignette: 0.62,
-    motion: 'out',
-    flash: false,
-    fadeOut: true,
-  },
-  {
-    id: 'heimweg',
-    label: 'Heimweg',
-    hint: '30 s, langsamer Bogen',
-    duration: 30,
-    grade: 'faded',
-    grain: 16,
-    vignette: 0.55,
-    motion: 'in',
-    flash: false,
     fadeOut: true,
   },
 ];
@@ -139,10 +130,9 @@ export const REEL_PRESETS: ReelPreset[] = [
 export const REEL_DURATIONS = [8, 15, 20, 30, 45, 60];
 
 export const GRADE_LABEL: Record<ReelGrade, string> = {
-  none: 'Roh',
+  none: 'Raw',
   warm: 'Warm',
   mono: 'Mono',
-  faded: 'Verblasst',
 };
 
 /**

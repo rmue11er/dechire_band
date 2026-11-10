@@ -35,7 +35,7 @@ import {
   type Template,
   type TextPreset,
 } from '@/lib/design';
-import { adaptDesign, recolourDesign, type DesignVariant } from '@/lib/studio';
+import { adaptDesign, recolourDesign, recolourElement, type DesignVariant } from '@/lib/studio';
 import { toast } from '@/lib/toast';
 import { zipBlob, type ZipEntry } from '@/lib/zipStore';
 import type { Design, DesignElement, MediaItem, ShapeKind, StickerKind, TextureKind } from '@/lib/types';
@@ -96,7 +96,7 @@ function SelectionFrame({
         height: element.h,
         transform: `rotate(${element.rotation}deg)`,
         transformOrigin: 'center center',
-        border: `${line}px solid #b9a5e8`,
+        border: `${line}px solid var(--accent)`,
         boxShadow: `0 0 0 ${line}px rgba(6,5,10,0.55)`,
         pointerEvents: 'none',
         zIndex: 9998,
@@ -114,7 +114,7 @@ function SelectionFrame({
           lineHeight: 1.4,
           padding: `${2 / zoom}px ${6 / zoom}px`,
           borderRadius: 4 / zoom,
-          background: '#b9a5e8',
+          background: 'var(--accent)',
           color: '#0a0812',
           fontWeight: 700,
           whiteSpace: 'nowrap',
@@ -136,7 +136,7 @@ function SelectionFrame({
           height: 18 / zoom,
           marginLeft: -9 / zoom,
           borderRadius: '50%',
-          background: '#b9a5e8',
+          background: 'var(--accent)',
           border: `${2 / zoom}px solid #0a0812`,
           cursor: 'grab',
           pointerEvents: 'auto',
@@ -167,7 +167,7 @@ function SelectionFrame({
             height: size,
             transform: 'translate(-50%, -50%)',
             background: '#0a0812',
-            border: `${1.6 / zoom}px solid #b9a5e8`,
+            border: `${1.6 / zoom}px solid var(--accent)`,
             borderRadius: 3 / zoom,
             cursor: HANDLE_POSITIONS[handle].cursor,
             pointerEvents: 'auto',
@@ -714,18 +714,18 @@ export default function DesignEditor({ designId }: { designId: number }) {
       const current = designRef.current;
       if (!current) return;
       const element = createText({ width: current.width, height: current.height }, preset);
-      addElement(element);
+      addElement(recolourElement(element, accent));
     },
-    [addElement]
+    [accent, addElement]
   );
 
   const addShape = useCallback(
     (shape: ShapeKind) => {
       const current = designRef.current;
       if (!current) return;
-      addElement(createShape({ width: current.width, height: current.height }, shape));
+      addElement(recolourElement(createShape({ width: current.width, height: current.height }, shape), accent));
     },
-    [addElement]
+    [accent, addElement]
   );
 
   const addImage = useCallback(
@@ -746,18 +746,18 @@ export default function DesignEditor({ designId }: { designId: number }) {
     (glyph: StickerKind) => {
       const current = designRef.current;
       if (!current) return;
-      addElement(createSticker({ width: current.width, height: current.height }, glyph));
+      addElement(recolourElement(createSticker({ width: current.width, height: current.height }, glyph), accent));
     },
-    [addElement]
+    [accent, addElement]
   );
 
   const addTexture = useCallback(
     (texture: TextureKind) => {
       const current = designRef.current;
       if (!current) return;
-      addElement(createTexture({ width: current.width, height: current.height }, texture));
+      addElement(recolourElement(createTexture({ width: current.width, height: current.height }, texture), accent));
     },
-    [addElement]
+    [accent, addElement]
   );
 
   const uploadFiles = useCallback(

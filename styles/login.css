@@ -29,7 +29,7 @@
   height: 44px;
   border-radius: 10px;
   background: linear-gradient(150deg, var(--accent), var(--accent-deep));
-  font-family: 'Anton', var(--font-sans);
+  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 22px;
   color: #0b0910;
 }
@@ -45,7 +45,7 @@
 
 .login-title {
   margin: 0;
-  font-family: 'Anton', var(--font-sans);
+  font-family: 'Instrument Serif', Georgia, serif;
   font-weight: 400;
   font-size: clamp(30px, 5vw, 40px);
   line-height: 1;

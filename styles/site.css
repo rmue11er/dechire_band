@@ -5,12 +5,12 @@
    ============================================================ */
 
 .site {
-  --site-ink: #080607;
-  --site-bone: #e7e0d2;
-  --site-ash: #8a8390;
-  --site-accent: #b9a5e8;
-  --site-accent-rgb: 185 165 232;
-  --site-paper: #e4dbc8;
+  --site-ink: #080808;
+  --site-bone: #e7e0d6;
+  --site-ash: #9c948b;
+  --site-accent: #a49c92;
+  --site-accent-rgb: 164 156 146;
+  --site-paper: #e7e0d6;
   --site-edge: clamp(18px, 4.6vw, 68px);
 
   position: relative;
@@ -175,7 +175,7 @@
 .sf-title {
   position: relative;
   margin: 0;
-  font-family: 'Anton', var(--font-sans);
+  font-family: 'Instrument Serif', Georgia, serif;
   font-weight: 400;
   font-size: clamp(58px, 15.5vw, 200px);
   line-height: 0.84;
@@ -220,7 +220,7 @@
 .sf-tagline {
   margin: clamp(20px, 2.6vw, 30px) 0 0;
   max-width: 32ch;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: clamp(16px, 1.9vw, 23px);
   line-height: 1.5;
@@ -238,7 +238,7 @@
   display: inline-flex;
   align-items: baseline;
   gap: 8px;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 15px;
   color: rgba(231, 224, 210, 0.55);
@@ -290,7 +290,7 @@
 
 .sf-label {
   display: block;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: clamp(14px, 1.35vw, 17px);
   line-height: 1.4;
@@ -317,7 +317,7 @@
 
 .sf-note-title {
   margin: clamp(14px, 2vw, 22px) 0 0;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-weight: 700;
   font-size: clamp(30px, 4.4vw, 52px);
@@ -333,7 +333,7 @@
 .sf-line {
   margin: 0 0 1.2em;
   max-width: 54ch;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(17px, 1.6vw, 21px);
   line-height: 1.7;
   color: rgba(231, 224, 210, 0.86);
@@ -348,7 +348,7 @@
 
 .sf-sign {
   margin: clamp(20px, 3vw, 32px) 0 0;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: clamp(17px, 2vw, 24px);
   color: rgba(231, 224, 210, 0.62);
@@ -362,7 +362,7 @@
 }
 
 .sf-note-caption {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 13.5px;
   color: rgba(231, 224, 210, 0.32);
@@ -412,7 +412,7 @@
 .sf-print-cap {
   display: block;
   margin-top: 8px;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 12px;
   color: rgba(22, 19, 28, 0.6);
@@ -507,7 +507,7 @@
 }
 
 .sf-flyer-cap {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 12.5px;
   line-height: 1.45;
@@ -535,7 +535,7 @@
 
 .sf-press blockquote {
   margin: 16px 0 0;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: clamp(21px, 3vw, 36px);
   line-height: 1.36;
@@ -546,7 +546,7 @@
 .sf-press cite {
   display: block;
   margin-top: 16px;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 13.5px;
   color: rgba(231, 224, 210, 0.38);
@@ -556,7 +556,7 @@
   display: block;
   padding-bottom: 12px;
   border-bottom: 1px solid rgba(231, 224, 210, 0.09);
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 15px;
   color: rgba(231, 224, 210, 0.42);
@@ -575,7 +575,7 @@
   gap: 14px;
   padding: 14px 0;
   border-bottom: 1px solid rgba(231, 224, 210, 0.07);
-  font-family: 'Anton', var(--font-sans);
+  font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(19px, 2.2vw, 27px);
   letter-spacing: 0.01em;
   text-transform: uppercase;
@@ -597,7 +597,7 @@
 .sf-links-foot {
   display: block;
   margin-top: 18px;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 12.5px;
   color: rgba(231, 224, 210, 0.28);
@@ -607,7 +607,7 @@
   display: inline-block;
   padding: 10px 18px;
   border: 1px solid rgba(231, 224, 210, 0.22);
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 14px;
   color: rgba(231, 224, 210, 0.8);
@@ -631,7 +631,7 @@
 }
 
 .sf-foot-name {
-  font-family: 'Anton', var(--font-sans);
+  font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(56px, 16vw, 220px);
   line-height: 0.8;
   letter-spacing: -0.02em;
@@ -647,7 +647,7 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 13.5px;
   color: rgba(231, 224, 210, 0.34);
@@ -701,7 +701,7 @@
 
 .gate-title {
   margin: 0;
-  font-family: 'Anton', var(--font-sans);
+  font-family: 'Instrument Serif', Georgia, serif;
   font-weight: 400;
   font-size: clamp(52px, 13vw, 160px);
   line-height: 0.86;
@@ -713,7 +713,7 @@
 .gate-line {
   margin: 0;
   max-width: 30ch;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: clamp(15px, 1.6vw, 19px);
   line-height: 1.5;
@@ -722,7 +722,7 @@
 
 .gate-note {
   margin: 0;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 13px;
   color: var(--site-accent);
@@ -886,7 +886,7 @@
   position: absolute;
   top: clamp(22px, 3.4vw, 48px);
   left: clamp(12px, 2.4vw, 34px);
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: clamp(12px, 1.3vw, 17px);
   letter-spacing: 0.08em;
@@ -945,14 +945,14 @@
   aspect-ratio: 1;
   background: #120f16;
   color: var(--site-accent);
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: 56px;
 }
 
 .sf-release-title {
   margin: 12px 0 10px;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-weight: 700;
   font-size: clamp(28px, 3.8vw, 48px);
@@ -963,7 +963,7 @@
 
 .sf-release-line {
   max-width: 46ch;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(13.5px, 1.35vw, 16.5px);
   line-height: 1.6;
   color: rgba(231, 224, 210, 0.55);
@@ -1034,7 +1034,7 @@
 .sf-interlude-line p {
   margin: 0;
   max-width: 20ch;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-weight: 700;
   font-size: clamp(28px, 4.6vw, 62px);
@@ -1049,7 +1049,7 @@
 .sf-letter .sf-line:first-child::first-letter {
   float: left;
   margin: 0.06em 0.12em 0 0;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 3.15em;
   line-height: 0.8;
   color: rgb(var(--site-accent-rgb) / 0.9);

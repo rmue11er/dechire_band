@@ -24,7 +24,7 @@ function Letters({ text }: { text: string }) {
 const TAPE_TILT = ['-1.8deg', '1.4deg', '-0.9deg', '2deg'];
 
 function hexTriple(hex: string) {
-  const value = /^#[0-9a-f]{6}$/i.test(hex) ? hex.slice(1) : 'b9a5e8';
+  const value = /^#[0-9a-f]{6}$/i.test(hex) ? hex.slice(1) : 'a49c92';
   return [0, 2, 4]
     .map((offset) => Number.parseInt(value.slice(offset, offset + 2), 16))
     .join(' ');
@@ -164,7 +164,7 @@ export default function SitePage() {
 
           <div className="sf-hero-foot">
             <a className="sf-scroll" href="#note">
-              lies den brief <span aria-hidden="true">↓</span>
+              read the note <span aria-hidden="true">↓</span>
             </a>
           </div>
         </header>
@@ -215,7 +215,7 @@ export default function SitePage() {
           </span>
           <div className="site-wrap sf-note-wrap">
             <Reveal className="sf-note-text">
-              <span className="sf-label">ein brief von uns</span>
+              <span className="sf-label">a note from us</span>
 
               {settings.introTitle ? <h2 className="sf-note-title">{settings.introTitle}</h2> : null}
 
@@ -270,7 +270,7 @@ export default function SitePage() {
         <section className="sf-block">
           <div className="site-wrap">
             <Reveal className="sf-teaser">
-              <span className="sf-label">{teaser.kind === 'video' ? 'ein clip' : 'woanders'}</span>
+              <span className="sf-label">{teaser.kind === 'video' ? 'a clip' : 'somewhere else'}</span>
               <div className="sf-teaser-frame">
                 {teaser.kind === 'video' ? (
                   <video src={teaser.src} controls playsInline />
@@ -297,8 +297,8 @@ export default function SitePage() {
           </span>
           <div className="site-wrap">
             <Reveal className="sf-label sf-label-wide">
-              {settings.feedTitle || 'aus dem proberaum'}
-              <span className="sf-label-aside">das letzte, was wir rausgelassen haben</span>
+              {settings.feedTitle || 'from the room'}
+              <span className="sf-label-aside">the last things we put out</span>
             </Reveal>
 
             <div className="sf-wall">
@@ -329,16 +329,16 @@ export default function SitePage() {
           </span>
           <div className="site-wrap">
             <Reveal className="sf-press">
-              <span className="sf-label">schreib uns</span>
+              <span className="sf-label">say hi</span>
               <blockquote>
                 {settings.pressQuote ||
-                  'Booking, Kollaborationen – oder einfach, um zu sagen, dass ein Song geholfen hat. Die Inbox ist offen, wir antworten irgendwann.'}
+                  'Booking, collabs, or just to say a song helped. The inbox is open. We answer, eventually.'}
               </blockquote>
               {settings.pressSource ? <cite>{settings.pressSource}</cite> : null}
             </Reveal>
 
             <Reveal className="sf-links" delay={70}>
-              <span className="sf-links-head">wo du uns findest</span>
+              <span className="sf-links-head">where to find us</span>
               <ul>
                 {settings.links.map((link, index) => (
                   <li key={`${link.label}-${index}`}>

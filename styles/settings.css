@@ -296,7 +296,7 @@
 .accent-swatch.custom {
   display: grid;
   place-items: center;
-  background: conic-gradient(#b9a5e8, #c86a4a, #efe7da, #7e9c94, #b9a5e8);
+  background: conic-gradient(#a49c92, #6f6a64, #e7e0d6, #474b44, #a49c92);
   overflow: hidden;
 }
 
@@ -473,7 +473,7 @@
 }
 
 .docsheet-preview-head strong {
-  font-family: 'Anton', sans-serif;
+  font-family: 'Instrument Serif', Georgia, serif;
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.02em;
