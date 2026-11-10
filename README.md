@@ -444,7 +444,9 @@ and rasterised to a transparent 1080×1920 PNG with `html-to-image` – what you
   rasterises one transparent PNG per cue and overlays it with `enable='between(t,…)'`. While lyrics exist
   they replace the hook; the kicker/sub/handle stay available as the quiet frame around them.
 - **Preview** – the real 9:16 frame, scaled: media layers switch at the cuts, the song plays in sync,
-safe-zone guides and the live text sit on top. Grain, vignette and grade are approximated in CSS.
+  safe-zone guides and the live text sit on top. *Groß* opens a full-screen theatre with a scrubber,
+  single-frame steps, an optional safe-zone overlay and *Als Cover* – good for checking a frame before
+  trusting the export. Grain, vignette and grade are approximated in CSS.
 - **Look** – Raw/Warm/Mono, grain, vignette, fade-out. *Warm* is the default: desaturated, slightly warm
 shadows, no colour cast. Beat flash is gone; the cut is the effect. The **cover frame** is set from the
 playhead (or stays at the default 0.6 s) so the feed thumbnail is a deliberate image, not a random frame.

@@ -688,8 +688,9 @@ cut plan, the default start point (a little before the drop) and the waveform ti
 **Preview** (`components/reels/ReelStage.tsx`): the real 1080×1920 frame, transformed down to the panel
 width. One media layer per clip, only the active one visible; a 60 ms interval reads `audio.currentTime`,
 advances the playhead, switches layers at the cuts and keeps each video within 0.35 s of its planned
-position. Grade is a CSS filter, grain an inline SVG turbulence, vignette a radial gradient – close enough
-to judge the edit before any encoding happens.
+position. Grade is a CSS filter, grain an inline SVG turbulence, vignette a radial gradient. **Groß** opens
+a full-screen theatre with scrubber, ±1-frame steps, safe-zone toggle and *Als Cover*; close with Esc or the
+X – so the final frame can be judged before the ffmpeg pass.
 
 **Text layer** (`ReelOverlay.tsx`): kicker, hook (auto-sized by line length, 1–3 lines), sub line and handle,
 three type styles (Redaction / Instrument Sans / DM Mono), left or centred, top/middle/low inside the safe

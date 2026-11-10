@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import MediaPicker from '@/components/MediaPicker';
 import { MediaThumb } from '@/components/MediaThumb';
@@ -14,6 +15,7 @@ import {
   IconDownload,
   IconEye,
   IconEyeOff,
+  IconExpand,
   IconFilm,
   IconMusic,
   IconPause,
@@ -22,6 +24,7 @@ import {
   IconRotate,
   IconSparkles,
   IconTrash,
+  IconX,
   IconZap,
 } from '@/components/icons';
 import { analyseAudioBuffer, audioPeaks, type BeatAnalysis } from '@/lib/beats';
@@ -130,6 +133,8 @@ export default function ReelsPage() {
   const [step, setStep] = useState<Step>('clips');
   const [guides, setGuides] = useState(true);
   const [coverAt, setCoverAt] = useState(0.6);
+  const [theater, setTheater] = useState(false);
+  const [theaterGuides, setTheaterGuides] = useState(false);
   const [lyricsDraft, setLyricsDraft] = useState('');
   const [tapMode, setTapMode] = useState(false);
   const [tapIndex, setTapIndex] = useState(0);
@@ -270,6 +275,12 @@ export default function ReelsPage() {
   const seekStart = (value: number) => {
     setAudioStart(value);
     if (playing && audioRef.current) audioRef.current.currentTime = value + time;
+  };
+
+  const seekTo = (value: number) => {
+    const next = Math.max(0, Math.min(totalDuration - 0.02, value));
+    setTime(next);
+    if (audioRef.current) audioRef.current.currentTime = audioStart + next;
   };
 
   const pickAudio = async (id: number) => {
@@ -571,6 +582,20 @@ export default function ReelsPage() {
   }, [exportOpen]);
 
   useEffect(() => {
+    if (!theater) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setTheater(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [theater]);
+
+  useEffect(() => {
     return () => {
       pollRef.current = false;
     };
@@ -667,6 +692,14 @@ export default function ReelsPage() {
 
       <div className="reel-lab">
         <section className="panel reel-stage-panel">
+          <div className="reel-stage-tools">
+            <span className="mono">9:16 · Vorschau</span>
+            {clips.length ? (
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => setTheater(true)}>
+                <IconExpand size={13} /> Groß
+              </button>
+            ) : null}
+          </div>
           {clips.length ? (
             <ReelStage
               clips={stageClips}
@@ -1346,6 +1379,99 @@ export default function ReelsPage() {
       />
 
       <audio ref={audioRef} src={audioMedia?.url} preload="auto" onEnded={() => setPlaying(false)} />
+
+      {theater && clips.length && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              className="reel-theater"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Großvorschau"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setTheater(false);
+              }}
+            >
+              <button
+                type="button"
+                className="reel-theater-close"
+                onClick={() => setTheater(false)}
+                aria-label="Vorschau schließen"
+              >
+                <IconX size={18} />
+              </button>
+              <div className="reel-theater-stage">
+                <ReelStage
+                  clips={stageClips}
+                  time={time}
+                  playing={playing}
+                  look={look}
+                  text={text}
+                  handle={profile?.handle}
+                  beats={beats}
+                  guides={theaterGuides}
+                />
+              </div>
+              <div className="reel-theater-bar">
+                <button
+                  type="button"
+                  className="btn btn-icon reel-play"
+                  onClick={togglePlay}
+                  disabled={!audioMedia}
+                  aria-label={playing ? 'Pause' : 'Play'}
+                >
+                  {playing ? <IconPause size={15} /> : <IconPlay size={15} />}
+                </button>
+                <input
+                  className="reel-theater-scrub"
+                  type="range"
+                  min={0}
+                  max={Math.max(0.1, totalDuration)}
+                  step={0.02}
+                  value={Math.min(time, totalDuration)}
+                  onChange={(event) => seekTo(Number(event.target.value))}
+                  aria-label="Zeitleiste"
+                />
+                <span className="mono reel-theater-clock">
+                  {clock(time)} <i>/</i> {clock(totalDuration)}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => seekTo(time - 1 / 30)}
+                  title="Ein Frame zurück"
+                >
+                  −1f
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => seekTo(time + 1 / 30)}
+                  title="Ein Frame vor"
+                >
+                  +1f
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${theaterGuides ? 'btn-primary' : 'btn-ghost'}`}
+                  onClick={() => setTheaterGuides((value) => !value)}
+                >
+                  Safe zones
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => {
+                    setCoverAt(Math.min(Math.max(0.1, totalDuration - 0.1), time));
+                    toast('Cover auf diesen Frame gesetzt');
+                  }}
+                >
+                  Als Cover
+                </button>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
 
       {/* transparent text layer – rasterised for the ffmpeg overlay */}
       <div className="reel-export-holder" aria-hidden="true">

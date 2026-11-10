@@ -898,3 +898,114 @@
   font-size: 10px;
   letter-spacing: 0.06em;
 }
+
+/* --------------------------------------------------------- theatre preview
+ */
+
+.reel-stage-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.reel-stage-tools .mono {
+  color: var(--muted-2);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.reel-theater {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 22px;
+  background: rgba(5, 5, 4, 0.94);
+  backdrop-filter: blur(10px);
+}
+
+.reel-theater-stage {
+  width: min(92vw, calc((100vh - 132px) * 9 / 16));
+  flex: none;
+}
+
+.reel-theater-stage .reel-stage-frame {
+  border-color: rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  box-shadow: 0 30px 90px -40px rgba(0, 0, 0, 0.95);
+}
+
+.reel-theater-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 900px);
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(18, 17, 16, 0.9);
+}
+
+.reel-theater-scrub {
+  flex: 1;
+  min-width: 80px;
+  accent-color: var(--accent);
+}
+
+.reel-theater-clock {
+  flex: none;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.reel-theater-clock i {
+  color: var(--muted-2);
+  font-style: normal;
+}
+
+.reel-theater-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: rgba(18, 17, 16, 0.82);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.reel-theater-close:hover {
+  border-color: rgb(var(--accent-rgb) / 0.5);
+  color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .reel-theater {
+    padding: 14px;
+  }
+
+  .reel-theater-stage {
+    width: min(94vw, calc((100vh - 190px) * 9 / 16));
+  }
+
+  .reel-theater-bar {
+    flex-wrap: wrap;
+  }
+
+  .reel-theater-scrub {
+    order: -1;
+    flex-basis: 100%;
+  }
+}
