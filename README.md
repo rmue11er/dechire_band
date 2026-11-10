@@ -58,7 +58,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 `styles/shell.css` is loaded last and restates the shell plus every shared component, so page styles never fight it.
 
 - **Display voice**: page titles in the serif voice (Redaction), lowercase and roomy; micro labels in
-  Inter or Space Mono with wide tracking and a `///` accent tick. Dashboard figures use the same face, so
+  Instrument Sans or DM Mono with wide tracking and a `///` accent tick. Dashboard figures use the same face, so
   numbers read like a poster, not a BI tool.
 - **Shell**: a 246 px sidebar with numbered entries (`01 … 11`), grouped by `/// STUDIO` / `/// SETUP`, a quick-jump
   field that forwards `⌘K` to the command palette, and a slim sticky **context bar** on every page
@@ -104,8 +104,10 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   smart snapping to edges, centre and other elements (with guide lines).
 - **Tools**:
   - **Text** in 6 presets (Display, Headline, Label, Quote, Body, Meta) with **three fonts only**:
-    Redaction (voice), Inter (body) and Space Mono (meta). Weight, size, tracking, line height,
-    alignment, uppercase, italic, outline, shadow effects and text background stay available.
+    Redaction (voice), Instrument Sans (body) and DM Mono (meta). Weight, size, tracking, line height,
+    alignment, uppercase, italic, outline, shadow effects and text background stay available. Redaction is a
+    xeroxed display serif; Instrument Sans is a quieter humanist grotesque than Inter; DM Mono is an editorial
+    mono rather than a developer one. All three are OFL and local.
   - **Shapes**: rectangle, circle, triangle, diamond, star, burst, cross, slash, line, frame, tape –
     with solid fill, gradient (adjustable angle), stroke and corner radius.
   - **Media**: images from the library or direct upload, with fill/fit,
@@ -123,7 +125,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   and every existing design (via *Directions → Brand accent*) follows.
 - **Three fonts, all self-hosted**: **Redaction** (the voice – headlines, lyrics, quotes; OFL, vendored
   in `public/fonts`),
-  **Inter** (body, captions, UI) and **Space Mono** (meta, labels, dates). No font carousel: everything in the
+  **Instrument Sans** (body, captions, UI) and **DM Mono** (meta, labels, dates). No font carousel: everything in the
   studio, the documents, the reels and the public site uses this set.
 - **Free photos in the studio** (`Stock` tab): search **Openverse** (WordPress/Automattic) filtered to
   **CC0 / public domain only** – usable commercially, **no credit and no payment**. Clicking a result downloads
@@ -437,12 +439,16 @@ default start. No strobe, no zoom punch – the cut is the effect.
 - **Text layer** – kicker, hook (1–3 lines, auto-sized), sub line and handle; Serif/Sans/Mono,
 left/centre, top/middle/low. It is laid out inside Meta's safe zones (top 14 %, bottom 35 %, 6 % sides)
 and rasterised to a transparent 1080×1920 PNG with `html-to-image` – what you see is the ffmpeg overlay.
+- **Lyrics in time** – paste one line per cue, start a tap session and hit Space when each line begins;
+  or set/nudge every cue against the playhead. The preview switches lyrics with the song, and the export
+  rasterises one transparent PNG per cue and overlays it with `enable='between(t,…)'`. While lyrics exist
+  they replace the hook; the kicker/sub/handle stay available as the quiet frame around them.
 - **Preview** – the real 9:16 frame, scaled: media layers switch at the cuts, the song plays in sync,
 safe-zone guides and the live text sit on top. Grain, vignette and grade are approximated in CSS.
 - **Look** – Raw/Warm/Mono, grain, vignette, fade-out. *Warm* is the default: desaturated, slightly warm
 shadows, no colour cast. Beat flash is gone; the cut is the effect.
 - **Export** – `POST /api/reels` validates the plan and renders in a background job with progress:
-trim/crop/motion per clip, concat, grade, grain, vignette, overlay PNG, fade-out,
+trim/crop/motion per clip, concat, grade, grain, vignette, timed lyric PNGs, fade-out,
 `loudnorm I=-14`, AAC 48 kHz, H.264 CRF 20, 1080×1920 @ 30 fps, `+faststart`; a cover JPEG is grabbed from
 the result. Both appear in the media library, and *In den Planner* creates a reel draft with the hook as
   caption. Clips must be raster photos (PNG/JPG/WebP) or videos – SVG artwork has to be exported to PNG first.
@@ -479,7 +485,7 @@ The PNG snapshot of the feed is generated client-side via `html-to-image`.
 | ZIP export | `archiver` (v8) |
 | Image dimensions | `image-size` |
 | Design export | `html-to-image` (PNG snapshot of the canvas, 2× resolution) |
-| Fonts | Redaction (vendored OFL in `public/fonts`) + `@fontsource` Inter and Space Mono – three families, bundled locally |
+| Fonts | Redaction, Instrument Sans, DM Mono – three OFL families, all vendored in `public/fonts` |
 | Styling | hand-written CSS design system in `styles/` (no Tailwind, no runtime) |
 
 ### Project structure

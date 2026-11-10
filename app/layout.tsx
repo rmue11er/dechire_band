@@ -2,12 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import PaletteProvider from '@/components/PaletteProvider';
 import { accentCss } from '@/lib/palette';
 import { getProfile } from '@/lib/repo';
-// Three fonts, nothing else: the voice, the body, the meta.
-import '@fontsource/inter/latin-400.css';
-import '@fontsource/inter/latin-600.css';
-import '@fontsource/inter/latin-800.css';
-import '@fontsource/space-mono/latin-400.css';
-import '@fontsource/space-mono/latin-700.css';
+// Three fonts, nothing else: Redaction, Instrument Sans, DM Mono.
 import './globals.css';
 
 export const metadata: Metadata = {

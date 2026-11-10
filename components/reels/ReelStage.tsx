@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ReelOverlay } from '@/components/reels/ReelOverlay';
-import { REEL_SAFE, type ReelLook, type ReelMotion, type ReelText } from '@/lib/reels';
+import { REEL_SAFE, lyricIndexAt, type ReelLook, type ReelMotion, type ReelText } from '@/lib/reels';
 import type { MediaItem } from '@/lib/types';
 
 export interface StageClip {
@@ -81,6 +81,13 @@ export function ReelStage({
   }, [clips, time, playing, active]);
 
   const grainOpacity = Math.min(0.4, look.grain / 30 * 0.42);
+  const lyrics = text.lyrics ?? [];
+  const lyricIndex = lyricIndexAt(lyrics, time);
+  const activeLyric = lyricIndex >= 0 ? lyrics[lyricIndex] : null;
+  const displayText = activeLyric
+    ? { ...text, kicker: '', sub: '', hook: activeLyric.text }
+    : text;
+  const hideText = lyrics.length > 0 && !activeLyric;
 
   return (
     <div className="reel-stage-frame" ref={wrapRef}>
@@ -128,7 +135,7 @@ export function ReelStage({
           aria-hidden="true"
         />
 
-        <ReelOverlay text={text} handle={handle} />
+        {hideText ? null : <ReelOverlay text={displayText} handle={handle} />}
 
         {guides ? (
           <div className="reel-guides" aria-hidden="true">

@@ -215,7 +215,7 @@ portable document, not a pile of pixels.
 
 ### 6.3 Tools
 
-- **Text**: 6 presets, **three fonts** – Redaction (voice), Inter (body), Space Mono (meta).
+- **Text**: 6 presets, **three fonts** – Redaction (voice), Instrument Sans (body), DM Mono (meta).
   Size, weight, tracking, line height, alignment,
   uppercase, italic, outline, five shadow modes, text background as a “pill”.
 - **Shapes**: rectangle, circle, triangle, diamond, star, burst, cross, slash, line, frame, tape.
@@ -248,8 +248,7 @@ portable document, not a pile of pixels.
   *Note* (date, lowercase), *Elegy* (empty black, serif, two hairlines), *Noise* (display type
   running off both edges) and *Dates* (plain rows, accent rules). Decorations were removed on purpose:
   serif instead of caps, no tape, no badges, no halftone, one accent.
-- **Type voice**: Redaction (OFL, vendored in `public/fonts`), Inter, Space Mono – **three
-  families total**. The presets *Display / Whisper / Elegy / Note / Type / Tight* encode the intent, so a
+- **Type voice**: Redaction, Instrument Sans, DM Mono – all three OFL and vendored in `public/fonts`. The presets *Display / Whisper / Elegy / Note / Type / Tight* encode the intent, so a
   design reads emotional before anyone touches a slider.
 
 ### 6.5a Free stock photos
@@ -504,7 +503,7 @@ sleeve spine, the monospaced uppercase labels, the neon accent outline and the s
 - **Warm black, not UI black.** `#080607`, bone text at 86 %, grain and a vignette. No scanlines, no progress
   bar, no hairline at the top of the page.
 - **Serif is the voice.** Redaction carries the name, the tagline, the section labels
-  ("a note from us", "say hi"), the captions and the signature; Inter is reserved for the micro
+  ("a note from us", "say hi"), the captions and the signature; Instrument Sans is reserved for the micro
   labels and the small print. **No second display face.**
 - **One accent** (`--site-accent`): the `*marked*` words in the letter and the quiet label lines. Nothing
   glows, nothing is outlined in colour.
@@ -662,7 +661,7 @@ already warm black with taped prints; this pass adds *senses and rhythm*, not mo
 ### 7.10 Reel Lab (`/reels`) – the mini reel machine
 
 Reels are where a band is discovered, but the workflow is usually: phone footage → external editor →
-manual cutting → wrong export. The Reel Lab cuts that down to *clips, song, look, render* and encodes the
+manual cutting → wrong export. The Reel Lab cuts that down to *clips, song, lyrics, look, render* and encodes the
 platform rules into the tool instead of leaving them to the user.
 
 **What the research says** (Meta guidance via Sprout Social's 2026 video spec guide): 1080×1920 (9:16),
@@ -693,10 +692,12 @@ position. Grade is a CSS filter, grain an inline SVG turbulence, vignette a radi
 to judge the edit before any encoding happens.
 
 **Text layer** (`ReelOverlay.tsx`): kicker, hook (auto-sized by line length, 1–3 lines), sub line and handle,
-three type styles (Redaction / Inter / Space Mono), left or centred, top/middle/low inside the safe
-box. For export the exact same markup is rasterised with `html-to-image` (`toPng` at 1080×1920, transparent,
-fonts embedded) and handed to ffmpeg as a PNG overlay – so typography and colours stay in the app's design
-system instead of being reimplemented in `drawtext`.
+three type styles (Redaction / Instrument Sans / DM Mono), left or centred, top/middle/low inside the safe
+box. **Lyrics** are an ordered list of `{ text, start }` cues: paste one line per cue, then either tap Space
+with the song (the current line gets the current audio time) or set/nudge each cue against the playhead.
+While lyrics exist they replace the hook in the preview. For export every cue is rasterised as its own
+transparent 1080×1920 PNG with `html-to-image` (fonts embedded) and overlaid with an ffmpeg `enable` window –
+so typography and colours stay in the app's design system instead of being reimplemented in `drawtext`.
 
 **Render** (`lib/reelRender.ts`, job store in `lib/reelJobs.ts`): `POST /api/reels` validates the plan,
 creates an in-memory job and returns `202`; the client polls `GET /api/reels/:id` for progress. ffmpeg gets
@@ -706,7 +707,7 @@ one `-filter_complex`:
 per clip: scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,
           setsar=1,fps=30[,zoompan=z='min(1+0.0011*on,1.12)':d=1],
           format=yuv420p,settb=AVTB,setpts=PTS-STARTPTS
-concat -> eq (grade) -> noise (grain) -> vignette -> overlay (text PNG) -> fade out
+concat -> eq (grade) -> noise (grain) -> vignette -> timed lyric overlays -> fade out
 audio:  atrim, afade in/out, loudnorm=I=-14:TP=-1:LRA=11, aresample=48000, alimiter
 output: libx264 -crf 20 -preset veryfast -r 30, aac 192k, +faststart
 ```
@@ -789,7 +790,7 @@ the dashboard all change with one colour now.
 
 ### Typography & texture
 
-- Grotesk stack (Inter/SF/Helvetica), headlines 800–900 with negative tracking,
+- Grotesk stack (Instrument Sans/SF/Helvetica), headlines 800–900 with negative tracking,
   mono labels in uppercase with wide letter-spacing – zine/poster feel without kitsch.
 - Background: one soft sulfur glow + fine SVG noise overlay (fixed, pointer-events: none).
 - Cards with 1 px lines in sulfur alpha, hover lift, soft drop shadows.

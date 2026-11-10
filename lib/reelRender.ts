@@ -63,14 +63,21 @@ export interface RenderResult {
   filename: string;
 }
 
+export interface RenderOverlayCue {
+  start: number;
+  end: number;
+  png: string;
+}
+
 /**
  * Renders the plan with ffmpeg: crop/fit + optional push-in, global grade,
- * grain, vignette, text overlay PNG, loudness-normalised song,
+ * grain, vignette, text overlay PNG(s), loudness-normalised song,
  * cover frame – all in one pass.
  */
 export async function renderReel(
   plan: ReelPlan,
   overlayDataUrl: string | null,
+  lyricOverlays: RenderOverlayCue[],
   onProgress: (progress: number) => void
 ): Promise<RenderResult> {
   const status = ffmpegStatus();
@@ -113,7 +120,21 @@ export async function renderReel(
       inputArgs.push('-loop', '1', '-framerate', String(REEL_FPS), '-i', overlayPath);
     }
 
-    const audioIndex = clips.length + (overlayIndex == null ? 0 : 1);
+    const cues = lyricOverlays
+      .map((cue) => ({
+        start: Math.max(0, Math.min(duration - 0.05, Number(cue.start) || 0)),
+        end: Math.max(0.1, Math.min(duration, Number(cue.end) || 0)),
+        png: cue.png,
+      }))
+      .filter((cue) => cue.end > cue.start + 0.05 && cue.png.startsWith('data:image/png;base64,'))
+      .sort((a, b) => a.start - b.start);
+    cues.forEach((cue, index) => {
+      const cuePath = path.join(tmp, `lyric-${index}.png`);
+      fs.writeFileSync(cuePath, Buffer.from(cue.png.split(',')[1], 'base64'));
+      inputArgs.push('-loop', '1', '-framerate', String(REEL_FPS), '-i', cuePath);
+    });
+
+    const audioIndex = clips.length + (overlayIndex == null ? 0 : 1) + cues.length;
     const { absolute: audioPath } = sourcePath(plan.audio.mediaId);
     inputArgs.push('-ss', plan.audio.start.toFixed(3), '-t', duration.toFixed(3), '-i', audioPath);
 
@@ -135,6 +156,15 @@ export async function renderReel(
       filters.push(`[${label}][${overlayIndex}:v]overlay=0:0:format=auto[texted]`);
       label = 'texted';
     }
+
+    const firstCueIndex = clips.length + (overlayIndex == null ? 0 : 1);
+    cues.forEach((cue, index) => {
+      const nextLabel = `lyric${index}`;
+      filters.push(
+        `[${label}][${firstCueIndex + index}:v]overlay=0:0:format=auto:enable='between(t,${cue.start.toFixed(3)},${cue.end.toFixed(3)})'[${nextLabel}]`
+      );
+      label = nextLabel;
+    });
 
     if (plan.look.fadeOut) {
       filters.push(`[${label}]fade=t=out:st=${(duration - 0.4).toFixed(2)}:d=0.4[outv]`);

@@ -27,6 +27,10 @@ import {
 import { analyseAudioBuffer, audioPeaks, type BeatAnalysis } from '@/lib/beats';
 import {
   GRADE_LABEL,
+  lyricIndexAt,
+  lyricWindow,
+  lyricsFromText,
+  normaliseLyrics,
   planClipLengths,
   REEL_DURATIONS,
   REEL_PRESETS,
@@ -68,7 +72,7 @@ interface ReelJobView {
   error?: string;
 }
 
-type Step = 'clips' | 'sound' | 'look';
+type Step = 'clips' | 'sound' | 'lyrics' | 'look';
 
 const clock = (value: number) => {
   const seconds = Math.max(0, value);
@@ -102,6 +106,7 @@ const DEFAULT_TEXT: ReelText = {
   align: 'left',
   place: 'low',
   showHandle: true,
+  lyrics: [],
 };
 
 export default function ReelsPage() {
@@ -124,6 +129,9 @@ export default function ReelsPage() {
   const [text, setText] = useState<ReelText>(DEFAULT_TEXT);
   const [step, setStep] = useState<Step>('clips');
   const [guides, setGuides] = useState(true);
+  const [lyricsDraft, setLyricsDraft] = useState('');
+  const [tapMode, setTapMode] = useState(false);
+  const [tapIndex, setTapIndex] = useState(0);
 
   const [clipPicker, setClipPicker] = useState(false);
   const [audioPicker, setAudioPicker] = useState(false);
@@ -139,6 +147,8 @@ export default function ReelsPage() {
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
+  const lyricExportRef = useRef<HTMLDivElement>(null);
+  const tapIndexRef = useRef(0);
   const pollRef = useRef(false);
 
   useEffect(() => {
@@ -348,24 +358,126 @@ export default function ReelsPage() {
     if (trackDuration) setAudioStart((current) => Math.max(0, Math.min(current, trackDuration - value)));
   };
 
+  /* ---------------------------------------------------------------- lyrics */
+
+  const setLineStart = useCallback(
+    (index: number, value: number, sequential = false) => {
+      setText((current) => {
+        const lines = current.lyrics ?? [];
+        if (!lines[index]) return current;
+        const min = index > 0 ? lines[index - 1].start + 0.05 : 0;
+        const max = sequential
+          ? Math.max(min + 0.05, totalDuration - 0.1)
+          : index < lines.length - 1
+            ? Math.max(min + 0.05, lines[index + 1].start - 0.05)
+            : Math.max(min + 0.05, totalDuration - 0.1);
+        const start = Number(Math.max(min, Math.min(max, Math.max(0, value))).toFixed(2));
+        const lyrics = lines.map((line, i) => (i === index ? { ...line, start } : line));
+        return { ...current, lyrics };
+      });
+    },
+    [totalDuration]
+  );
+
+  const applyLyrics = () => {
+    const next = lyricsFromText(lyricsDraft, totalDuration || target);
+    if (!next.length) {
+      toast('Füge zuerst ein paar Zeilen ein', 'error');
+      return;
+    }
+    setText((current) => ({ ...current, lyrics: next }));
+    setTapMode(false);
+    setTapIndex(0);
+    tapIndexRef.current = 0;
+  };
+
+  const distributeLyrics = () => {
+    const span = Math.max(1, totalDuration || target);
+    const step = span / Math.max(1, text.lyrics.length);
+    setText((current) => ({
+      ...current,
+      lyrics: current.lyrics.map((line, index) => ({
+        ...line,
+        start: Number(Math.min(span - 0.15, index * step).toFixed(2)),
+      })),
+    }));
+  };
+
+  const startTapSession = async () => {
+    if (!audioMedia) {
+      toast('Wähle zuerst einen Song', 'error');
+      return;
+    }
+    if (!text.lyrics.length) return;
+    tapIndexRef.current = 0;
+    setTapIndex(0);
+    setTapMode(true);
+    setTime(0);
+    const audio = audioRef.current;
+    if (audio) {
+      audio.currentTime = audioStart;
+      try {
+        await audio.play();
+        setPlaying(true);
+      } catch {
+        toast('Der Browser konnte den Song nicht starten', 'error');
+      }
+    }
+  };
+
+  const stampNextLyric = useCallback(() => {
+    const index = tapIndexRef.current;
+    const lines = text.lyrics ?? [];
+    if (index >= lines.length) return;
+    const audio = audioRef.current;
+    const at = audio ? Math.max(0, audio.currentTime - audioStart) : time;
+    setLineStart(index, at, true);
+    const next = index + 1;
+    tapIndexRef.current = next;
+    setTapIndex(next);
+    if (next >= lines.length) {
+      setTapMode(false);
+      toast('Lyrics-Timing sitzt');
+    }
+  }, [audioStart, setLineStart, text.lyrics, time]);
+
+  useEffect(() => {
+    if (!tapMode) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.code === 'Space' || event.key === 'Enter') {
+        event.preventDefault();
+        event.stopPropagation();
+        stampNextLyric();
+      }
+      if (event.key === 'Escape') setTapMode(false);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [tapMode, stampNextLyric]);
+
   /* --------------------------------------------------------------- export */
 
-  const buildPlan = (): ReelPlan => ({
-    title: text.hook.split('\n')[0]?.trim() || audioMedia?.title || 'Reel',
-    clips: clips.map((clip, index) => ({
-      mediaId: clip.media.id,
-      start: timeline[index]?.start ?? 0,
-      duration: timeline[index]?.duration ?? 1,
-      motion: clip.motion,
-    })),
-    audio: { mediaId: audioId ?? 0, start: audioStart, duration: totalDuration },
-    look,
-    text,
-    beats,
-    coverAt: Math.min(totalDuration - 0.1, 0.6),
-  });
+  const buildPlan = (): ReelPlan => {
+    const planLyrics = normaliseLyrics(text.lyrics, totalDuration);
+    return {
+      title:
+        text.hook.split('\n')[0]?.trim() || planLyrics[0]?.text || audioMedia?.title || 'Reel',
+      clips: clips.map((clip, index) => ({
+        mediaId: clip.media.id,
+        start: timeline[index]?.start ?? 0,
+        duration: timeline[index]?.duration ?? 1,
+        motion: clip.motion,
+      })),
+      audio: { mediaId: audioId ?? 0, start: audioStart, duration: totalDuration },
+      look,
+      text: { ...text, lyrics: planLyrics },
+      beats,
+      coverAt: Math.min(totalDuration - 0.1, 0.6),
+    };
+  };
 
   const renderOverlay = async () => {
+    if (text.lyrics.length) return null;
     if (!text.hook.trim() && !text.kicker.trim() && !text.sub.trim()) return null;
     if (!exportRef.current) return null;
     const { toPng } = await import('html-to-image');
@@ -376,6 +488,28 @@ export default function ReelsPage() {
       cacheBust: true,
       backgroundColor: 'transparent',
     });
+  };
+
+  const renderLyricOverlays = async () => {
+    if (!text.lyrics.length || !lyricExportRef.current) return [];
+    const { toPng } = await import('html-to-image');
+    const lines = normaliseLyrics(text.lyrics, totalDuration);
+    const nodes = [...lyricExportRef.current.querySelectorAll<HTMLElement>('[data-lyric-frame]')];
+    const overlays: { start: number; end: number; png: string }[] = [];
+    for (let index = 0; index < lines.length; index++) {
+      const node = nodes[index];
+      if (!node) continue;
+      const window = lyricWindow(lines, index, totalDuration);
+      const png = await toPng(node, {
+        width: 1080,
+        height: 1920,
+        pixelRatio: 1,
+        cacheBust: true,
+        backgroundColor: 'transparent',
+      });
+      overlays.push({ ...window, png });
+    }
+    return overlays;
   };
 
   const startExport = async () => {
@@ -395,11 +529,12 @@ export default function ReelsPage() {
     setExportError(null);
     setJob(null);
     try {
-      const overlay = await renderOverlay();
+      const overlays = await renderLyricOverlays();
+      const overlay = text.lyrics.length ? null : await renderOverlay();
       const response = await fetch('/api/reels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: buildPlan(), overlay }),
+        body: JSON.stringify({ plan: buildPlan(), overlay, overlays }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? 'The render could not be started');
@@ -449,7 +584,13 @@ export default function ReelsPage() {
     if (!job?.mediaId) return;
     setCreatingPost(true);
     try {
-      const caption = [text.hook.trim(), text.sub.trim()].filter(Boolean).join('\n\n');
+      const caption = [
+        text.hook.trim(),
+        text.sub.trim(),
+        text.lyrics.length ? text.lyrics.map((line) => line.text).slice(0, 4).join('\n') : '',
+      ]
+        .filter(Boolean)
+        .join('\n\n');
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -490,7 +631,7 @@ export default function ReelsPage() {
             Reel<span className="slash">/</span>Lab
           </>
         }
-        sub="Clips wählen, Song nehmen, auf den Beat schneiden: 9:16, 1080×1920, sichere Zonen, Ton normalisiert. Drei Schritte, ein Export."
+        sub="Clips wählen, Song nehmen, Lyrics setzen, auf den Beat schneiden: 9:16, 1080×1920, sichere Zonen, Ton normalisiert. Vier Schritte, ein Export."
         actions={
           <div className="row" style={{ gap: 8 }}>
             <button type="button" className="btn btn-ghost" onClick={() => setGuides((value) => !value)}>
@@ -605,7 +746,8 @@ export default function ReelsPage() {
               [
                 ['clips', '01 Clips'],
                 ['sound', '02 Sound'],
-                ['look', '03 Look'],
+                ['lyrics', '03 Lyrics'],
+                ['look', '04 Look'],
               ] as [Step, string][]
             ).map(([value, label]) => (
               <button
@@ -841,6 +983,158 @@ export default function ReelsPage() {
             </div>
           ) : null}
 
+          {step === 'lyrics' ? (
+            <div className="reel-panel">
+              <div className="row between wrap" style={{ gap: 10 }}>
+                <div>
+                  <div className="label">Lyrics im Takt</div>
+                  <p className="small muted">
+                    Text einfügen, dann beim Hören jede Zeile antippen. Leertaste setzt die nächste Zeile.
+                  </p>
+                </div>
+                {text.lyrics.length ? (
+                  <button
+                    type="button"
+                    className={tapMode ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-ghost'}
+                    onClick={tapMode ? () => setTapMode(false) : startTapSession}
+                    disabled={!audioMedia}
+                  >
+                    {tapMode ? <IconPause size={13} /> : <IconPlay size={13} />}
+                    {tapMode ? 'Tap-Session stoppen' : 'Tap-Session'}
+                  </button>
+                ) : null}
+              </div>
+
+              <textarea
+                className="input reel-lyrics-input"
+                rows={4}
+                value={lyricsDraft}
+                placeholder={'eine zeile pro cue\nkein leerer raum dazwischen\n...'}
+                onChange={(event) => setLyricsDraft(event.target.value)}
+              />
+
+              <div className="row wrap" style={{ gap: 8 }}>
+                <button type="button" className="btn btn-sm btn-primary" onClick={applyLyrics}>
+                  <IconPlus size={13} /> Zeilen übernehmen
+                </button>
+                {text.lyrics.length ? (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => setLyricsDraft(text.lyrics.map((line) => line.text).join('\n'))}
+                  >
+                    Text bearbeiten
+                  </button>
+                ) : null}
+                {text.lyrics.length ? (
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={distributeLyrics}>
+                    Gleichmäßig verteilen
+                  </button>
+                ) : null}
+                {text.lyrics.length ? (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => {
+                      setText((current) => ({ ...current, lyrics: [] }));
+                      setTapMode(false);
+                    }}
+                  >
+                    <IconTrash size={13} /> Leeren
+                  </button>
+                ) : null}
+              </div>
+
+              {tapMode ? (
+                <div className="reel-tap">
+                  <div className="label">Nächste Zeile</div>
+                  <strong>{text.lyrics[tapIndex]?.text ?? 'Alle Zeilen gesetzt'}</strong>
+                  <button type="button" className="btn btn-primary" onClick={stampNextLyric}>
+                    Zeile setzen <span className="mono">Space</span>
+                  </button>
+                  <p className="small muted">
+                    Der Song läuft. Drück die Leertaste genau dann, wenn die Zeile beginnt. Escape beendet die
+                    Session.
+                  </p>
+                </div>
+              ) : null}
+
+              {text.lyrics.length ? (
+                <ul className="reel-lyrics-list">
+                  {text.lyrics.map((line, index) => {
+                    const active = lyricIndexAt(text.lyrics, time) === index;
+                    const cue = lyricWindow(text.lyrics, index, totalDuration || target);
+                    return (
+                      <li key={`${index}-${line.start}`} className={active ? 'on' : ''}>
+                        <button
+                          type="button"
+                          className="reel-lyric-time mono"
+                          onClick={() => {
+                            setPlaying(false);
+                            audioRef.current?.pause();
+                            setTime(line.start);
+                            if (audioRef.current) audioRef.current.currentTime = audioStart + line.start;
+                          }}
+                          title="An diese Stelle springen"
+                        >
+                          {clock(line.start)}
+                        </button>
+                        <input
+                          className="input"
+                          value={line.text}
+                          onChange={(event) =>
+                            setText((current) => ({
+                              ...current,
+                              lyrics: current.lyrics.map((entry, i) =>
+                                i === index ? { ...entry, text: event.target.value.slice(0, 120) } : entry
+                              ),
+                            }))
+                          }
+                        />
+                        <span className="reel-lyric-length mono">{(cue.end - cue.start).toFixed(1)} s</span>
+                        <div className="reel-lyric-actions">
+                          <button
+                            type="button"
+                            onClick={() => setLineStart(index, time)}
+                            title="Start auf den aktuellen Playhead setzen"
+                          >
+                            Playhead
+                          </button>
+                          <button type="button" onClick={() => setLineStart(index, line.start - 0.1)} title="0,1 s früher">
+                            −0,1
+                          </button>
+                          <button type="button" onClick={() => setLineStart(index, line.start + 0.1)} title="0,1 s später">
+                            +0,1
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setText((current) => ({
+                                ...current,
+                                lyrics: current.lyrics.filter((_, i) => i !== index),
+                              }))
+                            }
+                            aria-label="Zeile löschen"
+                          >
+                            <IconTrash size={12} />
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="reel-hint">
+                  <IconSparkles size={14} />
+                  <span>
+                    Tipp: Song zuerst wählen, dann Zeilen einfügen und die Tap-Session starten. Die Zeilen
+                    erscheinen automatisch im Stil aus dem Look-Tab.
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : null}
+
           {step === 'look' ? (
             <div className="reel-panel">
               <div className="reel-text-grid">
@@ -1038,9 +1332,27 @@ export default function ReelsPage() {
 
       {/* transparent text layer – rasterised for the ffmpeg overlay */}
       <div className="reel-export-holder" aria-hidden="true">
-        <div className="reel-frame reel-overlay-frame" ref={exportRef}>
-          <ReelOverlay text={text} handle={profile?.handle} />
-        </div>
+        {text.lyrics.length ? (
+          <div ref={lyricExportRef}>
+            {normaliseLyrics(text.lyrics, totalDuration).map((line, index) => (
+              <div
+                key={`${line.start}-${index}`}
+                data-lyric-frame
+                className="reel-frame reel-overlay-frame"
+                style={{ position: 'absolute', top: index * 1920, left: 0 }}
+              >
+                <ReelOverlay
+                  text={{ ...text, kicker: '', sub: '', hook: line.text }}
+                  handle={profile?.handle}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="reel-frame reel-overlay-frame" ref={exportRef}>
+            <ReelOverlay text={text} handle={profile?.handle} />
+          </div>
+        )}
       </div>
 
       <Modal
@@ -1089,7 +1401,9 @@ export default function ReelsPage() {
                   unter Media → Videos.
                 </p>
                 <p className="small muted">
-                  {text.hook.trim() || 'Ohne Hook'} {text.sub.trim() ? `· ${text.sub.trim()}` : ''}
+                  {text.lyrics.length
+                    ? `${text.lyrics.length} Lyrics-Zeilen`
+                    : `${text.hook.trim() || 'Ohne Hook'} ${text.sub.trim() ? `· ${text.sub.trim()}` : ''}`}
                 </p>
               </div>
             </div>

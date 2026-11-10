@@ -164,13 +164,13 @@ export default function BrandSheetPage() {
                 <span className="bs-sample editorial">dark, heavy, but not lost.</span>
               </div>
               <div className="bs-type-row">
-                <span className="bs-type-label">Body · Inter</span>
+                <span className="bs-type-label">Body · Instrument Sans</span>
                 <span className="bs-sample body">
                   Emotional post-hardcore from Augsburg. Dark, heavy, but not lost – and always at eye level with the room.
                 </span>
               </div>
               <div className="bs-type-row">
-                <span className="bs-type-label">Meta · Space Mono</span>
+                <span className="bs-type-label">Meta · DM Mono</span>
                 <span className="bs-sample mono-label">post-hardcore /// augsburg · 2026</span>
               </div>
             </div>

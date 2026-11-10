@@ -68,16 +68,16 @@ export const FONTS: FontOption[] = [
   },
   {
     id: 'inter',
-    label: 'Inter',
-    stack: "'Inter', system-ui, sans-serif",
-    weights: [400, 600, 800],
+    label: 'Instrument Sans',
+    stack: "'Instrument Sans', 'Inter', system-ui, sans-serif",
+    weights: [400, 500, 600, 700],
     mood: 'Body',
   },
   {
     id: 'space',
-    label: 'Space Mono',
-    stack: "'Space Mono', ui-monospace, monospace",
-    weights: [400, 700],
+    label: 'DM Mono',
+    stack: "'DM Mono', 'Space Mono', ui-monospace, monospace",
+    weights: [400, 500],
     mood: 'Meta',
   },
 ];

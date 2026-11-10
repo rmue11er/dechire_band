@@ -53,6 +53,14 @@ export interface ReelText {
   align: 'left' | 'center';
   place: ReelTextPlace;
   showHandle: boolean;
+  /** Timed lyric cues in playback order. Empty = use the static hook. */
+  lyrics: ReelLyric[];
+}
+
+export interface ReelLyric {
+  text: string;
+  /** Start on the reel timeline (0 = first frame). */
+  start: number;
 }
 
 export interface ReelPlan {
@@ -188,4 +196,56 @@ export function snapToBeat(value: number, beats: number[], tolerance = 0.35) {
     }
   }
   return best;
+}
+
+/* ---------------------------------------------------------------- lyrics */
+
+/** Turns pasted lyrics into evenly spaced cues – a usable starting point for tapping. */
+export function lyricsFromText(value: string, duration: number): ReelLyric[] {
+  const lines = value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 80);
+  if (!lines.length) return [];
+  const span = Math.max(0.5, duration || lines.length * 2);
+  const step = span / lines.length;
+  return lines.map((text, index) => ({
+    text: text.slice(0, 120),
+    start: Number(Math.min(Math.max(0, span - 0.15), index * step).toFixed(2)),
+  }));
+}
+
+/** Clamps cue times into the reel and keeps them in lyric order. */
+export function normaliseLyrics(lyrics: ReelLyric[], duration: number): ReelLyric[] {
+  const safeDuration = Math.max(0.5, duration);
+  let previous = -0.05;
+  return lyrics
+    .map((line) => ({ text: String(line.text ?? '').trim().slice(0, 120), start: Number(line.start) || 0 }))
+    .filter((line) => line.text)
+    .slice(0, 80)
+    .map((line) => {
+      const start = Number(
+        Math.max(0, Math.min(safeDuration - 0.1, Math.max(previous + 0.05, line.start))).toFixed(2)
+      );
+      previous = start;
+      return { ...line, start };
+    });
+}
+
+/** Last cue that has started at `time` – lyrics switch on hard cuts. */
+export function lyricIndexAt(lyrics: ReelLyric[], time: number): number {
+  let index = -1;
+  for (let i = 0; i < lyrics.length; i++) {
+    if (lyrics[i].start <= time + 0.001) index = i;
+    else break;
+  }
+  return index;
+}
+
+/** Visible window of a cue; the next cue closes it, the last one runs to the end. */
+export function lyricWindow(lyrics: ReelLyric[], index: number, duration: number) {
+  const start = Math.max(0, lyrics[index]?.start ?? 0);
+  const next = lyrics[index + 1]?.start ?? duration;
+  return { start, end: Math.min(duration, Math.max(start + 0.2, Math.min(duration, next))) };
 }
