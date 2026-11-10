@@ -398,25 +398,21 @@ const DOCUMENTS = [
   {
     template: 'rider',
     title: 'Technical rider',
-    status: 'final',
     tags: ['rider', 'tour'],
   },
   {
     template: 'contract',
     title: 'Booking confirmation – Halle',
-    status: 'final',
     tags: ['booking', 'contract'],
   },
   {
     template: 'orga',
     title: 'Stage plot & backline notes',
-    status: 'draft',
     tags: ['stage', 'backline'],
   },
   {
     template: 'press',
     title: 'Press text – Fracture',
-    status: 'draft',
     tags: ['press', 'bio'],
   },
 ];
@@ -657,12 +653,11 @@ export function seed(db: any) {
     const template = DOC_TEMPLATES.find((item) => item.id === entry.template) ?? DOC_TEMPLATES[DOC_TEMPLATES.length - 1];
     const stamp = new Date(Date.now() - (index + 1) * 3600_000 * 9).toISOString();
     db.prepare(
-      `INSERT INTO documents (title, kind, status, content, plain_text, tags, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO documents (title, kind, content, plain_text, tags, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     ).run(
       entry.title,
       template.kind,
-      entry.status,
       template.content,
       template.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
       JSON.stringify(entry.tags),

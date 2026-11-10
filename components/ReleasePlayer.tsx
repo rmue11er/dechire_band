@@ -10,7 +10,15 @@ const clock = (seconds: number) => {
 };
 
 /** The finished master, playable right at the top of the release. */
-export default function ReleasePlayer({ src, title }: { src: string; title: string }) {
+export default function ReleasePlayer({
+  src,
+  title,
+  badge = 'Master',
+}: {
+  src: string;
+  title: string;
+  badge?: string;
+}) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -69,7 +77,7 @@ export default function ReleasePlayer({ src, title }: { src: string; title: stri
           aria-label="Seek"
         />
       </div>
-      <span className="release-player-badge mono">Master</span>
+      <span className="release-player-badge mono">{badge}</span>
       <audio
         ref={audioRef}
         src={src}

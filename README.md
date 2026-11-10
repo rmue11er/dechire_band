@@ -193,8 +193,8 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   to the next demo on its own. The printed sheet lists the demos, the HTML export embeds them.
 - Tables are real tables: insert, add/remove rows and columns, delete.
 - **CI layout**: every document is rendered as a branded sheet – not a business letter. Dark masthead with
-  logo, wordmark in the display face, tagline, a rotated FINAL/DRAFT **stamp** in the accent colour and a mono
-  meta row (`type · No. · date · handle`); below it bone paper with `///` kicker, uppercase display title,
+  logo, wordmark in the display face, tagline and a mono meta row (`type · No. · date · handle`); below it
+  bone paper with `///` kicker, uppercase display title,
   two-tone accent rule, uppercase section headings with accent ticks, tables with night headers, and a footer
   line. Everything is driven by `--accent` / `--accent-2`, so the sheet follows the accent you pick.
 - **Sheet image** (Settings → Document sheet): pick any photo from the media library – it sits in the dark
@@ -210,7 +210,14 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 - **Icons**: 124 hand-picked **Font Awesome Free (Solid)** icons – band, mood, on the road, orga, promo,
   marks – searchable, with recents. They are inserted as **inline SVG** (not a webfont), take the accent
   colour and stay self-contained in the exported HTML. Licence: icons CC BY 4.0, fonts OFL 1.1, code MIT.
-- Autosave (900 ms), draft/final status, tags, search and type filter.
+- **Folders** for order: create, rename and delete in the sidebar, drag a document onto a folder (or pick
+  the folder in the editor). Folder, search and type filters stack; deleting a folder keeps its documents
+  and moves them back to *No folder*.
+- Autosave (900 ms), tags, search and type filter.
+- **Share links**: *Share* creates a random token and a public page at `/share/<token>` that shows only
+  this document – no sidebar, no login, `noindex`. Attached demos are playable and downloadable there.
+  *New link* rotates the token (the old URL dies immediately), *Stop sharing* removes it; shared
+  documents carry a link icon in the list.
 - Export as **print-ready PDF** (print stylesheet, only the sheet on paper) or as a standalone HTML
   file with the same layout – logo, sheet image, **every picture in the text** and demos up to 24 MB are
   inlined as data URLs, the accent is copied as a CSS variable, so the exported file works offline and in
@@ -511,6 +518,8 @@ docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + ngin
 | GET/PUT | `/api/palette` | Read / fully replace the CI palette |
 | GET/POST | `/api/milestones`, `/api/milestones/:id` | Calendar milestones (PATCH/DELETE on `:id`) |
 | GET/POST | `/api/documents`, `/api/documents/:id` | Documents (PATCH/DELETE on `:id`) |
+| GET/POST | `/api/doc-folders`, `/api/doc-folders/:id` | Document folders (PATCH/DELETE on `:id`) |
+| POST/DELETE | `/api/documents/:id/share` | Create/rotate or revoke a public share token |
 | GET/POST | `/api/snippets`, `/api/snippets/:id` | Caption, hashtag and hook snippets |
 | POST | `/api/posts/:id/duplicate` | Copy a post as a new draft |
 | GET/POST/DELETE | `/api/trash`, `/api/trash/:id` | Bin: list, restore (POST), delete for good |

@@ -185,11 +185,20 @@ export interface DocumentAudio {
   media: MediaItem;
 }
 
+export interface DocFolder {
+  id: number;
+  name: string;
+  createdAt: string;
+}
+
 export interface BandDocument {
   id: number;
   title: string;
   kind: DocumentKind;
-  status: 'draft' | 'final';
+  folderId: number | null;
+  folderName: string | null;
+  /** `null` = private. A token means the document has a public link. */
+  shareToken: string | null;
   content: string;
   plainText: string;
   tags: string[];

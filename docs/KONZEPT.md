@@ -367,14 +367,30 @@ small things that otherwise get lost.
   **Range** requests (206) so seeking works. Deletes go into the bin payload and are re-attached on restore;
   backups and both reset modes include the table; the HTML export embeds demos up to 24 MB as data URLs.
 - Same autosave pattern as notes (900 ms debounce, version counter, `⌘S`, dirty/saving/saved state).
+- **Folders** (`doc_folders`): `documents.folder_id` references a folder, `GET|POST /api/doc-folders`
+  lists and creates, `PATCH|DELETE /api/doc-folders/:id` renames and removes. Deleting a folder sets its
+  documents back to `folder_id = NULL` – nothing is trashed with it. The sidebar in `app/(hq)/docs/page.tsx`
+  shows counts per folder and acts as a drop target: `onDragStart` stores the document id, `onDrop` calls
+  `moveDocument` (PATCH with `folderId`), and the editor offers the same move through its Folder select.
+  Folder, search and type filters combine.
+- **No draft/final status**: a document is a document. The old `status` column stays in existing databases
+  (default `'draft'`) but is never read or written, and the sheet no longer prints a FINAL/DRAFT stamp.
+- **Share links** (`documents.share_token`): `POST /api/documents/:id/share` sets a random token
+  (`randomBytes(16).toString('base64url')`), `POST` again with `rotate` re-issues it, `DELETE` clears it.
+  A unique partial index (`idx_documents_share … WHERE share_token IS NOT NULL`) keeps tokens unique.
+  `app/share/[token]/page.tsx` is a public, `noindex` page outside the HQ layout: it loads the document via
+  `getDocumentByShareToken` and renders the same sheet, the body plus the attached demos in the
+  `ReleasePlayer` (play/seek, download). `/share` is in the proxy’s public paths and matcher exclusion, so
+  the link works without the HQ session. The editor shows *Shared* + copy/open/new link/stop sharing; the
+  document list marks shared entries with a link icon.
 - Two exports, both without a server round-trip: **print → PDF** via a print stylesheet that hides
   navigation and renders the sheet black on white, and a **standalone HTML file** with inline styles
   for promoters who do not want a PDF. Images (logo, sheet image) are inlined as data URLs so the
   file is self-contained.
 - **Sheet design, second pass** (`styles/docs.css`): the first version read like a business letter, so the
   sheet is now built like a flyer-with-paperwork instead of a letterhead. A **dark masthead** (`#0b0a10`)
-  carries logo, the band name in the display face, the tagline in the accent colour, a rotated **stamp**
-  (FINAL/DRAFT) and a mono meta row (`type · No. · date · handle`), closed by a two-tone accent hairline.
+  carries logo, the band name in the display face, the tagline in the accent colour and a mono meta row
+  (`type · No. · date · handle`), closed by a two-tone accent hairline.
   Below it the body sits on bone paper with a grain dot pattern: `///` kicker, uppercase display title,
   a two-tone accent rule, **uppercase section headings** with a thin accent tick and a fading hairline,
   tables with night-coloured header cells (the rider look), italic accent-2 blockquotes and a closing
@@ -748,7 +764,9 @@ post_media   (id, post_id, media_id, position)          ← carousel order
 notes        (id, title, content, plain_text, folder, tags, pinned, ...)
 designs      (id, title, width, height, background JSON, elements JSON, ...)
 milestones   (id, title, date, kind, note, done, ...)
-documents    (id, title, kind, status, content, plain_text, tags, ...)
+doc_folders  (id, name, created_at)
+documents    (id, title, kind, folder_id, share_token, content, plain_text, tags, ...)
+document_audio (id, document_id, media_id, label, position, created_at)
 palette      (id, name, hex, role, position)
 profile      (id=1, band_name, handle, bio, website, followers, following,
               avatar_media_id, highlight_names, accent_hex,
@@ -819,7 +837,7 @@ site         (id=1, published, band_name, tagline, manifesto JSON (the letter),
 - [x] CI palette “Bruised Bloom” definable in one place, visible as its own row in every colour picker.
 - [x] Interface accent colour changeable in the settings, applied instantly and persisted with the profile.
 - [x] Calendar with milestones (type, note, done), month navigation, selected day and upcoming list.
-- [x] Documents: technical rider and other templates, tables, autosave, draft/final, print-to-PDF and HTML export.
+- [x] Documents: technical rider and other templates, tables, autosave, folders, public share links, print-to-PDF and HTML export.
 - [x] Brand sheet generated from profile + palette, exportable as PNG (2×), SVG and PDF.
 - [x] Calendar shows scheduled/published posts and milestones together, with `.ics` export and reminders.
 - [x] Milestone checklists incl. a release checklist template.

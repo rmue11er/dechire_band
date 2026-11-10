@@ -22,7 +22,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
   const document = updateDocument(documentId, {
     title: typeof body.title === 'string' ? body.title.slice(0, 160) : undefined,
     kind: typeof body.kind === 'string' ? body.kind : undefined,
-    status: body.status === 'final' || body.status === 'draft' ? body.status : undefined,
+    folderId: body.folderId === undefined ? undefined : body.folderId ? Number(body.folderId) : null,
     content: typeof body.content === 'string' ? body.content : undefined,
     plainText: typeof body.plainText === 'string' ? body.plainText : undefined,
     tags: Array.isArray(body.tags) ? body.tags.map(String) : undefined,

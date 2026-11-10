@@ -21,6 +21,7 @@ import {
   IconBold,
   IconCheck,
   IconCode,
+  IconCopy,
   IconDownload,
   IconMusic,
   IconExternal,
@@ -32,6 +33,7 @@ import {
   IconPin,
   IconQuote,
   IconRedo,
+  IconShare,
   IconStrike,
   IconTable,
   IconTask,
@@ -44,7 +46,7 @@ import EmojiPicker from '@/components/EmojiPicker';
 import IconPicker from '@/components/IconPicker';
 import MediaPicker from '@/components/MediaPicker';
 import { DocIcon, DocImage, DocSection, type ImageAlign } from '@/components/docNodes';
-import { Segmented } from '@/components/ui';
+import { Modal } from '@/components/ui';
 import { usePalette } from '@/components/PaletteProvider';
 import {
   DOC_KINDS,
@@ -57,7 +59,14 @@ import {
 } from '@/lib/kinds';
 import { timeAgo } from '@/lib/format';
 import { toast } from '@/lib/toast';
-import type { BandDocument, DocumentAudio, DocumentKind, MediaItem, Profile } from '@/lib/types';
+import type {
+  BandDocument,
+  DocFolder,
+  DocumentAudio,
+  DocumentKind,
+  MediaItem,
+  Profile,
+} from '@/lib/types';
 
 type Status = 'idle' | 'dirty' | 'saving' | 'saved';
 
@@ -70,16 +79,18 @@ const slug = (value: string) =>
 
 export default function DocEditor({
   document: doc,
+  folders,
   onSaved,
   onDeleted,
 }: {
   document: BandDocument;
+  folders: DocFolder[];
   onSaved: (doc: BandDocument) => void;
   onDeleted: (id: number) => void;
 }) {
   const [title, setTitle] = useState(doc.title);
   const [kind, setKind] = useState<DocumentKind>(doc.kind);
-  const [status, setStatus] = useState<'draft' | 'final'>(doc.status);
+  const [folderId, setFolderId] = useState<number | null>(doc.folderId);
   const [tags, setTags] = useState(doc.tags.join(', '));
   const [saveState, setSaveState] = useState<Status>('idle');
   const [savedAt, setSavedAt] = useState(doc.updatedAt);
@@ -94,8 +105,14 @@ export default function DocEditor({
   const [mediaOpen, setMediaOpen] = useState(false);
   const [audio, setAudio] = useState<DocumentAudio[]>(doc.audio ?? []);
   const [audioOpen, setAudioOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [origin, setOrigin] = useState('');
   const ciPrimary = palette.find((color) => color.role === 'primary')?.hex ?? '#6b54a6';
   const band = profile?.bandName ?? 'DECHIRE';
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -151,7 +168,7 @@ export default function DocEditor({
   useEffect(() => {
     setTitle(doc.title);
     setKind(doc.kind);
-    setStatus(doc.status);
+    setFolderId(doc.folderId);
     setTags(doc.tags.join(', '));
     setSaveState('idle');
     setSavedAt(doc.updatedAt);
@@ -176,7 +193,7 @@ export default function DocEditor({
         body: JSON.stringify({
           title: title.trim() || 'Untitled document',
           kind,
-          status,
+          folderId,
           content: contentRef.current.html,
           plainText: contentRef.current.text,
           tags: tags
@@ -197,13 +214,13 @@ export default function DocEditor({
       setSaveState('dirty');
       toast(error.message ?? 'Failed to save', 'error');
     }
-  }, [doc.id, title, kind, status, tags, onSaved]);
+  }, [doc.id, title, kind, folderId, tags, onSaved]);
 
   useEffect(() => {
     if (!dirtyRef.current) return;
     const timer = setTimeout(save, 900);
     return () => clearTimeout(timer);
-  }, [tick, title, kind, status, tags, save]);
+  }, [tick, title, kind, folderId, tags, save]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -300,6 +317,45 @@ export default function DocEditor({
     if (!response.ok) {
       toast('Could not rename the demo', 'error');
       refreshAudio();
+    }
+  };
+
+  const shareUrl = doc.shareToken && origin ? `${origin}/share/${doc.shareToken}` : '';
+
+  const createShareLink = async (rotate = false) => {
+    try {
+      const response = await fetch(`/api/documents/${doc.id}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rotate }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Could not create the link');
+      onSaved(data.document);
+      toast(rotate ? 'Old link invalidated, new link created' : 'Public link created');
+    } catch (error: any) {
+      toast(error.message ?? 'Could not create the link', 'error');
+    }
+  };
+
+  const stopSharing = async () => {
+    const response = await fetch(`/api/documents/${doc.id}/share`, { method: 'DELETE' });
+    const data = await response.json();
+    if (!response.ok) {
+      toast(data.error ?? 'Could not disable the link', 'error');
+      return;
+    }
+    onSaved(data.document);
+    toast('Public link disabled');
+  };
+
+  const copyShareLink = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast('Link copied');
+    } catch {
+      toast('Could not copy – select the link manually', 'error');
     }
   };
 
@@ -558,8 +614,6 @@ export default function DocEditor({
   .wordmark { display: grid; gap: 5px; }
   .wordmark strong { font-family: ${display}; font-weight: 400; font-size: 27px; line-height: .9; letter-spacing: .015em; text-transform: uppercase; color: #fbf8ff; }
   .wordmark em { font-style: normal; font-family: ${mono}; font-size: 8px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent); opacity: .85; }
-  .stamp { transform: rotate(-7deg); padding: 5px 10px 4px; border: 2px solid var(--accent); border-radius: 2px; font-family: ${mono}; font-size: 9px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); background: rgb(var(--accent-rgb) / .08); }
-  .stamp.draft { border-color: rgba(255, 255, 255, .28); color: rgba(255, 255, 255, .55); background: none; }
   .mast-meta { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 0 13px; border-top: 1px solid rgba(255, 255, 255, .12); font-family: ${mono}; font-size: 8.5px; letter-spacing: .18em; text-transform: uppercase; color: rgba(255, 255, 255, .62); }
   .mast-meta .kind { color: var(--accent); }
   .mast::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); z-index: 2; }
@@ -637,7 +691,6 @@ export default function DocEditor({
           <em>${tagline}</em>
         </span>
       </div>
-      <span class="stamp ${status === 'final' ? '' : 'draft'}">${status === 'final' ? 'Final' : 'Draft'}</span>
     </div>
     <div class="mast-meta">
       <span class="kind">${kindLabel}</span>
@@ -737,17 +790,14 @@ export default function DocEditor({
           </div>
         </div>
         <div className="doc-actions">
-          <Segmented
-            value={status}
-            options={[
-              { value: 'draft', label: 'Draft' },
-              { value: 'final', label: 'Final' },
-            ]}
-            onChange={(value) => {
-              setStatus(value);
-              markDirty();
-            }}
-          />
+          <button
+            type="button"
+            className={`btn btn-sm btn-ghost doc-share-btn ${doc.shareToken ? 'on' : ''}`}
+            onClick={() => setShareOpen(true)}
+            title={doc.shareToken ? 'Public link is active' : 'Share this document'}
+          >
+            <IconShare size={14} /> {doc.shareToken ? 'Shared' : 'Share'}
+          </button>
           <button type="button" className="btn btn-sm btn-ghost" onClick={downloadHtml} title="Download as HTML">
             <IconDownload size={14} /> HTML
           </button>
@@ -774,6 +824,24 @@ export default function DocEditor({
             {DOC_KINDS.map((entry) => (
               <option key={entry.value} value={entry.value}>
                 {entry.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="doc-field">
+          <span className="label">Folder</span>
+          <select
+            className="select"
+            value={folderId ?? ''}
+            onChange={(event) => {
+              setFolderId(event.target.value ? Number(event.target.value) : null);
+              markDirty();
+            }}
+          >
+            <option value="">No folder</option>
+            {folders.map((folder) => (
+              <option key={folder.id} value={folder.id}>
+                {folder.name}
               </option>
             ))}
           </select>
@@ -1045,7 +1113,6 @@ export default function DocEditor({
                 <em>{profile?.bio?.split('\n')[0] || 'Post-hardcore // Ruhr'}</em>
               </span>
             </div>
-            <span className={`doc-sheet-stamp ${status}`}>{status === 'final' ? 'Final' : 'Draft'}</span>
           </div>
 
           <div className="doc-sheet-mast-meta">
@@ -1116,6 +1183,83 @@ export default function DocEditor({
         }}
         onUploaded={(items) => setMedia((current) => [...items, ...current])}
       />
+
+      <Modal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        title="Share document"
+        subtitle={
+          audio.length
+            ? 'Only this document – the attached demos come with it.'
+            : 'Only this document, nothing else from the workspace.'
+        }
+        footer={
+          doc.shareToken ? (
+            <>
+              <button type="button" className="btn btn-ghost" onClick={() => setShareOpen(false)}>
+                Close
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => createShareLink(true)}>
+                New link
+              </button>
+              <button type="button" className="btn btn-danger" onClick={stopSharing}>
+                Stop sharing
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="btn btn-ghost" onClick={() => setShareOpen(false)}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-primary" onClick={() => createShareLink(false)}>
+                Create link
+              </button>
+            </>
+          )
+        }
+      >
+        <div className="doc-share-panel">
+          {doc.shareToken ? (
+            <>
+              <label className="doc-share-field">
+                <span className="label">Public link</span>
+                <input
+                  className="input"
+                  readOnly
+                  value={shareUrl}
+                  onFocus={(event) => event.target.select()}
+                />
+              </label>
+              <div className="doc-share-actions">
+                <button type="button" className="btn btn-sm btn-primary" onClick={copyShareLink}>
+                  <IconCopy size={13} /> Copy
+                </button>
+                <a className="btn btn-sm btn-ghost" href={shareUrl} target="_blank" rel="noreferrer">
+                  <IconExternal size={13} /> Open
+                </a>
+              </div>
+              <p className="small muted">
+                Anyone with this link can read the document
+                {audio.length
+                  ? ` and play ${audio.length === 1 ? 'the demo' : `the ${audio.length} demos`}`
+                  : ''}
+                . “New link” invalidates the old one immediately.
+              </p>
+            </>
+          ) : (
+            <p className="small muted">
+              Creates a public page with only this document – no sidebar, no other files, not indexed
+              by search engines.
+            </p>
+          )}
+          {audio.length ? (
+            <p className="doc-share-audio-note">
+              <IconMusic size={12} /> {audio.length === 1 ? 'The attached demo is' : `The ${audio.length} attached demos are`}{' '}
+              playable on the shared page.
+            </p>
+          ) : null}
+        </div>
+      </Modal>
     </div>
   );
 }

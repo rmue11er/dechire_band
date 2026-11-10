@@ -165,11 +165,19 @@ CREATE TABLE IF NOT EXISTS milestones (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS doc_folders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS documents (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL DEFAULT '',
   kind TEXT NOT NULL DEFAULT 'other',
   status TEXT NOT NULL DEFAULT 'draft',
+  folder_id INTEGER,
+  share_token TEXT,
   content TEXT NOT NULL DEFAULT '',
   plain_text TEXT NOT NULL DEFAULT '',
   tags TEXT NOT NULL DEFAULT '[]',
@@ -301,6 +309,13 @@ function ensureColumn(conn: DatabaseSync, table: string, column: string, definit
   conn.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }
 
+/** Creates an index only when it is missing – connecting must stay read-only otherwise. */
+function ensureIndex(conn: DatabaseSync, table: string, name: string, sql: string) {
+  const indexes = conn.prepare(`PRAGMA index_list(${table})`).all() as unknown as { name: string }[];
+  if (indexes.some((entry) => entry.name === name)) return;
+  conn.exec(sql);
+}
+
 /** CI palette exists independently of the demo seed – also for older databases. */
 function ensurePalette(db: DatabaseSync) {
   const row = db.prepare('SELECT COUNT(*) AS c FROM palette').get() as { c: number } | undefined;
@@ -419,6 +434,15 @@ function createConnection(): DatabaseSync {
   ensureColumn(db, 'connections', 'last_run_at', 'TEXT');
   ensureColumn(db, 'media', 'folder_id', 'INTEGER');
   ensureColumn(db, 'milestones', "checklist", "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn(db, 'documents', 'folder_id', 'INTEGER');
+  ensureColumn(db, 'documents', 'share_token', 'TEXT');
+  ensureIndex(db, 'documents', 'idx_documents_folder', 'CREATE INDEX idx_documents_folder ON documents(folder_id)');
+  ensureIndex(
+    db,
+    'documents',
+    'idx_documents_share',
+    'CREATE UNIQUE INDEX idx_documents_share ON documents(share_token) WHERE share_token IS NOT NULL'
+  );
   ensureColumn(db, 'releases', 'audio_media_id', 'INTEGER');
   ensureColumn(db, 'releases', 'video_media_id', 'INTEGER');
   ensureColumn(db, 'release_tasks', 'media_id', 'INTEGER');

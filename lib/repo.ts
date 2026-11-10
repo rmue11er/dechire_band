@@ -1,9 +1,11 @@
+import { randomBytes } from 'node:crypto';
 import { db, execute, queryAll, queryOne } from './db';
 import { buildTasks } from './release';
 import type {
   BandDocument,
   ChecklistItem,
   Design,
+  DocFolder,
   DocumentAudio,
   InstagramConnection,
   MediaFolder,
@@ -980,7 +982,9 @@ function mapDocument(row: any): BandDocument {
     id: Number(row.id),
     title: row.title ?? '',
     kind: (row.kind ?? 'other') as BandDocument['kind'],
-    status: (row.status ?? 'draft') as BandDocument['status'],
+    folderId: row.folder_id == null ? null : Number(row.folder_id),
+    folderName: row.folder_name ?? null,
+    shareToken: row.share_token ?? null,
     content: row.content ?? '',
     plainText: row.plain_text ?? '',
     tags: parseList(row.tags),
@@ -990,24 +994,63 @@ function mapDocument(row: any): BandDocument {
   };
 }
 
+const DOCUMENT_SELECT = `
+  SELECT d.*, f.name AS folder_name
+  FROM documents d
+  LEFT JOIN doc_folders f ON f.id = d.folder_id`;
+
 export function listDocuments(): BandDocument[] {
-  return queryAll<any>('SELECT * FROM documents ORDER BY updated_at DESC, id DESC').map(mapDocument);
+  return queryAll<any>(`${DOCUMENT_SELECT} ORDER BY d.updated_at DESC, d.id DESC`).map(mapDocument);
 }
 
 export function getDocument(id: number): BandDocument | null {
-  const row = queryOne<any>('SELECT * FROM documents WHERE id = ?', [id]);
+  const row = queryOne<any>(`${DOCUMENT_SELECT} WHERE d.id = ?`, [id]);
   return row ? mapDocument(row) : null;
+}
+
+export function getDocumentByShareToken(token: string): BandDocument | null {
+  if (!token) return null;
+  const row = queryOne<any>(`${DOCUMENT_SELECT} WHERE d.share_token = ?`, [token]);
+  return row ? mapDocument(row) : null;
+}
+
+export function listDocFolders(): DocFolder[] {
+  return queryAll<any>('SELECT * FROM doc_folders ORDER BY name COLLATE NOCASE ASC').map((row) => ({
+    id: Number(row.id),
+    name: row.name ?? '',
+    createdAt: row.created_at,
+  }));
+}
+
+export function createDocFolder(name: string) {
+  const result = execute('INSERT INTO doc_folders (name, created_at) VALUES (?, ?)', [
+    name.slice(0, 120),
+    new Date().toISOString(),
+  ]);
+  const row = queryOne<any>('SELECT * FROM doc_folders WHERE id = ?', [Number(result.lastInsertRowid)]);
+  return row ? { id: Number(row.id), name: row.name, createdAt: row.created_at } : null;
+}
+
+export function updateDocFolder(id: number, name: string) {
+  execute('UPDATE doc_folders SET name = ? WHERE id = ?', [name.slice(0, 120), id]);
+  return listDocFolders().find((folder) => folder.id === id) ?? null;
+}
+
+/** Deleting a folder never deletes documents – they move back to “no folder”. */
+export function deleteDocFolder(id: number) {
+  execute('UPDATE documents SET folder_id = NULL WHERE folder_id = ?', [id]);
+  execute('DELETE FROM doc_folders WHERE id = ?', [id]);
 }
 
 export function createDocument(input: Record<string, any> = {}) {
   const now = new Date().toISOString();
   const result = execute(
-    `INSERT INTO documents (title, kind, status, content, plain_text, tags, created_at, updated_at)
+    `INSERT INTO documents (title, kind, folder_id, content, plain_text, tags, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.title ?? 'Untitled document',
       input.kind ?? 'other',
-      input.status ?? 'draft',
+      input.folderId ?? null,
       input.content ?? '<p></p>',
       input.plainText ?? '',
       JSON.stringify(input.tags ?? []),
@@ -1024,14 +1067,14 @@ export function updateDocument(id: number, patch: Record<string, any>) {
   const map: Record<string, string> = {
     title: 'title',
     kind: 'kind',
-    status: 'status',
+    folderId: 'folder_id',
     content: 'content',
     plainText: 'plain_text',
   };
   for (const [key, column] of Object.entries(map)) {
     if (patch[key] !== undefined) {
       sets.push(`${column} = ?`);
-      params.push(patch[key]);
+      params.push(patch[key] ?? null);
     }
   }
   if (patch.tags !== undefined) {
@@ -1046,13 +1089,34 @@ export function updateDocument(id: number, patch: Record<string, any>) {
   return getDocument(id);
 }
 
+/** Enables the public link. Passing `rotate` replaces an existing token. */
+export function shareDocument(id: number, rotate = false) {
+  const document = getDocument(id);
+  if (!document) return null;
+  if (document.shareToken && !rotate) return document;
+  execute('UPDATE documents SET share_token = ?, updated_at = ? WHERE id = ?', [
+    randomBytes(16).toString('base64url'),
+    new Date().toISOString(),
+    id,
+  ]);
+  return getDocument(id);
+}
+
+export function unshareDocument(id: number) {
+  execute('UPDATE documents SET share_token = NULL, updated_at = ? WHERE id = ?', [
+    new Date().toISOString(),
+    id,
+  ]);
+  return getDocument(id);
+}
+
 export function deleteDocument(id: number) {
   const document = getDocument(id);
   if (document) {
     pushTrash('document', document.title || 'Untitled document', {
       title: document.title,
       kind: document.kind,
-      status: document.status,
+      folderId: document.folderId,
       content: document.content,
       plainText: document.plainText,
       tags: document.tags,

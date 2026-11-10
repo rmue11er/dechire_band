@@ -92,24 +92,6 @@
   gap: 8px;
 }
 
-.doc-status {
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: 99px;
-  border: 1px solid var(--line);
-  color: var(--muted);
-  flex: none;
-}
-
-.doc-status.final {
-  color: var(--ok);
-  border-color: rgba(127, 211, 176, 0.4);
-  background: rgba(127, 211, 176, 0.08);
-}
-
 /* editor ------------------------------------------------------------------ */
 
 .doc-panel {
@@ -357,27 +339,6 @@
   text-transform: uppercase;
   color: var(--accent);
   opacity: 0.85;
-}
-
-.doc-sheet-stamp {
-  flex: 0 0 auto;
-  transform: rotate(-7deg);
-  padding: 5px 10px 4px;
-  border: 2px solid var(--accent);
-  border-radius: 2px;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--accent);
-  background: rgb(var(--accent-rgb) / 0.08);
-}
-
-.doc-sheet-stamp.draft {
-  border-color: rgb(255 255 255 / 0.28);
-  color: rgb(255 255 255 / 0.55);
-  background: none;
 }
 
 .doc-sheet-mast-meta {
@@ -1646,5 +1607,367 @@
   .doc-page .prose table th,
   .doc-page .prose table td {
     border-color: #999 !important;
+  }
+}
+
+/* ============================================================
+   Document folders, sharing and the public shared page
+   ============================================================ */
+
+.doc-folders {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.doc-folders-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 2px 4px;
+}
+
+.doc-folders-title {
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.doc-folder-add {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: none;
+  color: var(--muted-2);
+  cursor: pointer;
+}
+
+.doc-folder-add:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.doc-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 5px 6px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: none;
+  color: var(--muted);
+  font-size: 11.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.doc-folder-row > svg {
+  flex: none;
+  color: var(--muted-2);
+}
+
+.doc-folder-row > span.truncate,
+.doc-folder-pick > span.truncate {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.doc-folder-row em {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted-2);
+}
+
+.doc-folder-row:hover {
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.doc-folder-row.on {
+  border-color: rgb(var(--accent-rgb) / 0.45);
+  background: rgb(var(--accent-rgb) / 0.07);
+  color: var(--text);
+}
+
+.doc-folder-row.on > svg,
+.doc-folder-row.on .doc-folder-pick > svg {
+  color: var(--accent);
+}
+
+.doc-folder-row.drop {
+  border-color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.18);
+  color: var(--text);
+}
+
+.doc-folder-pick {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.doc-folder-pick > svg {
+  flex: none;
+  color: var(--muted-2);
+}
+
+.doc-folder-pick em {
+  margin-left: auto;
+}
+
+.doc-folder-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.doc-folder-row:hover .doc-folder-actions,
+.doc-folder-row:focus-within .doc-folder-actions {
+  opacity: 1;
+}
+
+.doc-folder-actions button {
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  border: 0;
+  background: none;
+  color: var(--muted-2);
+  cursor: pointer;
+}
+
+.doc-folder-actions button:hover {
+  color: var(--accent);
+}
+
+.doc-folder-actions button:last-child:hover {
+  color: #e4778b;
+}
+
+@media (hover: none) {
+  .doc-folder-actions {
+    opacity: 1;
+  }
+}
+
+.doc-item-share {
+  flex: none;
+  display: inline-flex;
+  color: var(--accent-2);
+}
+
+.doc-share-btn.on {
+  color: var(--accent);
+  border-color: rgb(var(--accent-rgb) / 0.5);
+  background: rgb(var(--accent-rgb) / 0.08);
+}
+
+.doc-share-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.doc-share-field {
+  display: grid;
+  gap: 5px;
+}
+
+.doc-share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.doc-share-audio-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 11px;
+  color: var(--accent-2);
+}
+
+/* public share page ------------------------------------------------------- */
+
+.doc-share {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 44px 18px 64px;
+  background: #08070c;
+  background-image: radial-gradient(rgb(var(--accent-rgb) / 0.07), transparent 60%);
+}
+
+.doc-share-sheet {
+  width: min(820px, 100%);
+  box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.92);
+}
+
+.doc-share-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 22px;
+  background: #0b0a10;
+  color: #f6f2ff;
+}
+
+.doc-share-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.doc-share-brand img {
+  width: 36px;
+  height: 36px;
+  padding: 2px;
+  object-fit: contain;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.07);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+}
+
+.doc-share-brand strong {
+  display: block;
+  font-family: 'Anton', var(--font-sans);
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 0.95;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  color: #fbf8ff;
+}
+
+.doc-share-brand em {
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.doc-share-kind {
+  flex: none;
+  padding: 3px 7px;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.68);
+}
+
+.doc-share-titlewrap {
+  margin-bottom: 22px;
+}
+
+.doc-share-meta {
+  display: block;
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(16 13 22 / 0.5);
+}
+
+.doc-share-audio {
+  display: grid;
+  gap: 10px;
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1px dashed rgb(16 13 22 / 0.26);
+}
+
+.doc-share-audio h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+}
+
+.doc-share-audio-mark {
+  font-size: 12px;
+  color: var(--accent-2);
+}
+
+.doc-share-track {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.doc-share-track .release-player {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.doc-share-download {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.doc-share-note {
+  margin: 0;
+  max-width: 820px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6e6684;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .doc-share {
+    padding: 18px 10px 40px;
+  }
+
+  .doc-share-track {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .doc-share-download {
+    text-align: right;
   }
 }

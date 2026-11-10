@@ -13,6 +13,7 @@ import { SESSION_COOKIE, authEnabled, verifySession } from './lib/auth';
  */
 const PUBLIC_PATHS: RegExp[] = [
   /^\/site(\/|$)/,
+  /^\/share(\/|$)/,
   /^\/login(\/|$)/,
   /^\/api\/auth\//,
   /^\/api\/files\//,
@@ -46,5 +47,5 @@ export const config = {
    * Everything except the public one-pager and Next's own assets. The list above
    * additionally opens the login route and the uploaded files.
    */
-  matcher: ['/((?!site|_next/static|_next/image|api/files|icon\\.svg|favicon\\.ico).*)'],
+  matcher: ['/((?!site|share|_next/static|_next/image|api/files|icon\\.svg|favicon\\.ico).*)'],
 };
