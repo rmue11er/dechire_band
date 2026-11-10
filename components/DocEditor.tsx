@@ -46,6 +46,7 @@ import EmojiPicker from '@/components/EmojiPicker';
 import IconPicker from '@/components/IconPicker';
 import MediaPicker from '@/components/MediaPicker';
 import { DocIcon, DocImage, DocSection, type ImageAlign } from '@/components/docNodes';
+import { DocCollapsibleHeadings } from '@/components/docCollapsibleHeadings';
 import { Modal } from '@/components/ui';
 import { usePalette } from '@/components/PaletteProvider';
 import {
@@ -156,6 +157,7 @@ export default function DocEditor({
       DocImage.configure({ inline: false, allowBase64: false }),
       DocIcon,
       DocSection,
+      DocCollapsibleHeadings.configure({ enabled: doc.kind !== 'lyrics' }),
     ],
     content: doc.content || '<p></p>',
     immediatelyRender: false,
@@ -168,6 +170,10 @@ export default function DocEditor({
       markDirty();
     },
   });
+
+  useEffect(() => {
+    editor?.commands.setHeadingsCollapsible(kind !== 'lyrics');
+  }, [editor, kind]);
 
   useEffect(() => {
     setTitle(doc.title);

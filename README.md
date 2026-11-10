@@ -206,6 +206,10 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   (upload included). Tracks get a name, a size, a play button and can be detached again. Playback runs in a
   **docked player** at the bottom right, so it keeps playing while you scroll through the lyrics; it moves
   to the next demo on its own. The printed sheet lists the demos, the HTML export embeds them.
+- **Collapsible sections**: in every non-lyrics document each `h2` gets a small chevron in front of it.
+  Click it to hide the content up to the next `h1`/`h2` – also inside section blocks. Lyrics sheets are
+  excluded on purpose. The toggle is an editor decoration only: it never enters the HTML/export, and
+  print/PDF always shows the full document.
 - Tables are real tables: insert, add/remove rows and columns, delete.
 - **CI layout**: every document is rendered as a branded sheet – not a business letter. Dark masthead with
   logo, wordmark in the display face, tagline and a mono meta row (`type · No. · date · handle`); below it

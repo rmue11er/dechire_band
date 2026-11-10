@@ -358,6 +358,14 @@ small things that otherwise get lost.
   `setTextSelection(pos+2).scrollIntoView()`, neighbour swap via `tr.replaceWith` – only when the two parts
   are adjacent). A **Convert headings** action (`guessPartKind`) rebuilds old h2-based sheets with
   `setContent`, one undo step. The template in `lib/docTemplates.ts` ships the section markup directly.
+- **Collapsible h2 sections** (`components/docCollapsibleHeadings.ts`): a ProseMirror plugin adds a
+  chevron widget in front of every `h2` and, while collapsed, node decorations with
+  `.doc-collapsed-content` on every block up to the next `h1`/`h2`. It descends into `DocSection` nodes,
+  so nested sections work. **Lyrics documents are excluded** (`kind === 'lyrics'`) – the extension is
+  configured off and the DocEditor `setHeadingsCollapsible` command follows the Type select live. The
+  state is a `Set` of heading positions mapped through every transaction; widgets and classes are
+  decorations, so `getHTML()`, the HTML export, print/PDF and the share page always contain the full
+  document.
 - **Audio attachments** (`document_audio` in `lib/db.ts`): `document_id`, `media_id`, `label`, `position`.
   `POST /api/documents/:id/audio` attaches a file from the library (audio mime only),
   `PATCH|DELETE /api/document-audio/:id` renames or detaches it. `lib/repo.ts` exposes

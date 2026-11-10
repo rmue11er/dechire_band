@@ -1993,3 +1993,55 @@
   color: var(--accent);
   flex: none;
 }
+
+/* ------------------------------------------------- collapsible h2 sections */
+.doc-collapse-toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-right: -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--muted-2);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.55;
+  transform: translateY(1px);
+  transition: color 0.12s ease, opacity 0.12s ease, background 0.12s ease;
+}
+
+.doc-collapse-toggle:hover,
+.doc-collapse-toggle:focus-visible,
+.doc-collapse-toggle.is-collapsed {
+  color: var(--accent-deep);
+  opacity: 1;
+  outline: none;
+}
+
+.doc-collapse-toggle:hover {
+  background: rgb(16 13 22 / 0.06);
+}
+
+.doc-collapse-toggle:disabled {
+  opacity: 0.18;
+  cursor: default;
+}
+
+@media screen {
+  .doc-collapsed-content {
+    display: none !important;
+  }
+}
+
+@media print {
+  .doc-collapse-toggle {
+    display: none !important;
+  }
+}
