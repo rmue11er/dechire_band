@@ -15,6 +15,52 @@ export interface Song {
   notes: string;
   mediaCount: number;
   docCount: number;
+  videoCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type VideoStatus = 'idea' | 'preproduction' | 'shoot' | 'edit' | 'done';
+export type ShotStatus = 'idea' | 'scouted' | 'ready' | 'shot' | 'edited';
+
+export interface VideoProject {
+  id: number;
+  title: string;
+  songId: number | null;
+  songTitle: string | null;
+  audioMediaId: number | null;
+  audioTitle: string | null;
+  audioUrl: string | null;
+  treatmentDocId: number | null;
+  treatmentTitle: string | null;
+  status: VideoStatus;
+  shootDate: string;
+  location: string;
+  director: string;
+  notes: string;
+  shotCount: number;
+  plannedDuration: number;
+  coverUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VideoShot {
+  id: number;
+  videoId: number;
+  position: number;
+  start: number;
+  duration: number;
+  section: string;
+  description: string;
+  location: string;
+  shotType: string;
+  movement: string;
+  lighting: string;
+  status: ShotStatus;
+  mediaId: number | null;
+  media: MediaItem | null;
+  notes: string;
   createdAt: string;
   updatedAt: string;
 }

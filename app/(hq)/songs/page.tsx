@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   IconDocument,
+  IconFilm,
   IconImage,
   IconMusic,
   IconPencil,
@@ -53,6 +54,7 @@ export default function SongsPage() {
       songs: songs.length,
       media: songs.reduce((sum, song) => sum + song.mediaCount, 0),
       docs: songs.reduce((sum, song) => sum + song.docCount, 0),
+      videos: songs.reduce((sum, song) => sum + song.videoCount, 0),
     }),
     [songs]
   );
@@ -159,6 +161,9 @@ export default function SongsPage() {
         <span>
           <em>{totals.docs}</em> linked documents
         </span>
+        <span>
+          <em>{totals.videos}</em> music videos
+        </span>
       </div>
 
       {songs.length === 0 ? (
@@ -219,6 +224,11 @@ export default function SongsPage() {
                   <IconDocument size={13} />
                   <span>Documents</span>
                   <em>{song.docCount}</em>
+                </Link>
+                <Link href={`/videos?song=${song.id}`}>
+                  <IconFilm size={13} />
+                  <span>Video</span>
+                  <em>{song.videoCount}</em>
                 </Link>
               </div>
             </article>

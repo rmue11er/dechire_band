@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export type SearchHit = {
-  kind: 'post' | 'media' | 'note' | 'document' | 'milestone' | 'design' | 'snippet' | 'song';
+  kind: 'post' | 'media' | 'note' | 'document' | 'milestone' | 'design' | 'snippet' | 'song' | 'video';
   id: number;
   title: string;
   subtitle: string;
@@ -62,6 +62,19 @@ export async function GET(request: Request) {
       title: row.title,
       subtitle: `Song · ${row.status}`,
       href: '/songs',
+    });
+  }
+
+  for (const row of queryAll<any>(
+    'SELECT id, title, status, location FROM video_projects WHERE title LIKE ? OR notes LIKE ? OR location LIKE ? OR director LIKE ? LIMIT 8',
+    [like, like, like, like]
+  )) {
+    hits.push({
+      kind: 'video',
+      id: Number(row.id),
+      title: row.title,
+      subtitle: `Video · ${row.status}${row.location ? ` · ${row.location}` : ''}`,
+      href: `/videos/${row.id}`,
     });
   }
 

@@ -18,6 +18,7 @@ import {
   IconSettings,
   IconSparkles,
   IconSwatch,
+  IconVideo,
   IconZap,
 } from '@/components/icons';
 
@@ -28,6 +29,7 @@ const NAV = [
   { href: '/releases', label: 'Release Wave', icon: IconZap },
   { href: '/songs', label: 'Songs', icon: IconMusic },
   { href: '/reels', label: 'Reel Lab', icon: IconFilm },
+  { href: '/videos', label: 'Video Lab', icon: IconVideo },
   { href: '/studio', label: 'Design Studio', icon: IconSparkles },
   { href: '/palette', label: 'Colour Lab', icon: IconSwatch },
   { href: '/media', label: 'Media', icon: IconImage },

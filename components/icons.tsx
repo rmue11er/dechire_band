@@ -258,6 +258,13 @@ export const IconFilm = (p: IconProps) => (
   </Svg>
 );
 
+export const IconVideo = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="2.5" y="6" width="13" height="12" rx="2" />
+    <path d="m15.5 10 6-3.5v11l-6-3.5" />
+  </Svg>
+);
+
 export const IconExternal = (p: IconProps) => (
   <Svg {...p}>
     <path d="M14 4h6v6" />

@@ -5,7 +5,7 @@ paperwork — and a small public one-pager that is configured from inside it.
 
 | | |
 |---|---|
-| **Band HQ** (internal) | Post planner with a real Instagram mockup, Canva-style design studio, media library with asset versions, songs as the thread through media and documents, notes, milestone calendar, documents (rider, contracts, orga), release waves, a beat-synced reel machine, exportable brand sheet, palette/CI editor |
+| **Band HQ** (internal) | Post planner with a real Instagram mockup, Canva-style design studio, media library with asset versions, songs as the thread through media and documents, notes, milestone calendar, documents (rider, contracts, orga), release waves, a music-video shot planner with waveform timeline, a beat-synced reel machine, exportable brand sheet, palette/CI editor |
 | **Public site** (`/site`) | A cinematic one-pager that reads like a letter: hero, "a note from us", a media corner, the feed, contact links. Every block can be switched off in `/website` |
 
 ![Public site – hero](docs/screenshots/site-hero.jpg)
@@ -438,13 +438,30 @@ the media library and the document module, so the kit is never out of date.
 
 ### 13. Songs (`/songs`)
 - Every song has a title, status (Idea, Demo, Recording, Mix, Master, Released), key, BPM, length and notes.
-  The card shows how many media files and documents point at it and links straight to the filtered lists:
-  `/media?song=id` and `/docs?song=id`.
+  The card shows how many media files, documents and music videos point at it and links straight to the
+  filtered lists: `/media?song=id`, `/docs?song=id` and `/videos?song=id`.
 - Media files and documents carry `song_id`. Deleting a song only removes the link – assets and documents stay.
 - In the media library and document list there is a **song filter**; the document editor has a `Song` select.
   Global ⌘K search finds songs by title, key or notes.
 
-### 14. Reel Lab (`/reels`)
+### 14. Video Lab (`/videos`)
+- One project per music video: title, song, audio file for the timeline, treatment document, status
+  (Idea → Pre-production → Shoot → Edit → Done), shoot date, location, director and notes.
+- **Shot planner**: every shot has a start second, duration, song section (Intro/Verse/Chorus/…), description,
+  location, shot type, camera move, light, status (Idea → Scouted → Ready → Shot → Edited), notes and an
+  optional reference from the media library.
+- **Waveform timeline** decoded in the browser (`analyseAudioBuffer` + `audioPeaks`): playhead, beat ticks,
+  time axis, shot blocks coloured by status, click to seek, click a shot to select it. The audio element is
+  the actual song playback, so “what happens at 1:12” is visible and audible at the same time.
+- **Shot library** on the left: media linked to the project song (or all media), searchable, with *Shot* to
+  create a new shot from an asset at the current playhead. The storyboard below lists every shot with thumb,
+  timecode, description and metadata.
+- **Treatment import**: choose a document, each paragraph becomes one shot, distributed across the audio
+  length (or 60 s when no audio is linked). The document is stored on the project and linked back to `/docs`.
+- **Storyboard print**: `window.print()` produces a clean shot list with title, song, date, location and
+  thumbs – the version you take to the shoot.
+
+### 15. Reel Lab (`/reels`)
 The mini reel machine: clips from the library, one song, three steps, one MP4.
 - **Presets** – Still 8 s, Slow 15 s, Grain 20 s, Long 30 s. Each one sets length, grade, grain,
 vignette and motion in a click – warm or black and white, no strobe.
@@ -536,6 +553,8 @@ app/
   (hq)/notes/page.tsx      Notes
   (hq)/docs/page.tsx       Documents (rider, contracts, orga)
   (hq)/songs/page.tsx      Songs – media/document links and filters
+  (hq)/videos/page.tsx     Video Lab – music video projects
+  (hq)/videos/[id]/page.tsx Video planner – waveform timeline, shots, treatment import
   (hq)/reels/page.tsx      Reel Lab – clips, beat cuts, text layer, ffmpeg export
   (hq)/website/page.tsx    Public site: blocks, letter, crew, media corner, live preview
   (hq)/brand/page.tsx      Brand sheet (CI guide, export)
@@ -600,6 +619,9 @@ docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + ngin
 | GET/POST | `/api/milestones`, `/api/milestones/:id` | Calendar milestones (PATCH/DELETE on `:id`) |
 | GET/POST | `/api/documents`, `/api/documents/:id` | Documents (PATCH/DELETE on `:id`) |
 | GET/POST | `/api/songs`, `/api/songs/:id` | Songs, counts and links (PATCH/DELETE on `:id`) |
+| GET/POST | `/api/videos`, `/api/videos/:id` | Video projects (PATCH/DELETE on `:id`) |
+| POST | `/api/videos/:id/shots` | Create one shot or a treatment batch |
+| PATCH/DELETE | `/api/video-shots/:id` | Edit or delete a shot |
 | GET/POST | `/api/doc-folders`, `/api/doc-folders/:id` | Document folders (PATCH/DELETE on `:id`) |
 | POST/DELETE | `/api/documents/:id/share` | Create/rotate or revoke a public share token |
 | GET/POST | `/api/snippets`, `/api/snippets/:id` | Caption, hashtag and hook snippets |

@@ -752,17 +752,36 @@ failing silently.
 
 ### 7.11 Songs (`/songs`) – the thread through the archive
 
-The song is the unit the band actually thinks in: a demo, its artwork, the lyrics sheet, the mix notes and
-the reel all belong to one title. `/songs` is deliberately small – one card per song with title, status
-(*Idea, Demo, Recording, Mix, Master, Released*), key, BPM, length, a short note and the number of linked media
-files and documents. Each card links straight to `/media?song=id` and `/docs?song=id`, so “continue working on
-this song” is one click.
+The song is the unit the band actually thinks in: a demo, its artwork, the lyrics sheet, the mix notes, the
+reel and the music video all belong to one title. `/songs` is deliberately small – one card per song with
+title, status (*Idea, Demo, Recording, Mix, Master, Released*), key, BPM, length, a short note and the number
+of linked media files, documents and videos. Each card links straight to `/media?song=id`, `/docs?song=id`
+and `/videos?song=id`, so “continue working on this song” is one click.
 
-`media.song_id` and `documents.song_id` are nullable links (`ensureColumn` for older databases, indexed after
-the fact). The media library and document sidebar both have a song filter; the document editor has a `Song`
-select. Uploading while a song filter is active inherits that song. Deleting a song only clears the links –
-no asset and no document is deleted. The table is included in backup/restore and demo reset, and global ⌘K
-search finds songs by title, key or notes.
+`media.song_id`, `documents.song_id` and `video_projects.song_id` are nullable links (`ensureColumn` for
+older databases, indexed after the fact). The media library and document sidebar both have a song filter;
+the document editor has a `Song` select. Uploading while a song filter is active inherits that song. Deleting
+a song only clears the links – no asset, document or video project is deleted. The table is included in
+backup/restore and demo reset, and global ⌘K search finds songs by title, key or notes.
+
+### 7.12 Video Lab (`/videos`) – treatment, waveform, shots
+
+A music video is not a folder of clips; it is a timeline of decisions. The Video Lab keeps one project per
+video (`video_projects`) with song, audio media, treatment document, status, shoot date, location, director
+and notes. `/videos` is the overview; `/videos/[id]` is the planner.
+
+The planner decodes the linked song in the browser with the same `analyseAudioBuffer`/`audioPeaks` code as the
+reel machine. The waveform canvas draws peaks, beat ticks, a playhead and a time axis; below it the shot lane
+positions every `video_shots` row at `start_seconds`/`duration_seconds`. Clicking the waveform seeks, clicking
+a block selects the shot. The actual `<audio>` element is the playback source, so timecode and sound stay in
+sync without a server round-trip.
+
+Each shot stores description, section (`LYRIC_PARTS` values), start, duration, location, shot type, camera
+move, light, status (*Idea, Scouted, Ready, Shot, Edited*), notes and an optional media reference. The **Shot
+library** filters media by the project's song and creates a new shot from an asset at the current playhead.
+The **storyboard** below is the readable version: thumb, timecode, section, status and metadata. A treatment
+document can be imported paragraph by paragraph; the lines are distributed over the audio length and the
+document is linked back to `/docs`. `window.print()` has a dedicated storyboard print stylesheet.
 
 ## 8. Design system
 

@@ -29,6 +29,41 @@ CREATE TABLE IF NOT EXISTS songs (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS video_projects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  song_id INTEGER,
+  audio_media_id INTEGER,
+  treatment_doc_id INTEGER,
+  status TEXT NOT NULL DEFAULT 'idea',
+  shoot_date TEXT NOT NULL DEFAULT '',
+  location TEXT NOT NULL DEFAULT '',
+  director TEXT NOT NULL DEFAULT '',
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS video_shots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  video_id INTEGER NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  start_seconds REAL NOT NULL DEFAULT 0,
+  duration_seconds REAL NOT NULL DEFAULT 4,
+  section TEXT NOT NULL DEFAULT 'verse',
+  description TEXT NOT NULL DEFAULT '',
+  location TEXT NOT NULL DEFAULT '',
+  shot_type TEXT NOT NULL DEFAULT '',
+  movement TEXT NOT NULL DEFAULT '',
+  lighting TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'idea',
+  media_id INTEGER,
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (video_id) REFERENCES video_projects(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS media_folders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   parent_id INTEGER,
@@ -307,6 +342,8 @@ CREATE TABLE IF NOT EXISTS site (
 );
 
 CREATE INDEX IF NOT EXISTS idx_media_group ON media(group_id);
+CREATE INDEX IF NOT EXISTS idx_video_projects_song ON video_projects(song_id);
+CREATE INDEX IF NOT EXISTS idx_video_shots_video ON video_shots(video_id);
 CREATE INDEX IF NOT EXISTS idx_post_media_post ON post_media(post_id);
 CREATE INDEX IF NOT EXISTS idx_posts_position ON posts(position);
 CREATE INDEX IF NOT EXISTS idx_milestones_date ON milestones(date);

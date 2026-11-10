@@ -11,6 +11,8 @@ const TABLES = [
   'media_groups',
   'media_folders',
   'songs',
+  'video_projects',
+  'video_shots',
   'media',
   'posts',
   'post_media',
@@ -73,6 +75,8 @@ export function backupResponse() {
       posts: countRows('posts'),
       media: countRows('media'),
       songs: countRows('songs'),
+      videos: countRows('video_projects'),
+      shots: countRows('video_shots'),
       notes: countRows('notes'),
       designs: countRows('designs'),
       milestones: countRows('milestones'),
@@ -159,6 +163,8 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
       DELETE FROM release_tasks;
       DELETE FROM releases;
       DELETE FROM milestones;
+      DELETE FROM video_shots;
+      DELETE FROM video_projects;
       DELETE FROM document_audio;
       DELETE FROM documents;
       DELETE FROM songs;
@@ -174,7 +180,9 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
     insertAll('media_groups', data.media_groups);
     insertAll('media_folders', data.media_folders);
     insertAll('songs', data.songs);
+    insertAll('video_projects', data.video_projects);
     insertAll('media', data.media);
+    insertAll('video_shots', data.video_shots);
     insertAll('posts', data.posts);
     insertAll('post_media', data.post_media);
     insertAll('notes', data.notes);

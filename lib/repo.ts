@@ -24,6 +24,8 @@ import type {
   Song,
   Stats,
   TrashEntry,
+  VideoProject,
+  VideoShot,
 } from './types';
 
 const parseList = (value: any, fallback: string[] = []): string[] => {
@@ -82,6 +84,7 @@ function mapSong(row: any): Song {
     notes: row.notes ?? '',
     mediaCount: Number(row.media_count ?? 0),
     docCount: Number(row.doc_count ?? 0),
+    videoCount: Number(row.video_count ?? 0),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -90,7 +93,8 @@ function mapSong(row: any): Song {
 const SONG_SELECT = `
   SELECT s.*,
     (SELECT COUNT(*) FROM media m WHERE m.song_id = s.id) AS media_count,
-    (SELECT COUNT(*) FROM documents d WHERE d.song_id = s.id) AS doc_count
+    (SELECT COUNT(*) FROM documents d WHERE d.song_id = s.id) AS doc_count,
+    (SELECT COUNT(*) FROM video_projects v WHERE v.song_id = s.id) AS video_count
   FROM songs s`;
 
 export function listSongs(): Song[] {
@@ -149,7 +153,236 @@ export function updateSong(id: number, patch: Record<string, any>) {
 export function deleteSong(id: number) {
   execute('UPDATE media SET song_id = NULL WHERE song_id = ?', [id]);
   execute('UPDATE documents SET song_id = NULL WHERE song_id = ?', [id]);
+  execute('UPDATE video_projects SET song_id = NULL WHERE song_id = ?', [id]);
   execute('DELETE FROM songs WHERE id = ?', [id]);
+}
+
+/* ------------------------------------------------------------------ videos */
+
+function mapVideoProject(row: any): VideoProject {
+  return {
+    id: Number(row.id),
+    title: row.title ?? '',
+    songId: row.song_id == null ? null : Number(row.song_id),
+    songTitle: row.song_title ?? null,
+    audioMediaId: row.audio_media_id == null ? null : Number(row.audio_media_id),
+    audioTitle: row.audio_title ?? null,
+    audioUrl: row.audio_filename ? `/api/files/${row.audio_filename}` : null,
+    treatmentDocId: row.treatment_doc_id == null ? null : Number(row.treatment_doc_id),
+    treatmentTitle: row.treatment_title ?? null,
+    status: (row.status ?? 'idea') as VideoProject['status'],
+    shootDate: row.shoot_date ?? '',
+    location: row.location ?? '',
+    director: row.director ?? '',
+    notes: row.notes ?? '',
+    shotCount: Number(row.shot_count ?? 0),
+    plannedDuration: Number(row.planned_duration ?? 0),
+    coverUrl: row.cover_filename ? `/api/files/${row.cover_filename}` : null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+const VIDEO_SELECT = `
+  SELECT v.*, s.title AS song_title, am.title AS audio_title, am.filename AS audio_filename,
+    d.title AS treatment_title,
+    (SELECT COUNT(*) FROM video_shots vs WHERE vs.video_id = v.id) AS shot_count,
+    (SELECT COALESCE(MAX(vs.start_seconds + vs.duration_seconds), 0)
+       FROM video_shots vs WHERE vs.video_id = v.id) AS planned_duration,
+    (SELECT m.filename FROM video_shots vs JOIN media m ON m.id = vs.media_id
+       WHERE vs.video_id = v.id ORDER BY vs.start_seconds, vs.position LIMIT 1) AS cover_filename
+  FROM video_projects v
+  LEFT JOIN songs s ON s.id = v.song_id
+  LEFT JOIN media am ON am.id = v.audio_media_id
+  LEFT JOIN documents d ON d.id = v.treatment_doc_id`;
+
+export function listVideoProjects(): VideoProject[] {
+  return queryAll(`${VIDEO_SELECT} ORDER BY v.updated_at DESC, v.id DESC`).map(mapVideoProject);
+}
+
+export function getVideoProject(id: number): VideoProject | null {
+  const row = queryOne(`${VIDEO_SELECT} WHERE v.id = ?`, [id]);
+  return row ? mapVideoProject(row) : null;
+}
+
+export function createVideoProject(input: Record<string, any> = {}) {
+  const now = new Date().toISOString();
+  const result = execute(
+    `INSERT INTO video_projects (title, song_id, audio_media_id, treatment_doc_id, status,
+       shoot_date, location, director, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      String(input.title ?? 'Untitled video').slice(0, 160),
+      input.songId ? Number(input.songId) : null,
+      input.audioMediaId ? Number(input.audioMediaId) : null,
+      input.treatmentDocId ? Number(input.treatmentDocId) : null,
+      input.status ?? 'idea',
+      String(input.shootDate ?? '').slice(0, 10),
+      String(input.location ?? '').slice(0, 160),
+      String(input.director ?? '').slice(0, 120),
+      String(input.notes ?? '').slice(0, 4000),
+      now,
+      now,
+    ]
+  );
+  return getVideoProject(Number(result.lastInsertRowid));
+}
+
+export function updateVideoProject(id: number, patch: Record<string, any>) {
+  const sets: string[] = [];
+  const params: any[] = [];
+  const map: Record<string, string> = {
+    title: 'title',
+    songId: 'song_id',
+    audioMediaId: 'audio_media_id',
+    treatmentDocId: 'treatment_doc_id',
+    status: 'status',
+    shootDate: 'shoot_date',
+    location: 'location',
+    director: 'director',
+    notes: 'notes',
+  };
+  for (const [key, column] of Object.entries(map)) {
+    if (patch[key] !== undefined) {
+      sets.push(`${column} = ?`);
+      params.push(patch[key] === '' || patch[key] == null ? null : patch[key]);
+    }
+  }
+  if (!sets.length) return getVideoProject(id);
+  sets.push('updated_at = ?');
+  params.push(new Date().toISOString(), id);
+  execute(`UPDATE video_projects SET ${sets.join(', ')} WHERE id = ?`, params);
+  return getVideoProject(id);
+}
+
+export function deleteVideoProject(id: number) {
+  execute('DELETE FROM video_shots WHERE video_id = ?', [id]);
+  execute('DELETE FROM video_projects WHERE id = ?', [id]);
+}
+
+function mapVideoShot(row: any): VideoShot {
+  const media = row.media_id == null ? null : getMedia(Number(row.media_id));
+  return {
+    id: Number(row.id),
+    videoId: Number(row.video_id),
+    position: Number(row.position ?? 0),
+    start: Number(row.start_seconds ?? 0),
+    duration: Number(row.duration_seconds ?? 4),
+    section: row.section ?? 'verse',
+    description: row.description ?? '',
+    location: row.location ?? '',
+    shotType: row.shot_type ?? '',
+    movement: row.movement ?? '',
+    lighting: row.lighting ?? '',
+    status: (row.status ?? 'idea') as VideoShot['status'],
+    mediaId: row.media_id == null ? null : Number(row.media_id),
+    media,
+    notes: row.notes ?? '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function listVideoShots(videoId: number): VideoShot[] {
+  return queryAll<any>(
+    'SELECT * FROM video_shots WHERE video_id = ? ORDER BY start_seconds ASC, position ASC, id ASC',
+    [videoId]
+  ).map(mapVideoShot);
+}
+
+export function getVideoShot(id: number): VideoShot | null {
+  const row = queryOne<any>('SELECT * FROM video_shots WHERE id = ?', [id]);
+  return row ? mapVideoShot(row) : null;
+}
+
+export function createVideoShot(videoId: number, input: Record<string, any> = {}) {
+  const next = queryOne<any>(
+    'SELECT COALESCE(MAX(position), -1) + 1 AS position FROM video_shots WHERE video_id = ?',
+    [videoId]
+  );
+  const now = new Date().toISOString();
+  const result = execute(
+    `INSERT INTO video_shots (video_id, position, start_seconds, duration_seconds, section,
+       description, location, shot_type, movement, lighting, status, media_id, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      videoId,
+      Number(next?.position ?? 0),
+      Math.max(0, Number(input.start ?? 0)),
+      Math.max(0.2, Number(input.duration ?? 4)),
+      String(input.section ?? 'verse').slice(0, 40),
+      String(input.description ?? 'New shot').slice(0, 500),
+      String(input.location ?? '').slice(0, 160),
+      String(input.shotType ?? '').slice(0, 80),
+      String(input.movement ?? '').slice(0, 80),
+      String(input.lighting ?? '').slice(0, 120),
+      String(input.status ?? 'idea'),
+      input.mediaId ? Number(input.mediaId) : null,
+      String(input.notes ?? '').slice(0, 2000),
+      now,
+      now,
+    ]
+  );
+  return getVideoShot(Number(result.lastInsertRowid));
+}
+
+export function bulkCreateVideoShots(videoId: number, inputs: Record<string, any>[]) {
+  const created: VideoShot[] = [];
+  for (const input of inputs.slice(0, 80)) {
+    const shot = createVideoShot(videoId, input);
+    if (shot) created.push(shot);
+  }
+  execute('UPDATE video_projects SET updated_at = ? WHERE id = ?', [new Date().toISOString(), videoId]);
+  return created;
+}
+
+export function updateVideoShot(id: number, patch: Record<string, any>) {
+  const sets: string[] = [];
+  const params: any[] = [];
+  const map: Record<string, string> = {
+    start: 'start_seconds',
+    duration: 'duration_seconds',
+    section: 'section',
+    description: 'description',
+    location: 'location',
+    shotType: 'shot_type',
+    movement: 'movement',
+    lighting: 'lighting',
+    status: 'status',
+    mediaId: 'media_id',
+    notes: 'notes',
+  };
+  for (const [key, column] of Object.entries(map)) {
+    if (patch[key] === undefined) continue;
+    sets.push(`${column} = ?`);
+    if (key === 'mediaId') params.push(patch[key] ? Number(patch[key]) : null);
+    else if (key === 'start') params.push(Math.max(0, Number(patch[key])));
+    else if (key === 'duration') params.push(Math.max(0.2, Number(patch[key])));
+    else params.push(patch[key] ?? '');
+  }
+  if (!sets.length) return getVideoShot(id);
+  sets.push('updated_at = ?');
+  params.push(new Date().toISOString(), id);
+  execute(`UPDATE video_shots SET ${sets.join(', ')} WHERE id = ?`, params);
+  const shot = getVideoShot(id);
+  if (shot) {
+    execute('UPDATE video_projects SET updated_at = ? WHERE id = ?', [
+      new Date().toISOString(),
+      shot.videoId,
+    ]);
+  }
+  return shot;
+}
+
+export function deleteVideoShot(id: number) {
+  const shot = getVideoShot(id);
+  execute('DELETE FROM video_shots WHERE id = ?', [id]);
+  if (shot) {
+    execute('UPDATE video_projects SET updated_at = ? WHERE id = ?', [
+      new Date().toISOString(),
+      shot.videoId,
+    ]);
+  }
 }
 
 /* ------------------------------------------------------------------ media */
@@ -257,6 +490,8 @@ export function getMediaFileRow(id: number) {
 
 export function deleteMedia(id: number) {
   const row = getMediaFileRow(id);
+  execute('UPDATE video_shots SET media_id = NULL WHERE media_id = ?', [id]);
+  execute('UPDATE video_projects SET audio_media_id = NULL WHERE audio_media_id = ?', [id]);
   execute('DELETE FROM media WHERE id = ?', [id]);
   return row;
 }
@@ -1224,6 +1459,7 @@ export function deleteDocument(id: number) {
       audio: document.audio.map((entry) => ({ mediaId: entry.mediaId, label: entry.label })),
     });
   }
+  execute('UPDATE video_projects SET treatment_doc_id = NULL WHERE treatment_doc_id = ?', [id]);
   execute('DELETE FROM documents WHERE id = ?', [id]);
 }
 
