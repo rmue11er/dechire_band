@@ -19,6 +19,7 @@ export default function MediaPicker({
   multiple = false,
   imagesOnly = false,
   audioOnly = false,
+  visualOnly = false,
   kind,
 }: {
   open: boolean;
@@ -30,6 +31,8 @@ export default function MediaPicker({
   multiple?: boolean;
   imagesOnly?: boolean;
   audioOnly?: boolean;
+  /** Videos and photos together – what the reel machine can cut. */
+  visualOnly?: boolean;
   /** Restrict the picker to one media type (release cover, master, video …). */
   kind?: 'image' | 'video' | 'audio';
 }) {
@@ -51,6 +54,7 @@ export default function MediaPicker({
   const only = kind ?? (audioOnly ? 'audio' : imagesOnly ? 'image' : null);
 
   const filtered = media.filter((item) => {
+    if (visualOnly && !(item.mime.startsWith('image/') || item.mime.startsWith('video/'))) return false;
     if (only) {
       if (!item.mime.startsWith(`${only}/`)) return false;
     } else {
@@ -102,14 +106,16 @@ export default function MediaPicker({
       open={open}
       onClose={onClose}
       title={
-        only === 'audio' ? 'Select audio' : only === 'video' ? 'Select video' : only === 'image' ? 'Select image' : 'Select media'
+        only === 'audio' ? 'Select audio' : only === 'video' ? 'Select video' : only === 'image' ? 'Select image' : visualOnly ? 'Select clips' : 'Select media'
       }
       subtitle={
         only === 'audio'
           ? 'The finished master – plays at the top of the release.'
           : only === 'video'
             ? 'Music video, Canvas loop or cutdown footage.'
-            : multiple
+            : visualOnly
+              ? 'Videos and photos for the reel – order of selection = order of cuts.'
+              : multiple
               ? 'Selection order = carousel order'
               : imagesOnly
                 ? 'One image for this document'
@@ -177,7 +183,9 @@ export default function MediaPicker({
                 ? 'video/*'
                 : only === 'image'
                   ? 'image/*'
-                  : 'image/*,video/*,audio/*'
+                  : visualOnly
+                    ? 'image/*,video/*'
+                    : 'image/*,video/*,audio/*'
           }
           onChange={(event) => handleUpload(event.target.files)}
         />

@@ -34,6 +34,10 @@ const MIME_EXT: Record<string, string> = {
 
 /** Browsers sometimes hand over `application/octet-stream` – the extension knows better. */
 const EXT_MIME: Record<string, string> = {
+  '.mp4': 'video/mp4',
+  '.m4v': 'video/mp4',
+  '.mov': 'video/quicktime',
+  '.webm': 'video/webm',
   '.mp3': 'audio/mpeg',
   '.m4a': 'audio/mp4',
   '.aac': 'audio/aac',

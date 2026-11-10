@@ -46,6 +46,11 @@ else
   bad ".next is missing or incomplete → npm run build as the subscription user"
 fi
 [ -d "$WEB/node_modules" ] && ok "node_modules present" || bad "node_modules missing → npm ci"
+if command -v ffmpeg >/dev/null 2>&1; then
+  ok "ffmpeg $(ffmpeg -version 2>/dev/null | head -n1 | awk '{print $3}') – Reel Lab renders"
+else
+  warn "ffmpeg missing → Reel Lab cannot render (apt install ffmpeg, or set FFMPEG_PATH)"
+fi
 
 line "3. Ownership (what the permissions trace looks like)"
 namei -l "$WEB" 2>/dev/null || ls -ld "$WEB"

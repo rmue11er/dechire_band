@@ -1,0 +1,801 @@
+/* ============================================================
+   Reel Lab – vertical video machine
+   Preview, safe zones, transport, controls and the export frame.
+   ============================================================ */
+
+.reel-lab {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+/* ------------------------------------------------------------------ stage */
+
+.reel-stage-panel {
+  position: sticky;
+  top: calc(var(--ctx-h, 45px) + 14px);
+  padding: 12px;
+}
+
+.reel-stage-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #08070b;
+  border: 1px solid var(--line);
+}
+
+.reel-frame {
+  position: relative;
+  width: 1080px;
+  height: 1920px;
+  overflow: hidden;
+  background: #08070b;
+  color: #f7f3ec;
+}
+
+.reel-preview {
+  will-change: transform;
+}
+
+.reel-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.12s linear;
+  transform-origin: center;
+}
+
+.reel-media.on {
+  opacity: 1;
+}
+
+@keyframes reel-push-in {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes reel-push-out {
+  from {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.reel-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>");
+  background-size: 220px 220px;
+}
+
+.reel-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 0.85) 100%);
+}
+
+.reel-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.1s linear;
+}
+
+.reel-flash.on {
+  opacity: 0.18;
+}
+
+/* ------------------------------------------------------------ text overlay */
+
+.reel-overlay {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  pointer-events: none;
+}
+
+.reel-overlay.place-top {
+  justify-content: flex-start;
+}
+
+.reel-overlay.place-middle {
+  justify-content: center;
+}
+
+.reel-overlay.place-low {
+  justify-content: flex-end;
+  padding-bottom: 96px;
+}
+
+.reel-overlay.align-center {
+  align-items: center;
+  text-align: center;
+}
+
+.reel-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 100%;
+}
+
+.reel-copy::before {
+  content: '';
+  display: block;
+  width: 86px;
+  height: 10px;
+  background: var(--accent);
+  margin-bottom: 10px;
+}
+
+.reel-overlay.align-center .reel-copy::before {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.reel-kicker {
+  font-family: 'Space Mono', var(--font-mono);
+  font-size: 30px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.reel-kicker::before {
+  content: '/// ';
+  opacity: 0.7;
+}
+
+.reel-hook {
+  display: flex;
+  flex-direction: column;
+  line-height: 0.9;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  text-shadow: 0 10px 42px rgba(0, 0, 0, 0.55);
+}
+
+.reel-hook span {
+  display: block;
+}
+
+.reel-overlay.style-block .reel-hook {
+  font-family: var(--font-display, 'Anton', sans-serif);
+}
+
+.reel-overlay.style-serif .reel-hook {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  text-transform: none;
+  line-height: 0.98;
+}
+
+.reel-overlay.style-mono .reel-hook {
+  font-family: 'Space Mono', var(--font-mono);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+
+.reel-sub {
+  font-family: var(--font-sans);
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(247, 243, 236, 0.78);
+}
+
+.reel-handle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  font-family: 'Space Mono', var(--font-mono);
+  font-size: 27px;
+  letter-spacing: 0.2em;
+  text-transform: lowercase;
+  color: rgba(247, 243, 236, 0.55);
+}
+
+.reel-overlay.align-center .reel-handle {
+  text-align: center;
+}
+
+/* --------------------------------------------------------------- safe zones */
+
+.reel-guides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.reel-guide {
+  position: absolute;
+  border: 0 dashed var(--accent);
+  opacity: 0.55;
+}
+
+.reel-guide.top {
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top-width: 2px;
+}
+
+.reel-guide.bottom {
+  left: 0;
+  right: 0;
+  height: 0;
+  border-bottom-width: 2px;
+}
+
+.reel-guide.left {
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left-width: 2px;
+}
+
+.reel-guide.right {
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-right-width: 2px;
+}
+
+.reel-guide-label {
+  position: absolute;
+  right: 18px;
+  font-family: 'Space Mono', var(--font-mono);
+  font-size: 20px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.7;
+}
+
+/* --------------------------------------------------------------- transport */
+
+.reel-stage-empty {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 9 / 16;
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+}
+
+.reel-transport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 2px 2px;
+}
+
+.reel-play {
+  border: 1px solid var(--line-strong);
+  background: var(--accent);
+  color: #100e17;
+}
+
+.reel-clock {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.reel-clock i {
+  opacity: 0.4;
+  font-style: normal;
+  margin: 0 3px;
+}
+
+.reel-transport-meta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+/* ---------------------------------------------------------------- controls */
+
+.reel-controls {
+  padding: 14px 16px 18px;
+}
+
+.reel-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.reel-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.reel-preset strong {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.reel-preset span {
+  font-size: 10px;
+  color: var(--muted-2);
+}
+
+.reel-preset:hover,
+.reel-preset.on {
+  border-color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.07);
+}
+
+.reel-preset.on strong {
+  color: var(--accent);
+}
+
+.reel-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+
+.reel-tabs button {
+  padding: 9px 14px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.reel-tabs button.on {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.reel-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reel-panel .label,
+.reel-clip-head {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------- clips */
+
+.reel-cliplist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reel-clip {
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.reel-clip-thumb {
+  width: 54px;
+  height: 54px;
+  flex: none;
+  border-radius: 2px;
+  overflow: hidden;
+  object-fit: cover;
+}
+
+.reel-clip-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reel-clip-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.reel-clip-head em {
+  font-style: normal;
+  color: var(--accent);
+  font-size: 9px;
+}
+
+.reel-clip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.reel-motion {
+  display: flex;
+  gap: 2px;
+}
+
+.reel-motion button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+
+.reel-motion button.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.reel-clip-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.reel-clip-actions button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 22px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.reel-clip-actions button:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.reel-clip-actions button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.reel-trim {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reel-trim span,
+.reel-trim em,
+.reel-range span,
+.reel-range em {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  font-style: normal;
+  flex: none;
+  width: 46px;
+}
+
+.reel-trim em,
+.reel-range em {
+  width: auto;
+  min-width: 44px;
+  text-align: right;
+  color: var(--muted);
+}
+
+.reel-trim input,
+.reel-range input {
+  flex: 1;
+  accent-color: var(--accent);
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------- sound */
+
+.reel-wave {
+  position: relative;
+  height: 92px;
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.reel-wave canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.reel-sound-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reel-sound-meta .mono {
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.reel-analysing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.reel-analysing .spinner {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+.reel-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.reel-chips button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+
+.reel-chips button.on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.08);
+}
+
+.reel-hint {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.reel-hint svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent);
+}
+
+/* -------------------------------------------------------------------- look */
+
+.reel-text-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.reel-hook-input {
+  resize: vertical;
+  min-height: 58px;
+  font-family: var(--font-display, 'Anton', sans-serif);
+  font-size: 20px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.reel-look-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.reel-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  padding-bottom: 4px;
+}
+
+.reel-toggle input {
+  accent-color: var(--accent);
+}
+
+/* ------------------------------------------------------------------ export */
+
+.reel-warn {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border: 1px solid rgb(232 192 125 / 0.35);
+  background: rgb(232 192 125 / 0.06);
+  color: var(--warn);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.reel-warn code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+}
+
+.reel-export-holder {
+  position: fixed;
+  left: -12000px;
+  top: 0;
+  width: 1080px;
+  height: 1920px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.reel-overlay-frame {
+  background: transparent;
+}
+
+.reel-export {
+  min-height: 200px;
+}
+
+.reel-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reel-progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.reel-progress-bar {
+  height: 6px;
+  background: var(--panel-3);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.reel-progress-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  transition: width 0.3s linear;
+}
+
+.reel-result {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.reel-result-video {
+  width: 168px;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  background: #000;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.reel-result h3 {
+  font-size: 17px;
+  margin: 4px 0 6px;
+}
+
+.reel-error strong {
+  color: var(--danger);
+}
+
+.reel-error {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@media (max-width: 1100px) {
+  .reel-lab {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reel-stage-panel {
+    position: static;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  .reel-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

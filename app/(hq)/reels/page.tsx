@@ -1,0 +1,1142 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import MediaPicker from '@/components/MediaPicker';
+import { MediaThumb } from '@/components/MediaThumb';
+import { ReelOverlay } from '@/components/reels/ReelOverlay';
+import { ReelStage, type StageClip } from '@/components/reels/ReelStage';
+import { ReelWaveform } from '@/components/reels/ReelWaveform';
+import { EmptyState, Field, Modal, PageHead, Spinner } from '@/components/ui';
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconDownload,
+  IconEye,
+  IconEyeOff,
+  IconFilm,
+  IconMusic,
+  IconPause,
+  IconPlay,
+  IconPlus,
+  IconRotate,
+  IconSparkles,
+  IconTrash,
+  IconZap,
+} from '@/components/icons';
+import { analyseAudioBuffer, audioPeaks, type BeatAnalysis } from '@/lib/beats';
+import {
+  GRADE_LABEL,
+  planClipLengths,
+  REEL_DURATIONS,
+  REEL_PRESETS,
+  type ReelGrade,
+  type ReelLook,
+  type ReelMotion,
+  type ReelPlan,
+  type ReelPreset,
+  type ReelText,
+  type ReelTextStyle,
+} from '@/lib/reels';
+import { toast } from '@/lib/toast';
+import type { MediaItem } from '@/lib/types';
+
+interface ClipState {
+  key: string;
+  media: MediaItem;
+  /** trim offset inside a video */
+  start: number;
+  motion: ReelMotion;
+  /** source length – Infinity for photos */
+  natural: number;
+}
+
+interface Profile {
+  bandName?: string;
+  handle?: string;
+  website?: string;
+}
+
+interface ReelJobView {
+  id: string;
+  status: 'queued' | 'rendering' | 'done' | 'error';
+  progress: number;
+  duration: number;
+  mediaId?: number;
+  coverId?: number | null;
+  filename?: string;
+  error?: string;
+}
+
+type Step = 'clips' | 'sound' | 'look';
+
+const clock = (value: number) => {
+  const seconds = Math.max(0, value);
+  const whole = Math.floor(seconds);
+  const tenths = Math.floor((seconds - whole) * 10);
+  return `${String(Math.floor(whole / 60)).padStart(2, '0')}:${String(whole % 60).padStart(2, '0')}.${tenths}`;
+};
+
+const sourceDuration = (url: string) =>
+  new Promise<number>((resolve) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.onloadedmetadata = () => resolve(video.duration || 0);
+    video.onerror = () => resolve(0);
+    video.src = url;
+  });
+
+const DEFAULT_LOOK: ReelLook = {
+  grade: 'film',
+  grain: 10,
+  vignette: 0.45,
+  fadeOut: true,
+  flash: true,
+  beatCut: true,
+  accent: '#b9a5e8',
+};
+
+const DEFAULT_TEXT: ReelText = {
+  kicker: '',
+  hook: '',
+  sub: '',
+  style: 'block',
+  align: 'left',
+  place: 'low',
+  showHandle: true,
+};
+
+export default function ReelsPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [ffmpeg, setFfmpeg] = useState<{ ok: boolean; version?: string; error?: string } | null>(null);
+
+  const [clips, setClips] = useState<ClipState[]>([]);
+  const [audioId, setAudioId] = useState<number | null>(null);
+  const [audioStart, setAudioStart] = useState(0);
+  const [target, setTarget] = useState(15);
+  const [analysis, setAnalysis] = useState<BeatAnalysis | null>(null);
+  const [peaks, setPeaks] = useState<number[]>([]);
+  const [trackDuration, setTrackDuration] = useState(0);
+  const [analysing, setAnalysing] = useState(false);
+
+  const [look, setLook] = useState<ReelLook>(DEFAULT_LOOK);
+  const [text, setText] = useState<ReelText>(DEFAULT_TEXT);
+  const [step, setStep] = useState<Step>('clips');
+  const [guides, setGuides] = useState(true);
+
+  const [clipPicker, setClipPicker] = useState(false);
+  const [audioPicker, setAudioPicker] = useState(false);
+
+  const [playing, setPlaying] = useState(false);
+  const [time, setTime] = useState(0);
+
+  const [exportOpen, setExportOpen] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [job, setJob] = useState<ReelJobView | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [creatingPost, setCreatingPost] = useState(false);
+
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
+  const pollRef = useRef(false);
+
+  useEffect(() => {
+    let mounted = true;
+    Promise.all([
+      fetch('/api/media').then((response) => response.json()),
+      fetch('/api/profile').then((response) => response.json()),
+      fetch('/api/reels').then((response) => response.json()),
+    ])
+      .then(([mediaData, profileData, reelData]) => {
+        if (!mounted) return;
+        setMedia(mediaData.media ?? []);
+        setProfile(profileData.profile ?? null);
+        setFfmpeg(reelData.ffmpeg ?? null);
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+        if (/^#[0-9a-f]{6}$/i.test(accent)) setLook((current) => ({ ...current, accent }));
+      })
+      .catch(() => toast('Reel lab could not be loaded', 'error'))
+      .finally(() => mounted && setLoading(false));
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const audioMedia = useMemo(() => media.find((item) => item.id === audioId) ?? null, [media, audioId]);
+
+  const trackBeats = useMemo(() => {
+    if (!analysis) return [];
+    return analysis.beats
+      .filter((beat) => beat >= audioStart && beat <= audioStart + target)
+      .map((beat) => Number((beat - audioStart).toFixed(3)));
+  }, [analysis, audioStart, target]);
+
+  /** Assigned clip lengths (beat grid or equal), clamped to what the source can give. */
+  const timeline = useMemo(() => {
+    const wanted = planClipLengths(clips.length, target, trackBeats, look.beatCut);
+    return clips.map((clip, index) => {
+      const length = wanted[index] ?? 0;
+      if (!clip.media.mime.startsWith('video/')) return { start: 0, duration: length };
+      const maxStart = Math.max(0, clip.natural - Math.min(length, clip.natural));
+      const start = Math.max(0, Math.min(clip.start, maxStart));
+      const duration = Math.max(0.5, Math.min(length, clip.natural - start));
+      return { start, duration };
+    });
+  }, [clips, target, trackBeats, look.beatCut]);
+
+  const totalDuration = useMemo(
+    () => Number(timeline.reduce((sum, entry) => sum + entry.duration, 0).toFixed(3)),
+    [timeline]
+  );
+
+  const stageClips: StageClip[] = useMemo(() => {
+    let cursor = 0;
+    return clips.map((clip, index) => {
+      const entry = timeline[index] ?? { start: 0, duration: 0 };
+      const stage: StageClip = {
+        key: clip.key,
+        media: clip.media,
+        start: entry.start,
+        duration: entry.duration,
+        motion: clip.motion,
+        timelineStart: cursor,
+      };
+      cursor += entry.duration;
+      return stage;
+    });
+  }, [clips, timeline]);
+
+  const beats = useMemo(
+    () => trackBeats.filter((beat) => beat < totalDuration - 0.2),
+    [trackBeats, totalDuration]
+  );
+
+  useEffect(() => {
+    if (time > totalDuration) setTime(0);
+  }, [totalDuration, time]);
+
+  /* ------------------------------------------------------------- playback */
+
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setInterval(() => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      const next = audio.currentTime - audioStart;
+      if (next >= totalDuration - 0.02) {
+        audio.pause();
+        setPlaying(false);
+        setTime(Math.max(0, totalDuration - 0.02));
+        return;
+      }
+      setTime(Math.max(0, next));
+    }, 60);
+    return () => window.clearInterval(timer);
+  }, [playing, audioStart, totalDuration]);
+
+  const togglePlay = async () => {
+    if (!audioMedia) {
+      toast('Pick a song first', 'error');
+      return;
+    }
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+      return;
+    }
+    if (time >= totalDuration - 0.05) setTime(0);
+    const startAt = audioStart + (time >= totalDuration - 0.05 ? 0 : time);
+    try {
+      audio.currentTime = startAt;
+      await audio.play();
+      setPlaying(true);
+    } catch {
+      toast('The browser refused to play the track', 'error');
+    }
+  };
+
+  const seekStart = (value: number) => {
+    setAudioStart(value);
+    if (playing && audioRef.current) audioRef.current.currentTime = value + time;
+  };
+
+  const pickAudio = async (id: number) => {
+    const item = media.find((entry) => entry.id === id);
+    if (!item) return;
+    setAudioId(id);
+    setAnalysis(null);
+    setPeaks([]);
+    setTrackDuration(0);
+    setAudioStart(0);
+    setPlaying(false);
+    setTime(0);
+    setAnalysing(true);
+    try {
+      const response = await fetch(item.url);
+      const bytes = await response.arrayBuffer();
+      const context = new AudioContext();
+      const buffer = await context.decodeAudioData(bytes);
+      const result = analyseAudioBuffer(buffer);
+      setAnalysis(result);
+      setPeaks(audioPeaks(buffer, 1200));
+      setTrackDuration(buffer.duration);
+      const wanted = Math.min(target, buffer.duration);
+      const dropStart =
+        result.drop > 2.5 && result.drop + wanted < buffer.duration
+          ? result.drop - 0.35
+          : result.drop > 2.5
+            ? Math.max(0, buffer.duration - wanted)
+            : 0;
+      setAudioStart(Math.max(0, Math.min(buffer.duration - wanted, dropStart)));
+      await context.close();
+    } catch {
+      toast('Could not analyse this file – MP3, WAV or M4A work best', 'error');
+    } finally {
+      setAnalysing(false);
+    }
+  };
+
+  const addClips = async (ids: number[]) => {
+    const room = Math.max(0, 12 - clips.length);
+    const chosen = ids
+      .map((id) => media.find((item) => item.id === id))
+      .filter((item): item is MediaItem => Boolean(item))
+      .slice(0, room);
+    if (!chosen.length) return;
+    const next: ClipState[] = [];
+    for (const item of chosen) {
+      const natural = item.mime.startsWith('video/') ? await sourceDuration(item.url) : Infinity;
+      next.push({
+        key: `${item.id}-${Math.random().toString(36).slice(2, 7)}`,
+        media: item,
+        start: 0,
+        motion: 'in',
+        natural: natural > 0 ? natural : 3,
+      });
+    }
+    setClips((current) => [...current, ...next]);
+    setStep('clips');
+  };
+
+  const moveClip = (index: number, direction: -1 | 1) => {
+    setClips((current) => {
+      const next = [...current];
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= next.length) return current;
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next;
+    });
+  };
+
+  const applyPreset = (preset: ReelPreset) => {
+    setTarget(preset.duration);
+    setLook((current) => ({
+      ...current,
+      grade: preset.grade,
+      grain: preset.grain,
+      vignette: preset.vignette,
+      flash: preset.flash,
+      fadeOut: preset.fadeOut,
+    }));
+    setClips((current) => current.map((clip) => ({ ...clip, motion: preset.motion })));
+    if (trackDuration) setAudioStart((current) => Math.max(0, Math.min(current, trackDuration - preset.duration)));
+  };
+
+  const setDuration = (value: number) => {
+    setTarget(value);
+    if (trackDuration) setAudioStart((current) => Math.max(0, Math.min(current, trackDuration - value)));
+  };
+
+  /* --------------------------------------------------------------- export */
+
+  const buildPlan = (): ReelPlan => ({
+    title: text.hook.split('\n')[0]?.trim() || audioMedia?.title || 'Reel',
+    clips: clips.map((clip, index) => ({
+      mediaId: clip.media.id,
+      start: timeline[index]?.start ?? 0,
+      duration: timeline[index]?.duration ?? 1,
+      motion: clip.motion,
+    })),
+    audio: { mediaId: audioId ?? 0, start: audioStart, duration: totalDuration },
+    look,
+    text,
+    beats,
+    coverAt: Math.min(totalDuration - 0.1, 0.6),
+  });
+
+  const renderOverlay = async () => {
+    if (!text.hook.trim() && !text.kicker.trim() && !text.sub.trim()) return null;
+    if (!exportRef.current) return null;
+    const { toPng } = await import('html-to-image');
+    return toPng(exportRef.current, {
+      width: 1080,
+      height: 1920,
+      pixelRatio: 1,
+      cacheBust: true,
+      backgroundColor: 'transparent',
+    });
+  };
+
+  const startExport = async () => {
+    if (!ffmpeg?.ok) {
+      toast('ffmpeg is not installed on this server', 'error');
+      return;
+    }
+    if (!clips.length) {
+      toast('Add at least one clip', 'error');
+      return;
+    }
+    if (!audioMedia) {
+      toast('Pick a song first', 'error');
+      return;
+    }
+    setStarting(true);
+    setExportError(null);
+    setJob(null);
+    try {
+      const overlay = await renderOverlay();
+      const response = await fetch('/api/reels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: buildPlan(), overlay }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'The render could not be started');
+      setJob(data.job);
+      pollRef.current = true;
+      void pollJob(data.job.id);
+    } catch (error: any) {
+      setExportError(error.message ?? 'The render failed');
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  const pollJob = async (id: string) => {
+    while (pollRef.current) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (!pollRef.current) return;
+      try {
+        const response = await fetch(`/api/reels/${id}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? 'Render lost');
+        setJob(data.job);
+        if (data.job.status === 'done' || data.job.status === 'error') return;
+      } catch (error: any) {
+        setExportError(error.message ?? 'Render lost');
+        return;
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!exportOpen) pollRef.current = false;
+  }, [exportOpen]);
+
+  useEffect(() => {
+    return () => {
+      pollRef.current = false;
+    };
+  }, []);
+
+  const closeExport = () => {
+    pollRef.current = false;
+    setExportOpen(false);
+  };
+
+  const createReelPost = async () => {
+    if (!job?.mediaId) return;
+    setCreatingPost(true);
+    try {
+      const caption = [text.hook.trim(), text.sub.trim()].filter(Boolean).join('\n\n');
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'reel',
+          status: 'draft',
+          caption,
+          altText: `${profile?.bandName ?? 'DECHIRE'} – ${text.hook.trim() || 'Reel'}`,
+          songTitle: audioMedia?.title ?? '',
+          songArtist: profile?.bandName ?? '',
+          mediaIds: [job.mediaId],
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Could not create the post');
+      closeExport();
+      router.push(`/planner?post=${data.post.id}`);
+    } catch (error: any) {
+      toast(error.message ?? 'Could not create the post', 'error');
+    } finally {
+      setCreatingPost(false);
+    }
+  };
+
+  if (loading) return <Spinner label="Warming up the reel machine" />;
+
+  const visualClips = clips.length;
+  const chosenTrack = audioMedia?.title ?? '';
+  const canExport = Boolean(ffmpeg?.ok && visualClips && audioMedia);
+  const resultUrl = job?.filename ? `/api/files/${job.filename}` : '';
+
+  return (
+    <>
+      <PageHead
+        eyebrow="Reel machine"
+        title={
+          <>
+            Reel<span className="slash">/</span>Lab
+          </>
+        }
+        sub="Clips wählen, Song nehmen, auf den Beat schneiden: 9:16, 1080×1920, sichere Zonen, Ton normalisiert. Drei Schritte, ein Export."
+        actions={
+          <div className="row" style={{ gap: 8 }}>
+            <button type="button" className="btn btn-ghost" onClick={() => setGuides((value) => !value)}>
+              {guides ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+              Safe zones
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!canExport}
+              onClick={() => {
+                setExportOpen(true);
+                void startExport();
+              }}
+            >
+              <IconZap size={15} /> Export
+            </button>
+          </div>
+        }
+      />
+
+      {ffmpeg && !ffmpeg.ok ? (
+        <div className="reel-warn">
+          <IconFilm size={16} />
+          <div>
+            <strong>ffmpeg fehlt auf diesem Server.</strong> Damit gerendert werden kann, muss es installiert
+            sein (<code>brew install ffmpeg</code> bzw. <code>apt install ffmpeg</code>) oder über
+            <code> FFMPEG_PATH</code> gesetzt werden.
+          </div>
+        </div>
+      ) : null}
+
+      <div className="reel-lab">
+        <section className="panel reel-stage-panel">
+          {clips.length ? (
+            <ReelStage
+              clips={stageClips}
+              time={time}
+              playing={playing}
+              look={look}
+              text={text}
+              handle={profile?.handle}
+              beats={beats}
+              guides={guides}
+            />
+          ) : (
+            <div className="reel-stage-empty">
+              <EmptyState
+                icon={<IconFilm size={24} />}
+                title="Noch keine Clips"
+                hint="Videos oder Fotos aus der Bibliothek – oder direkt hochladen."
+                action={
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => setClipPicker(true)}>
+                    <IconPlus size={14} /> Clips wählen
+                  </button>
+                }
+              />
+            </div>
+          )}
+
+          <div className="reel-transport">
+            <button
+              type="button"
+              className="btn btn-icon reel-play"
+              onClick={togglePlay}
+              disabled={!audioMedia || !clips.length}
+              aria-label={playing ? 'Pause' : 'Play'}
+            >
+              {playing ? <IconPause size={15} /> : <IconPlay size={15} />}
+            </button>
+            <button
+              type="button"
+              className="btn btn-icon"
+              onClick={() => {
+                setPlaying(false);
+                audioRef.current?.pause();
+                setTime(0);
+                if (audioRef.current) audioRef.current.currentTime = audioStart;
+              }}
+              aria-label="Restart"
+            >
+              <IconRotate size={14} />
+            </button>
+            <span className="mono reel-clock">
+              {clock(time)} <i>/</i> {clock(totalDuration)}
+            </span>
+            <span className="reel-transport-meta">
+              {visualClips} {visualClips === 1 ? 'Clip' : 'Clips'}
+              {analysis ? ` · ${analysis.bpm} BPM` : ''}
+            </span>
+          </div>
+        </section>
+
+        <section className="panel reel-controls">
+          <div className="reel-presets">
+            {REEL_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className={`reel-preset ${target === preset.duration ? 'on' : ''}`}
+                onClick={() => applyPreset(preset)}
+                title={preset.hint}
+              >
+                <strong>{preset.label}</strong>
+                <span>{preset.duration} s</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="reel-tabs" role="tablist">
+            {(
+              [
+                ['clips', '01 Clips'],
+                ['sound', '02 Sound'],
+                ['look', '03 Look'],
+              ] as [Step, string][]
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={step === value}
+                className={step === value ? 'on' : ''}
+                onClick={() => setStep(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {step === 'clips' ? (
+            <div className="reel-panel">
+              <div className="row between wrap" style={{ gap: 10 }}>
+                <div>
+                  <div className="label">Schnitt</div>
+                  <p className="small muted">
+                    {look.beatCut ? 'Auf den Beat geschnitten.' : 'Gleichmäßig verteilt.'}{' '}
+                    {target !== totalDuration && clips.length ? `Reel wird ${totalDuration.toFixed(1)} s.` : ''}
+                  </p>
+                </div>
+                <div className="row" style={{ gap: 8 }}>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${look.beatCut ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => setLook((current) => ({ ...current, beatCut: !current.beatCut }))}
+                  >
+                    <IconZap size={13} /> Beat-Cut
+                  </button>
+                  <button type="button" className="btn btn-sm btn-primary" onClick={() => setClipPicker(true)}>
+                    <IconPlus size={14} /> Clips
+                  </button>
+                </div>
+              </div>
+
+              {clips.length === 0 ? (
+                <div className="empty" style={{ padding: '26px 12px' }}>
+                  <h3>Erst Clips, dann Magie</h3>
+                  <p>Videos werden auf 9:16 beschnitten, Fotos bekommen einen langsamen Push.</p>
+                </div>
+              ) : (
+                <ul className="reel-cliplist">
+                  {clips.map((clip, index) => {
+                    const entry = timeline[index] ?? { start: 0, duration: 0 };
+                    const isVideo = clip.media.mime.startsWith('video/');
+                    const maxStart = isVideo ? Math.max(0, clip.natural - Math.max(0.6, entry.duration)) : 0;
+                    return (
+                      <li key={clip.key} className="reel-clip">
+                        <MediaThumb media={clip.media} className="reel-clip-thumb" />
+                        <div className="reel-clip-main">
+                          <div className="reel-clip-head">
+                            <span className="truncate">{clip.media.title}</span>
+                            <em className="mono">{entry.duration.toFixed(1)} s</em>
+                          </div>
+                          <div className="reel-clip-row">
+                            <div className="reel-motion">
+                              {(
+                                [
+                                  ['none', 'Still'],
+                                  ['in', 'Push'],
+                                  ['out', 'Pull'],
+                                ] as [ReelMotion, string][]
+                              ).map(([value, label]) => (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  className={clip.motion === value ? 'on' : ''}
+                                  onClick={() =>
+                                    setClips((current) =>
+                                      current.map((item) =>
+                                        item.key === clip.key ? { ...item, motion: value } : item
+                                      )
+                                    )
+                                  }
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="reel-clip-actions">
+                              <button
+                                type="button"
+                                onClick={() => moveClip(index, -1)}
+                                disabled={index === 0}
+                                aria-label="Move up"
+                              >
+                                <IconArrowUp size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveClip(index, 1)}
+                                disabled={index === clips.length - 1}
+                                aria-label="Move down"
+                              >
+                                <IconArrowDown size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setClips((current) => current.filter((item) => item.key !== clip.key))}
+                                aria-label="Remove clip"
+                              >
+                                <IconTrash size={13} />
+                              </button>
+                            </div>
+                          </div>
+                          {isVideo && maxStart > 0.05 ? (
+                            <label className="reel-trim">
+                              <span>Start</span>
+                              <input
+                                type="range"
+                                min={0}
+                                max={maxStart}
+                                step={0.05}
+                                value={Math.min(clip.start, maxStart)}
+                                onChange={(event) =>
+                                  setClips((current) =>
+                                    current.map((item) =>
+                                      item.key === clip.key
+                                        ? { ...item, start: Number(event.target.value) }
+                                        : item
+                                    )
+                                  )
+                                }
+                              />
+                              <em className="mono">{Math.min(clip.start, maxStart).toFixed(1)} s</em>
+                            </label>
+                          ) : null}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          ) : null}
+
+          {step === 'sound' ? (
+            <div className="reel-panel">
+              <div className="row between wrap" style={{ gap: 10 }}>
+                <div>
+                  <div className="label">Song</div>
+                  <p className="small muted">
+                    {chosenTrack || 'Eigene Masters, Demos, alles aus der Mediathek.'}
+                  </p>
+                </div>
+                <button type="button" className="btn btn-sm btn-primary" onClick={() => setAudioPicker(true)}>
+                  <IconMusic size={14} /> {chosenTrack ? 'Wechseln' : 'Song wählen'}
+                </button>
+              </div>
+
+              {analysing ? (
+                <div className="reel-analysing">
+                  <span className="spinner" /> Beat-Erkennung läuft …
+                </div>
+              ) : null}
+
+              {peaks.length ? (
+                <>
+                  <ReelWaveform
+                    peaks={peaks}
+                    duration={trackDuration}
+                    start={audioStart}
+                    length={totalDuration}
+                    beats={analysis?.beats ?? []}
+                    playhead={playing ? time : null}
+                    onPick={seekStart}
+                  />
+                  <div className="reel-sound-meta">
+                    <span className="mono">
+                      {analysis ? `${analysis.bpm} BPM` : 'kein Takt'} · {chosenTrack}
+                    </span>
+                    <span className="row" style={{ gap: 8 }}>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-ghost"
+                        onClick={() => setAudioStart(0)}
+                      >
+                        Anfang
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-ghost"
+                        onClick={() =>
+                          setAudioStart(Math.max(0, Math.min(trackDuration - target, (analysis?.drop ?? 0) - 0.35)))
+                        }
+                        disabled={!analysis?.drop}
+                      >
+                        <IconZap size={13} /> Drop
+                      </button>
+                    </span>
+                  </div>
+                  <label className="reel-range">
+                    <span>Start im Song</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={Math.max(0, trackDuration - 1)}
+                      step={0.1}
+                      value={audioStart}
+                      onChange={(event) => seekStart(Number(event.target.value))}
+                    />
+                    <em className="mono">{clock(audioStart)}</em>
+                  </label>
+                </>
+              ) : null}
+
+              <Field label="Länge">
+                <div className="reel-chips">
+                  {REEL_DURATIONS.filter((value) => value <= 60).map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={target === value ? 'on' : ''}
+                      onClick={() => setDuration(value)}
+                    >
+                      {value} s
+                    </button>
+                  ))}
+                </div>
+              </Field>
+
+              <div className="reel-hint">
+                <IconMusic size={14} />
+                <span>
+                  Der Ton wird auf −14 LUFS normalisiert und am Ende ausgeblendet – Instagram nimmt ihn so
+                  unverändert an. Nur eigene oder lizenzierte Musik verwenden.
+                </span>
+              </div>
+            </div>
+          ) : null}
+
+          {step === 'look' ? (
+            <div className="reel-panel">
+              <div className="reel-text-grid">
+                <Field label="Kicker">
+                  <input
+                    className="input"
+                    value={text.kicker}
+                    placeholder="New single"
+                    onChange={(event) => setText((current) => ({ ...current, kicker: event.target.value }))}
+                  />
+                </Field>
+                <Field label="Zeile klein">
+                  <input
+                    className="input"
+                    value={text.sub}
+                    placeholder="Out now · everywhere"
+                    onChange={(event) => setText((current) => ({ ...current, sub: event.target.value }))}
+                  />
+                </Field>
+              </div>
+
+              <Field label="Hook" hint={<span className="mono">{text.hook.length}/48</span>}>
+                <textarea
+                  className="input reel-hook-input"
+                  rows={2}
+                  maxLength={48}
+                  value={text.hook}
+                  placeholder="FRACTURE"
+                  onChange={(event) => setText((current) => ({ ...current, hook: event.target.value }))}
+                />
+              </Field>
+
+              <div className="reel-look-row">
+                <Field label="Schrift">
+                  <div className="reel-chips">
+                    {(
+                      [
+                        ['block', 'Block'],
+                        ['serif', 'Serif'],
+                        ['mono', 'Mono'],
+                      ] as [ReelTextStyle, string][]
+                    ).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={text.style === value ? 'on' : ''}
+                        onClick={() => setText((current) => ({ ...current, style: value }))}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+                <Field label="Ausrichtung">
+                  <div className="reel-chips">
+                    {(
+                      [
+                        ['left', 'Links'],
+                        ['center', 'Mitte'],
+                      ] as ['left' | 'center', string][]
+                    ).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={text.align === value ? 'on' : ''}
+                        onClick={() => setText((current) => ({ ...current, align: value }))}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+                <Field label="Position">
+                  <div className="reel-chips">
+                    {(
+                      [
+                        ['top', 'Oben'],
+                        ['middle', 'Mitte'],
+                        ['low', 'Unten'],
+                      ] as ['top' | 'middle' | 'low', string][]
+                    ).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={text.place === value ? 'on' : ''}
+                        onClick={() => setText((current) => ({ ...current, place: value }))}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+              </div>
+
+              <div className="reel-look-row">
+                <Field label="Look">
+                  <div className="reel-chips">
+                    {(['none', 'film', 'mono', 'bleed'] as ReelGrade[]).map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={look.grade === value ? 'on' : ''}
+                        onClick={() => setLook((current) => ({ ...current, grade: value }))}
+                      >
+                        {GRADE_LABEL[value]}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+                <label className="reel-toggle">
+                  <input
+                    type="checkbox"
+                    checked={text.showHandle}
+                    onChange={(event) => setText((current) => ({ ...current, showHandle: event.target.checked }))}
+                  />
+                  <span>Handle zeigen</span>
+                </label>
+                <label className="reel-toggle">
+                  <input
+                    type="checkbox"
+                    checked={look.flash}
+                    onChange={(event) => setLook((current) => ({ ...current, flash: event.target.checked }))}
+                  />
+                  <span>Blitz auf Beat</span>
+                </label>
+                <label className="reel-toggle">
+                  <input
+                    type="checkbox"
+                    checked={look.fadeOut}
+                    onChange={(event) => setLook((current) => ({ ...current, fadeOut: event.target.checked }))}
+                  />
+                  <span>Ausblenden</span>
+                </label>
+              </div>
+
+              <label className="reel-range">
+                <span>Korn</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={30}
+                  step={1}
+                  value={look.grain}
+                  onChange={(event) => setLook((current) => ({ ...current, grain: Number(event.target.value) }))}
+                />
+                <em className="mono">{look.grain}</em>
+              </label>
+              <label className="reel-range">
+                <span>Vignette</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={look.vignette}
+                  onChange={(event) =>
+                    setLook((current) => ({ ...current, vignette: Number(event.target.value) }))
+                  }
+                />
+                <em className="mono">{Math.round(look.vignette * 100)} %</em>
+              </label>
+
+              <div className="reel-hint">
+                <IconSparkles size={14} />
+                <span>
+                  Text sitzt automatisch in den Safe Zones: oben 14 %, unten 35 % bleiben frei, damit
+                  Instagram-UI nichts verdeckt.
+                </span>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      </div>
+
+      <MediaPicker
+        open={clipPicker}
+        onClose={() => setClipPicker(false)}
+        media={media}
+        selectedIds={[]}
+        onConfirm={(ids) => {
+          void addClips(ids);
+          setClipPicker(false);
+        }}
+        onUploaded={(items) => setMedia((current) => [...items, ...current])}
+        multiple
+        visualOnly
+      />
+
+      <MediaPicker
+        open={audioPicker}
+        onClose={() => setAudioPicker(false)}
+        media={media}
+        selectedIds={audioId ? [audioId] : []}
+        onConfirm={(ids) => {
+          if (ids[0]) void pickAudio(ids[0]);
+          setAudioPicker(false);
+        }}
+        onUploaded={(items) => setMedia((current) => [...items, ...current])}
+        kind="audio"
+      />
+
+      <audio ref={audioRef} src={audioMedia?.url} preload="auto" onEnded={() => setPlaying(false)} />
+
+      {/* transparent text layer – rasterised for the ffmpeg overlay */}
+      <div className="reel-export-holder" aria-hidden="true">
+        <div className="reel-frame reel-overlay-frame" ref={exportRef}>
+          <ReelOverlay text={text} handle={profile?.handle} />
+        </div>
+      </div>
+
+      <Modal
+        open={exportOpen}
+        onClose={closeExport}
+        title="Reel rendern"
+        subtitle="1080 × 1920 · 30 fps · H.264/AAC · faststart"
+        footer={
+          job?.status === 'done' ? (
+            <>
+              <a className="btn btn-ghost" href={resultUrl} download>
+                <IconDownload size={14} /> MP4
+              </a>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={createReelPost}
+                disabled={creatingPost}
+              >
+                {creatingPost ? 'Anlegen …' : 'In den Planner'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="btn btn-ghost" onClick={closeExport}>
+                Schließen
+              </button>
+              {job?.status === 'error' || exportError ? (
+                <button type="button" className="btn btn-primary" onClick={startExport} disabled={starting}>
+                  Nochmal
+                </button>
+              ) : null}
+            </>
+          )
+        }
+      >
+        <div className="reel-export">
+          {job?.status === 'done' && resultUrl ? (
+            <div className="reel-result">
+              <video className="reel-result-video" src={resultUrl} controls playsInline />
+              <div>
+                <div className="label">Fertig</div>
+                <h3>Reel in der Bibliothek</h3>
+                <p className="small muted">
+                  {job.duration.toFixed(1)} s · Cover {job.coverId ? 'erzeugt' : 'nicht erzeugt'} · Video liegt
+                  unter Media → Videos.
+                </p>
+                <p className="small muted">
+                  {text.hook.trim() || 'Ohne Hook'} {text.sub.trim() ? `· ${text.sub.trim()}` : ''}
+                </p>
+              </div>
+            </div>
+          ) : exportError || job?.status === 'error' ? (
+            <div className="reel-error">
+              <strong>Der Render ist gescheitert.</strong>
+              <p className="small muted">{exportError ?? job?.error ?? 'Unbekannter Fehler'}</p>
+              <p className="small muted">
+                Meistens fehlt eine Datei oder ffmpeg kennt einen Codec nicht – die Meldung oben hilft beim
+                Einordnen.
+              </p>
+            </div>
+          ) : (
+            <div className="reel-progress">
+              <div className="reel-progress-head">
+                <span className="label">Rendert</span>
+                <span className="mono">{Math.round((job?.progress ?? 0) * 100)} %</span>
+              </div>
+              <div className="reel-progress-bar">
+                <span style={{ width: `${Math.max(3, Math.round((job?.progress ?? 0) * 100))}%` }} />
+              </div>
+              <p className="small muted">
+                {starting || !job
+                  ? 'Text wird gerastert, dann schneidet ffmpeg Bild und Ton zusammen …'
+                  : 'Bild wird geschnitten, Ton normalisiert, Cover gezogen …'}
+              </p>
+              {!starting && !job && !exportError ? (
+                <button type="button" className="btn btn-primary" onClick={startExport}>
+                  <IconZap size={14} /> Export starten
+                </button>
+              ) : null}
+            </div>
+          )}
+        </div>
+      </Modal>
+    </>
+  );
+}

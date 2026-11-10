@@ -657,6 +657,68 @@ already warm black with taped prints; this pass adds *senses and rhythm*, not mo
 - Everything motion-related is wrapped in `prefers-reduced-motion: no-preference`; the sound toggle never
   autoplays.
 
+### 7.10 Reel Lab (`/reels`) – the mini reel machine
+
+Reels are where a band is discovered, but the workflow is usually: phone footage → external editor →
+manual cutting → wrong export. The Reel Lab cuts that down to *clips, song, look, render* and encodes the
+platform rules into the tool instead of leaving them to the user.
+
+**What the research says** (Meta guidance via Sprout Social's 2026 video spec guide): 1080×1920 (9:16),
+30 fps, MP4/H.264 + AAC, faststart, ~8 Mbps for 1080p30; keep the top 14 %, the bottom 35 % and 6 % per side
+free of text and logos (≈270 px / 670 px / 65 px on a 1080×1920 frame); sound and captions strongly
+recommended; reels longer than 3 minutes are not recommended for new audiences. The UI therefore fixes the
+frame to 1080×1920, draws the safe zones as guides, defaults to 15 s, caps exports at 60 s and keeps every
+text element inside that inner box. Music is expected to be the band's own or licensed material.
+
+**The plan model** (`lib/reels.ts`) is deliberately small: clips `{ mediaId, start, duration, motion }`,
+one audio window `{ mediaId, start, duration }`, the look (`grade`, `grain`, `vignette`, `fadeOut`, `flash`,
+`beatCut`, `accent`), the text layer and the beat positions. Presets are just patches
+(*Loop 8 s, Drop Teaser 15 s, Live Cut 20 s, Single Trailer 30 s*). `planClipLengths()` splits the target
+duration either evenly or snapped to the beat grid – with a minimum shot length, so a beat cut never
+produces a 0.2 s flash frame.
+
+**Beat tracking in the browser** (`lib/beats.ts`): the audio file is fetched and decoded with
+`decodeAudioData`, then analysed in plain arithmetic – RMS envelope at 100 fps, a 3-tap smooth, half-wave
+rectified flux, autocorrelation over 70–170 BPM for the tempo, a phase search over one bar for the grid and a
+2 s loudness jump for the drop. No library, no upload, ~100 ms for a 4-minute track. The result drives the
+cut plan, the default start point (a little before the drop), the waveform ticks and the beat flashes.
+
+**Preview** (`components/reels/ReelStage.tsx`): the real 1080×1920 frame, transformed down to the panel
+width. One media layer per clip, only the active one visible; a 60 ms interval reads `audio.currentTime`,
+advances the playhead, switches layers at the cuts and keeps each video within 0.35 s of its planned
+position. Grade is a CSS filter, grain an inline SVG turbulence, vignette a radial gradient, flashes a
+`var(--accent)` overlay – close enough to judge the edit before any encoding happens.
+
+**Text layer** (`ReelOverlay.tsx`): kicker, hook (auto-sized by line length, 1–3 lines), sub line and handle,
+three type styles (Anton / Playfair italic / Space Mono), left or centred, top/middle/low inside the safe
+box. For export the exact same markup is rasterised with `html-to-image` (`toPng` at 1080×1920, transparent,
+fonts embedded) and handed to ffmpeg as a PNG overlay – so typography and colours stay in the app's design
+system instead of being reimplemented in `drawtext`.
+
+**Render** (`lib/reelRender.ts`, job store in `lib/reelJobs.ts`): `POST /api/reels` validates the plan,
+creates an in-memory job and returns `202`; the client polls `GET /api/reels/:id` for progress. ffmpeg gets
+one `-filter_complex`:
+
+```
+per clip: scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,
+          setsar=1,fps=30[,zoompan=z='min(1+0.0011*on,1.12)':d=1],
+          format=yuv420p,settb=AVTB,setpts=PTS-STARTPTS
+concat -> eq (grade) -> noise (grain) -> vignette -> overlay (text PNG)
+       -> drawbox flashes with enable='between(t,…)+…' -> fade out
+audio:  atrim, afade in/out, loudnorm=I=-14:TP=-1:LRA=11, aresample=48000, alimiter
+output: libx264 -crf 20 -preset veryfast -r 30, aac 192k, +faststart
+```
+
+Photos are fed with `-loop 1 -framerate 30` and get the Ken Burns move through `zoompan`; a cover JPEG is
+grabbed from the finished file. Both the reel and the cover become media rows (tags `reel`, `export`,
+`cover`), so the planner, the press kit and the feed snapshot all see them. *In den Planner* creates a reel
+draft via `POST /api/posts` with the hook as caption.
+
+**Constraints, on purpose**: no auto-captions (that needs speech recognition), original clip audio is muted
+(the song is the point), clips shorter than their slot are cut rather than looped, and rendering needs
+ffmpeg on the server (`FFMPEG_PATH` overrides the binary). If ffmpeg is missing the page says so instead of
+failing silently.
+
 ## 8. Design system
 
 ### Colours

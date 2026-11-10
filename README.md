@@ -5,7 +5,7 @@ paperwork — and a small public one-pager that is configured from inside it.
 
 | | |
 |---|---|
-| **Band HQ** (internal) | Post planner with a real Instagram mockup, Canva-style design studio, media library with asset versions, notes, milestone calendar, documents (rider, contracts, orga), exportable brand sheet, palette/CI editor |
+| **Band HQ** (internal) | Post planner with a real Instagram mockup, Canva-style design studio, media library with asset versions, notes, milestone calendar, documents (rider, contracts, orga), release waves, a beat-synced reel machine, exportable brand sheet, palette/CI editor |
 | **Public site** (`/site`) | A cinematic one-pager that reads like a letter: hero, "a note from us", a media corner, the feed, contact links. Every block can be switched off in `/website` |
 
 ![Public site – hero](docs/screenshots/site-hero.jpg)
@@ -411,6 +411,27 @@ One click builds a ZIP for promoters, blogs and playlist editors:
 press text rendered as printable HTML pages in the CI accent. Everything is generated from the profile,
 the media library and the document module, so the kit is never out of date.
 
+### 13. Reel Lab (`/reels`)
+The mini reel machine: clips from the library, one song, three steps, one MP4.
+- **Presets** – Loop 8 s, Drop Teaser 15 s, Live Cut 20 s, Single Trailer 30 s. Each one sets length,
+grade, grain, vignette, motion and the beat flash in a click.
+- **Clips** – 1–12 videos or photos, reorderable, each with a trim offset and a motion
+(*still / push / pull*). Videos are cropped to 9:16 (`force_original_aspect_ratio=increase,crop`), photos
+get a Ken Burns move through `zoompan`.
+- **Beat cuts** – the track is decoded in the browser: RMS envelope → onset flux → autocorrelation → BPM,
+phase search → beat grid, 2 s loudness jump → drop. Cuts snap to that grid, the drop becomes the default
+start, and *Blitz auf Beat* flashes the CI accent on every beat.
+- **Text layer** – kicker, hook (1–3 lines, auto-sized), sub line and handle; Block/Serif/Mono,
+left/centre, top/middle/low. It is laid out inside Meta's safe zones (top 14 %, bottom 35 %, 6 % sides)
+and rasterised to a transparent 1080×1920 PNG with `html-to-image` – what you see is the ffmpeg overlay.
+- **Preview** – the real 9:16 frame, scaled: media layers switch at the cuts, the song plays in sync,
+safe-zone guides and the live text sit on top. Grain, vignette and grade are approximated in CSS.
+- **Export** – `POST /api/reels` validates the plan and renders in a background job with progress:
+trim/crop/motion per clip, concat, grade, grain, vignette, overlay PNG, beat flashes, fade-out,
+`loudnorm I=-14`, AAC 48 kHz, H.264 CRF 20, 1080×1920 @ 30 fps, `+faststart`; a cover JPEG is grabbed from
+the result. Both appear in the media library, and *In den Planner* creates a reel draft with the hook as
+caption. Needs **ffmpeg** on the server (`FFMPEG_PATH` if it lives outside `PATH`).
+
 ## Export format
 
 `GET /api/export/plan` returns:
@@ -460,6 +481,7 @@ app/
   (hq)/media/page.tsx      Media library
   (hq)/notes/page.tsx      Notes
   (hq)/docs/page.tsx       Documents (rider, contracts, orga)
+  (hq)/reels/page.tsx      Reel Lab – clips, beat cuts, text layer, ffmpeg export
   (hq)/website/page.tsx    Public site: blocks, letter, crew, media corner, live preview
   (hq)/brand/page.tsx      Brand sheet (CI guide, export)
   (hq)/settings/page.tsx   Profile, accent, Instagram, backup, bin, palette
@@ -488,6 +510,10 @@ lib/
   colorlab.ts              OKLCH colour maths: search, scoring, harmonies, generator, naming
   design.ts                Design model, shapes, fonts, textures, templates
   docTemplates.ts          Rider, contract, itinerary, press & stage-plot templates
+  reels.ts                 Reel plan model, presets, beat-aware clip lengths, safe zones
+  beats.ts                 RMS/flux beat tracking, drop detection, waveform peaks
+  reelRender.ts            ffmpeg pipeline (crop, zoompan, grade, overlay, loudnorm, cover)
+  reelJobs.ts              In-memory render jobs with progress for the polling UI
   instagram.ts             Meta Graph API client (publish, insights, token refresh, sandbox)
   backup.ts                Backup ZIP + restore by importing rows
   palette.ts               CI palette, accent tokens, colour helpers
@@ -496,7 +522,7 @@ lib/
   zip.ts, api.ts, format.ts, toast.ts, types.ts
 styles/                    base, shell (UI system v2), dashboard, planner, media, notes,
                            settings, studio, palette, calendar, docs, brand, command,
-                           website, site, login, fonts
+                           website, site, login, fonts, reels
 data/                      band.db + uploads (git-ignored, created on first start)
 docs/KONZEPT.md            Product and architecture plan
 docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + nginx, cron, backups
@@ -523,6 +549,7 @@ docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + ngin
 | GET/POST | `/api/snippets`, `/api/snippets/:id` | Caption, hashtag and hook snippets |
 | POST | `/api/posts/:id/duplicate` | Copy a post as a new draft |
 | GET/POST/DELETE | `/api/trash`, `/api/trash/:id` | Bin: list, restore (POST), delete for good |
+| GET/POST | `/api/reels`, `/api/reels/:id` | Reel Lab capability + render job (poll `:id`) |
 | GET/POST | `/api/metrics` | Manual numbers, best-weekday insight |
 | GET/POST | `/api/instagram` | Status, save, test, publish, sync |
 | GET/POST | `/api/scheduler` | Auto-publish status / run it (also for cron) |

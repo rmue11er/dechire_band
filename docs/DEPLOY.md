@@ -15,6 +15,7 @@ works on any Linux box.
 | | |
 | --- | --- |
 | **Node.js 24+** | `node:sqlite` is used without a flag. On Node 22 it works with `NODE_OPTIONS=--experimental-sqlite`. |
+| **ffmpeg** | only for the Reel Lab (`/reels`). Everything else runs without it. `apt install ffmpeg` / `dnf install ffmpeg-free`; if the binary is not on `PATH`, set `FFMPEG_PATH` to its absolute path. |
 | **One writable folder** | `data/` — SQLite database, WAL files, `uploads/`. This folder *is* the app's state. |
 | **No database server** | no MySQL/Postgres, no Docker, no Redis, no external services. |
 | **RAM** | ~150 MB at runtime; the `next build` step wants a bit more — on a 1 GB VPS add swap. |
@@ -371,6 +372,8 @@ Schema changes run themselves on start (`ensureColumn` in `lib/db.ts`); `data/` 
 | Pages look unstyled after an update | stale build → `npm run build` again and restart |
 | Build dies with `Killed` | RAM → add swap: `fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile` |
 | Instagram upload: “media could not be fetched” | `publicBase` wrong, or `/api/files` is blocked by a firewall / auth proxy |
+| Reel Lab export stays at 0 % / “ffmpeg is not available” | ffmpeg missing or not on the service user's `PATH` → install it, or set `FFMPEG_PATH` in the Plesk environment variables / systemd unit |
+| Reel render fails with a codec message | the server ffmpeg lacks `libx264`/`aac` → use a build with GPL/x264 (distribution packages include it) |
 | Reload loop while developing on the server | `npm run dev` only — Turbopack watches the WAL files in `data/`. Use the built app in production |
 
 ### 9.0 One command that answers most of it
