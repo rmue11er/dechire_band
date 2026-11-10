@@ -31,8 +31,8 @@ export default function BrandSheetPage() {
       const lib = await import('html-to-image');
       const dataUrl =
         format === 'png'
-          ? await lib.toPng(node, { pixelRatio: 2, cacheBust: false, backgroundColor: '#08070b' })
-          : await lib.toSvg(node, { cacheBust: false, backgroundColor: '#08070b' });
+          ? await lib.toPng(node, { pixelRatio: 2, cacheBust: false, backgroundColor: '#080808' })
+          : await lib.toSvg(node, { cacheBust: false, backgroundColor: '#080808' });
       const link = document.createElement('a');
       link.href = dataUrl;
       link.download = `dechire-brand-sheet.${format}`;
@@ -109,15 +109,15 @@ export default function BrandSheetPage() {
             <div className="bs-logo-row">
               <figure className="bs-logo-tile dark">
                 {profile.avatarUrl ? <img src={profile.avatarUrl} alt="Logo on dark" /> : <span>D</span>}
-                <figcaption>On night · #08070b</figcaption>
+                <figcaption>On night · #080808</figcaption>
               </figure>
               <figure className="bs-logo-tile light">
                 {profile.avatarUrl ? <img src={profile.avatarUrl} alt="Logo on bone" /> : <span>D</span>}
-                <figcaption>On bone · #efe7da</figcaption>
+                <figcaption>On bone · #e7e0d6</figcaption>
               </figure>
             </div>
             <ul className="bs-rules-inline">
-              <li>Clear space around the logo: at least the height of the “D”.</li>
+                <li>Clear space around the logo: at least the height of the “d”.</li>
               <li>Minimum width 320 px on screen, 25 mm in print.</li>
               <li>Never stretch, rotate, outline or put a gradient on the logo.</li>
             </ul>
@@ -143,8 +143,8 @@ export default function BrandSheetPage() {
               ))}
             </div>
             <p className="bs-note">
-              One accent per layout. Lavender carries the light work, bone the paper, rust and wound the emotion, moss
-              and fog the quiet rhythm. Backgrounds stay dark – black is the stage.
+              One accent per layout. Sulfur carries the signal, bone the paper, rust and wound the emotion, moss
+              and steel the quiet rhythm. Backgrounds stay dark – black is the stage.
             </p>
           </section>
 
@@ -156,11 +156,11 @@ export default function BrandSheetPage() {
             </div>
             <div className="bs-type">
               <div className="bs-type-row">
-                <span className="bs-type-label">Voice · Instrument Serif</span>
+                <span className="bs-type-label">Voice · Redaction</span>
                 <span className="bs-sample display">déchire</span>
               </div>
               <div className="bs-type-row">
-                <span className="bs-type-label">Voice italic · Instrument Serif</span>
+                <span className="bs-type-label">Voice italic · Redaction</span>
                 <span className="bs-sample editorial">dark, heavy, but not lost.</span>
               </div>
               <div className="bs-type-row">
@@ -188,7 +188,7 @@ export default function BrandSheetPage() {
                 <ul>
                   <li>Keep lots of black. The image breathes through the empty space.</li>
                   <li>Use one CI colour as the accent, everything else stays dark.</li>
-                  <li>Set headlines in Instrument Serif or Inter, keep them lowercase and give them room.</li>
+                  <li>Set headlines in Redaction or Inter, keep them lowercase and give them room.</li>
                   <li>Keep an 8 % safe margin in stories and reels.</li>
                   <li>Use the original logo version for every format.</li>
                 </ul>
@@ -196,7 +196,7 @@ export default function BrandSheetPage() {
               <div className="bs-rule-col dont">
                 <strong>Don’t</strong>
                 <ul>
-                  <li>No second accent colour next to smoke grey.</li>
+                  <li>No second accent colour next to sulfur.</li>
                   <li>No white boxes behind the logo.</li>
                   <li>No soft shadows, no glow, no neon.</li>
                   <li>No body copy below 14 px or below 9 pt in print.</li>
@@ -207,7 +207,7 @@ export default function BrandSheetPage() {
           </section>
 
           <footer className="bs-foot">
-            <span>POST-HARDCORE /// {profile.bandName.toUpperCase()}</span>
+            <span>POST-HARDCORE /// {profile.bandName}</span>
             <span>Band HQ · {profile.handle}</span>
           </footer>
         </div>

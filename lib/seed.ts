@@ -477,8 +477,8 @@ export function seed(db: any) {
     312,
     avatarId,
     JSON.stringify(['LIVE', 'FRACTURE', 'PRACTICE ROOM', 'MERCH']),
-    '#a49c92',
-    null,
+    '#e2e29c',
+    '#8f8f6a',
     now
   );
 

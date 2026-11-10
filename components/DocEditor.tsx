@@ -107,7 +107,7 @@ export default function DocEditor({
   const [audioOpen, setAudioOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [origin, setOrigin] = useState('');
-  const ciPrimary = palette.find((color) => color.role === 'primary')?.hex ?? '#a49c92';
+  const ciPrimary = palette.find((color) => color.role === 'primary')?.hex ?? '#e2e29c';
   const band = profile?.bandName ?? 'déchire';
 
   useEffect(() => {
@@ -590,10 +590,10 @@ export default function DocEditor({
     const accent = token('--accent', ciPrimary);
     const accent2 = token('--accent-2', ciPrimary);
     const accentDeep = token('--accent-deep', ciPrimary);
-    const accentRgb = token('--accent-rgb', '164 156 146');
+    const accentRgb = token('--accent-rgb', '226 226 156');
     const tagline = profile?.bio?.split('\n')[0] || 'emotional post-hardcore /// augsburg';
     const mono = 'ui-monospace, "SF Mono", Menlo, monospace';
-    const display = '"Instrument Serif", Georgia, serif';
+    const display = '"Redaction", "Instrument Serif", Georgia, serif';
     const html = `<!doctype html>
 <html lang="en">
 <head>

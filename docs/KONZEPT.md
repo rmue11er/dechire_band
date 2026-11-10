@@ -14,8 +14,9 @@ From the brief:
 2. **Media library** – all media organised; when the logo is needed somewhere,
    grab the right **version** (transparent, white, sticker, square …) straight away.
 3. **Notes** – another tool with *solid formatting options*.
-4. Colour world: warm black, soot and ash, one light smoke grey as accent – almost no hue at all. Dark,
-   heavy, but never cold-corporate. A hint of 80s/90s texture (grain, low light), never a costume.
+4. Colour world: warm black, soot and ash, one pale sulfur signal – a strange, washed-out
+   acid yellow instead of pastel pink. Dark, heavy, but never cold-corporate. A hint of 80s/90s
+   texture (grain, low light), never a costume.
 
 Quality goals derived from that:
 
@@ -125,7 +126,7 @@ is solved by a two-level model:
 ```
 Asset group "déchire Wordmark"
 ├── Version "White / transparent"      1080×1080, SVG
-├── Version "Lavender / transparent"   1080×1080, SVG
+├── Version "Smoke / transparent"   1080×1080, SVG
 ├── Version "Sticker 1080×1080"        1080×1080, SVG
 └── Version "Social avatar"            1080×1080, SVG
 ```
@@ -214,7 +215,7 @@ portable document, not a pile of pixels.
 
 ### 6.3 Tools
 
-- **Text**: 6 presets, **three fonts** – Instrument Serif (voice), Inter (body), Space Mono (meta).
+- **Text**: 6 presets, **three fonts** – Redaction (voice), Inter (body), Space Mono (meta).
   Size, weight, tracking, line height, alignment,
   uppercase, italic, outline, five shadow modes, text background as a “pill”.
 - **Shapes**: rectangle, circle, triangle, diamond, star, burst, cross, slash, line, frame, tape.
@@ -243,11 +244,11 @@ portable document, not a pile of pixels.
 
 - Formats: feed 1:1 (1080×1080), feed 4:5 (1080×1350), story 9:16 (1080×1920).
 - 12 templates, all in the same quiet language: *Release*, *Show*, *Quote*, *Merch*, *Story*,
-  *Statement*, *Portrait* plus *Close* (portrait, dark veil, whisper in Instrument Serif italic),
+  *Statement*, *Portrait* plus *Close* (portrait, dark veil, whisper in Redaction italic),
   *Note* (date, lowercase), *Elegy* (empty black, serif, two hairlines), *Noise* (display type
   running off both edges) and *Dates* (plain rows, accent rules). Decorations were removed on purpose:
   serif instead of caps, no tape, no badges, no halftone, one accent.
-- **Type voice** (all self-hosted via `@fontsource`): Instrument Serif, Inter, Space Mono – **three
+- **Type voice**: Redaction (OFL, vendored in `public/fonts`), Inter, Space Mono – **three
   families total**. The presets *Display / Whisper / Elegy / Note / Type / Tight* encode the intent, so a
   design reads emotional before anyone touches a slider.
 
@@ -502,7 +503,7 @@ sleeve spine, the monospaced uppercase labels, the neon accent outline and the s
 
 - **Warm black, not UI black.** `#080607`, bone text at 86 %, grain and a vignette. No scanlines, no progress
   bar, no hairline at the top of the page.
-- **Serif is the voice.** Instrument Serif carries the name, the tagline, the section labels
+- **Serif is the voice.** Redaction carries the name, the tagline, the section labels
   ("a note from us", "say hi"), the captions and the signature; Inter is reserved for the micro
   labels and the small print. **No second display face.**
 - **One accent** (`--site-accent`): the `*marked*` words in the letter and the quiet label lines. Nothing
@@ -510,7 +511,7 @@ sleeve spine, the monospaced uppercase labels, the neon accent outline and the s
 - **A face in the hero**: one photo as a taped print next to the name instead of decorative effects. The
   hero background photo stays at 12 % as depth only.
 - **No props**: no spine, no stamp, no margin print, no paper sheet, no cursor light, no crew list, no names.
-- **The letter is the page** – 54 ch of `Instrument Serif` on black, then the band's photos as the same taped prints
+- **The letter is the page** – 54 ch of `Redaction` on black, then the band's photos as the same taped prints
   the feed wall uses (paper, tape, own angle, developing into colour on hover).
 - **Say hi** is a large italic press line next to plain display-face links – the numbered receipt is gone.
 - **Backend follows the page**: no crew editor, the signature has its own field, `showMedia` gates the prints
@@ -692,7 +693,7 @@ position. Grade is a CSS filter, grain an inline SVG turbulence, vignette a radi
 to judge the edit before any encoding happens.
 
 **Text layer** (`ReelOverlay.tsx`): kicker, hook (auto-sized by line length, 1–3 lines), sub line and handle,
-three type styles (Instrument Serif / Inter / Space Mono), left or centred, top/middle/low inside the safe
+three type styles (Redaction / Inter / Space Mono), left or centred, top/middle/low inside the safe
 box. For export the exact same markup is rasterised with `html-to-image` (`toPng` at 1080×1920, transparent,
 fonts embedded) and handed to ffmpeg as a PNG overlay – so typography and colours stay in the app's design
 system instead of being reimplemented in `drawtext`.
@@ -731,19 +732,20 @@ failing silently.
 | `--panel` | `#110e0c` | Cards, panels |
 | `--text` | `#ece4d8` | Body copy |
 | `--muted` | `#9a8d81` | Secondary text |
-| `--accent` | `#a49c92` | Light smoke grey, interaction, focus (profile accent) |
-| `--accent-rgb` | `164 156 146` | Same colour as `r g b` – every translucent tint uses `rgb(var(--accent-rgb) / x)`, so a new accent reaches every surface |
-| `--accent-2` | derived | **Second working colour** (`profile.accent_2_hex`, *Auto* = sibling tone, hue +26°): page kickers, panel icons, `scheduled` badges, meta labels, document kicker, milestone dates, selection, `.chip.secondary` – plus gradients and two-tone rules |
+| `--accent` | `#e2e29c` | Pale sulfur, interaction, focus (profile accent) |
+| `--accent-rgb` | `226 226 156` | Same colour as `r g b` – every translucent tint uses `rgb(var(--accent-rgb) / x)`, so a new accent reaches every surface |
+| `--accent-2` | `#8f8f6a` | **Second working colour** (`profile.accent_2_hex`; CI default is muted olive, *Auto* = sibling tone, hue +26°): page kickers, panel icons, `scheduled` badges, meta labels, document kicker, milestone dates, selection, `.chip.secondary` – plus gradients and two-tone rules |
 | `--accent-2-deep` / `--accent-2-soft` | derived | Depth + tint of the second colour |
-| `--accent-deep` | `#6e3b2c` | Gradients, depth |
+| `--accent-deep` | `#6b6b42` | Gradients, depth |
 | `--ok / --warn / --danger` | `#8aa891 / #c9a06a / #b25b60` | Status |
 
-### CI palette “Ash”
+### CI palette “Ash / Sulfur”
 
 Emotional post-hardcore means: **no agency CI, no colour that wants attention**. The
-palette is a warm black room – soot, ash, bone and one light smoke grey for the few
-places that need an accent. Rust and wound stay in the print layer. Darker beats louder:
-the light is low on purpose, but it is not lost.
+palette is a warm black room – soot, ash, bone and one pale sulfur signal for the few
+places that need an accent. It is deliberately not pastel pink: acid yellow is strange
+enough to be ours, quiet enough to stay a signal. Rust and wound stay in the print
+layer. Darker beats louder: the light is low on purpose, but it is not lost.
 
 | Name | Hex | Role | Emotion / use |
 | --- | --- | --- | --- |
@@ -751,7 +753,8 @@ the light is low on purpose, but it is not lost.
 | Soot | `#111010` | Base | Panels, shadows |
 | Ash | `#1a1918` | Deep | Gradients, depth layering |
 | Umbra | `#262422` | Deep | Second depth for vignettes |
-| Smoke | `#a49c92` | Primary | The only accent: buttons, kickers, focus |
+| Sulfur | `#e2e29c` | Primary | The signal: accented é, buttons, kickers, focus |
+| Smoke | `#a49c92` | Neutral | Secondary text, distance |
 | Steel | `#6f6a64` | Neutral | Secondary text, distance |
 | Bone | `#e7e0d6` | Paper | Warm white for type on dark |
 | Rust | `#553b34` | Warm | Print only |
@@ -788,8 +791,8 @@ the dashboard all change with one colour now.
 
 - Grotesk stack (Inter/SF/Helvetica), headlines 800–900 with negative tracking,
   mono labels in uppercase with wide letter-spacing – zine/poster feel without kitsch.
-- Background: one soft smoke glow + fine SVG noise overlay (fixed, pointer-events: none).
-- Cards with 1 px lines in smoke alpha, hover lift, soft drop shadows.
+- Background: one soft sulfur glow + fine SVG noise overlay (fixed, pointer-events: none).
+- Cards with 1 px lines in sulfur alpha, hover lift, soft drop shadows.
 - Consistent “///” separators, status pills, locked lowercase for meta information.
 
 ### Interaction
@@ -897,7 +900,7 @@ site         (id=1, published, band_name, tagline, manifesto JSON (the letter),
 - [x] Design studio: text, shapes, stickers, textures, media, layers, templates, 3 formats.
 - [x] Move, resize, rotate, snapping, undo/redo, duplicate, lock, hide.
 - [x] PNG export at 2× resolution, save to the library, straight to a draft post.
-- [x] CI palette “Ash” definable in one place, visible as its own row in every colour picker.
+- [x] CI palette “Ash / Sulfur” definable in one place, visible as its own row in every colour picker.
 - [x] Interface accent colour changeable in the settings, applied instantly and persisted with the profile.
 - [x] Calendar with milestones (type, note, done), month navigation, selected day and upcoming list.
 - [x] Documents: technical rider and other templates, tables, autosave, folders, public share links, print-to-PDF and HTML export.
@@ -913,4 +916,4 @@ site         (id=1, published, band_name, tagline, manifesto JSON (the letter),
 - [x] Manual performance numbers and best-weekday insight from real data.
 - [x] Public one-pager (`/site`) that reads like a letter: hero, letter + crew, media corner, feed strip, links,
       footer — every block switchable in `/website` with a live desktop/mobile preview, plus a pre-launch gate.
-- [x] Warm black/smoke design, responsive down to mobile.
+- [x] Warm black/sulfur design, responsive down to mobile.

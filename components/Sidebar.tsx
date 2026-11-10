@@ -67,7 +67,9 @@ export default function Sidebar() {
       <Link href="/" className="brand">
         <div className="brand-mark">D</div>
         <div className="brand-text">
-          <span className="brand-name">déchire</span>
+          <span className="brand-name">
+            d<span className="brand-e">é</span>chire
+          </span>
           <span className="brand-sub">Band HQ</span>
         </div>
       </Link>

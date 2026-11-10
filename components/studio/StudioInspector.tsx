@@ -406,7 +406,7 @@ export default function StudioInspector({
                 options={[
                   { value: 'none', label: 'None' },
                   { value: 'soft', label: 'Soft' },
-                  { value: 'glow', label: 'Lavender glow' },
+                  { value: 'glow', label: 'Signal glow' },
                   { value: 'hard', label: 'Hard shadow' },
                   { value: 'echo', label: 'Color echo' },
                 ]}

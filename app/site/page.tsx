@@ -13,7 +13,11 @@ function Letters({ text }: { text: string }) {
   return (
     <>
       {text.split('').map((char, index) => (
-        <span key={`${char}-${index}`} style={{ animationDelay: `${0.2 + index * 0.07}s` }}>
+        <span
+          key={`${char}-${index}`}
+          className={char === 'é' ? 'is-accent' : undefined}
+          style={{ animationDelay: `${0.2 + index * 0.07}s` }}
+        >
           {char === ' ' ? '\u00A0' : char}
         </span>
       ))}
@@ -24,7 +28,7 @@ function Letters({ text }: { text: string }) {
 const TAPE_TILT = ['-1.8deg', '1.4deg', '-0.9deg', '2deg'];
 
 function hexTriple(hex: string) {
-  const value = /^#[0-9a-f]{6}$/i.test(hex) ? hex.slice(1) : 'a49c92';
+  const value = /^#[0-9a-f]{6}$/i.test(hex) ? hex.slice(1) : 'e2e29c';
   return [0, 2, 4]
     .map((offset) => Number.parseInt(value.slice(offset, offset + 2), 16))
     .join(' ');

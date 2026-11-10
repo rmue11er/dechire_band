@@ -51,7 +51,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 9px 0;
-  border-bottom: 1px solid rgba(190, 168, 240, 0.07);
+  border-bottom: 1px solid rgba(200, 193, 184, 0.07);
 }
 
 .system-row:last-child {
@@ -296,7 +296,7 @@
 .accent-swatch.custom {
   display: grid;
   place-items: center;
-  background: conic-gradient(#a49c92, #6f6a64, #e7e0d6, #474b44, #a49c92);
+  background: conic-gradient(#e2e29c, #6f6a64, #e7e0d6, #474b44, #e2e29c);
   overflow: hidden;
 }
 

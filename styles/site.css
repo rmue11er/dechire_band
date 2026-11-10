@@ -8,8 +8,8 @@
   --site-ink: #080808;
   --site-bone: #e7e0d6;
   --site-ash: #9c948b;
-  --site-accent: #a49c92;
-  --site-accent-rgb: 164 156 146;
+  --site-accent: #e2e29c;
+  --site-accent-rgb: 226 226 156;
   --site-paper: #e7e0d6;
   --site-edge: clamp(18px, 4.6vw, 68px);
 
@@ -195,6 +195,11 @@
   opacity: 0;
   transform: translateY(48%);
   animation: sf-rise 1.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+/* The accented é is the one coloured letter – the band's signature. */
+.sf-title-main span.is-accent {
+  color: var(--site-accent);
 }
 
 /* a second, softer print under the first – like wet ink on thin paper */

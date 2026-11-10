@@ -2,18 +2,19 @@ import type { PaletteColor } from './types';
 import { hexToOklch, oklchToHex } from './colorlab';
 
 /**
- * CI “Ash” – emotional post-hardcore from Augsburg.
+ * CI “Ash / Sulfur” – emotional post-hardcore from Augsburg.
  *
- * Almost no colour. Warm black, soot, ash, bone – and one light smoke grey as
- * the only accent. Dark rust and a muted wound live in the print layer, not in
- * the UI. The room stays dark; the light is low, not gone.
+ * Warm black, soot, ash and bone – almost no colour. One pale sulfur signal
+ * (a washed-out acid yellow, not the pastel pink everyone uses) carries
+ * interaction and kickers; rust and wound stay in the print layer.
  */
 export const DEFAULT_PALETTE: PaletteColor[] = [
   { name: 'Night', hex: '#080808', role: 'base' },
   { name: 'Soot', hex: '#111010', role: 'base' },
   { name: 'Ash', hex: '#1a1918', role: 'deep' },
   { name: 'Umbra', hex: '#262422', role: 'deep' },
-  { name: 'Smoke', hex: '#a49c92', role: 'primary' },
+  { name: 'Sulfur', hex: '#e2e29c', role: 'primary' },
+  { name: 'Smoke', hex: '#a49c92', role: 'neutral' },
   { name: 'Steel', hex: '#6f6a64', role: 'neutral' },
   { name: 'Bone', hex: '#e7e0d6', role: 'paper' },
   { name: 'Rust', hex: '#553b34', role: 'warm' },
@@ -38,7 +39,7 @@ export const roleLabel = (role: string) =>
   PALETTE_ROLES.find((item) => item.value === role)?.label ?? role;
 
 /** Neutral utilities that should always be available. */
-export const UTILITY_COLORS = ['#000000', '#ffffff', '#8d8178', '#33261f'];
+export const UTILITY_COLORS = ['#000000', '#ffffff', '#a49c92', '#6f6a64'];
 
 export const isHex = (value: string) => /^#[0-9a-f]{6}$/i.test(value.trim());
 
@@ -54,7 +55,7 @@ export const isLightHex = (value: string) => {
 /* ------------------------------------------------- app accent (UI colour) */
 
 const toRgb = (hex: string) => {
-  const value = isHex(hex) ? hex.trim() : '#a49c92';
+  const value = isHex(hex) ? hex.trim() : '#e2e29c';
   return {
     r: Number.parseInt(value.slice(1, 3), 16),
     g: Number.parseInt(value.slice(3, 5), 16),
@@ -78,7 +79,7 @@ const rgbTriple = (hex: string) => {
   return `${r} ${g} ${b}`;
 };
 
-export const DEFAULT_ACCENT = '#a49c92';
+export const DEFAULT_ACCENT = '#e2e29c';
 
 /**
  * Second CI colour. `null` = derived from the primary accent: a *visible*

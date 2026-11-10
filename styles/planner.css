@@ -1335,7 +1335,7 @@
   gap: 10px;
   align-items: center;
   padding: 8px 12px;
-  border-bottom: 1px solid rgba(190, 168, 240, 0.06);
+  border-bottom: 1px solid rgba(200, 193, 184, 0.06);
   cursor: pointer;
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }

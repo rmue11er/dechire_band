@@ -201,7 +201,7 @@ export default function SettingsPage() {
   const addColor = () => {
     setPalette((current) => [
       ...current,
-      { name: `Color ${current.length + 1}`, hex: '#a49c92', role: 'custom' },
+      { name: `Color ${current.length + 1}`, hex: '#e2e29c', role: 'custom' },
     ]);
   };
 
@@ -1148,7 +1148,7 @@ export default function SettingsPage() {
         <div className="panel-body">
           <p className="palette-intro">
             These colors now appear in <strong>every color picker</strong> of the design studio – as “Band CI”
-            above the neutral tones. Define once, stay consistent: smoke as the accent, bone as paper,
+            above the neutral tones. Define once, stay consistent: sulfur as the signal, bone as paper,
             rust and wound for print, moss and steel as the cool counterweight.
           </p>
 

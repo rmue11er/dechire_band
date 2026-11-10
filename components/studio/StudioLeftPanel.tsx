@@ -286,7 +286,7 @@ export default function StudioLeftPanel({
                     title={sticker.label}
                   >
                     <span className="sticker-glyph">
-                      <StickerGlyph glyph={sticker.id} color="#a49c92" />
+                      <StickerGlyph glyph={sticker.id} color="#e2e29c" />
                     </span>
                   </button>
                 ))}

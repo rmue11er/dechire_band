@@ -133,7 +133,7 @@
 .lab-seed.custom {
   position: relative;
   overflow: hidden;
-  background: conic-gradient(var(--accent), #c86a4a, #efe7da, #7e9c94, var(--accent));
+  background: conic-gradient(var(--accent), #6f6a64, #e7e0d6, #474b44, var(--accent));
 }
 
 .lab-seed.custom input {

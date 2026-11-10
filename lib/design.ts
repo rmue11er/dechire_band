@@ -59,10 +59,11 @@ export interface FontOption {
 
 export const FONTS: FontOption[] = [
   {
+    // Legacy id kept so saved designs and templates keep resolving.
     id: 'instrument',
-    label: 'Instrument Serif',
-    stack: "'Instrument Serif', 'Times New Roman', serif",
-    weights: [400],
+    label: 'Redaction',
+    stack: "'Redaction', 'Instrument Serif', Georgia, serif",
+    weights: [400, 700],
     mood: 'Voice',
   },
   {
@@ -112,7 +113,7 @@ export const fontById = (id: string) => fontStack(id);
 export const TEXT_SHADOWS: Record<TextElement['shadow'], string> = {
   none: 'none',
   soft: '0 10px 34px rgba(0, 0, 0, 0.6)',
-  glow: '0 0 46px rgba(184, 122, 99, 0.55)',
+  glow: '0 0 46px rgba(226, 226, 156, 0.45)',
   hard: '7px 7px 0 rgba(0, 0, 0, 0.9)',
   echo: '5px 5px 0 #6e3b2c',
 };

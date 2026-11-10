@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS profile (
   following INTEGER NOT NULL DEFAULT 0,
   avatar_media_id INTEGER,
   highlight_names TEXT NOT NULL DEFAULT '[]',
-  accent_hex TEXT NOT NULL DEFAULT '#a49c92',
+  accent_hex TEXT NOT NULL DEFAULT '#e2e29c',
   updated_at TEXT NOT NULL
 );
 
@@ -422,7 +422,7 @@ function createConnection(): DatabaseSync {
   }
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec(SCHEMA);
-  ensureColumn(db, 'profile', 'accent_hex', "TEXT NOT NULL DEFAULT '#a49c92'");
+  ensureColumn(db, 'profile', 'accent_hex', "TEXT NOT NULL DEFAULT '#e2e29c'");
   ensureColumn(db, 'profile', 'accent_2_hex', 'TEXT');
   ensureColumn(db, 'profile', 'doc_media_id', 'INTEGER');
   ensureColumn(db, 'profile', 'doc_mark_strength', 'INTEGER NOT NULL DEFAULT 30');

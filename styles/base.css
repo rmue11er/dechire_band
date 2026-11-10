@@ -1,7 +1,53 @@
 /* ============================================================
    DECHIRE · BAND HQ – Designsystem
-   Schwarz, Asche, Pastell-Lavendel. Laut, aber lesbar.
+   Ash grey, bone, one pale sulfur signal – and Redaction as the voice.
    ============================================================ */
+
+/* CI voice: Redaction (SIL OFL, vendored in /public/fonts). Registered under
+   its own name and under the legacy family name “Instrument Serif” so older
+   designs, documents and print styles resolve to the new typeface. */
+@font-face {
+  font-family: 'Redaction';
+  src: url('/fonts/redaction-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Redaction';
+  src: url('/fonts/redaction-400-italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Redaction';
+  src: url('/fonts/redaction-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Instrument Serif';
+  src: url('/fonts/redaction-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Instrument Serif';
+  src: url('/fonts/redaction-400-italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Instrument Serif';
+  src: url('/fonts/redaction-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --ink: #080808;
@@ -14,13 +60,13 @@
   --text: #e7e0d6;
   --muted: #9c948b;
   --muted-2: #6f6a64;
-  --accent: #a49c92;
-  --accent-rgb: 164 156 146;
-  --accent-2: #7f7871;
-  --accent-2-rgb: 127 120 113;
-  --accent-2-deep: #56514c;
+  --accent: #e2e29c;
+  --accent-rgb: 226 226 156;
+  --accent-2: #8f8f6a;
+  --accent-2-rgb: 143 143 106;
+  --accent-2-deep: #5c5c42;
   --accent-2-soft: rgb(var(--accent-2-rgb) / 0.14);
-  --accent-deep: #6f6a64;
+  --accent-deep: #6b6b42;
   --accent-soft: rgb(var(--accent-rgb) / 0.12);
   --accent-glow: rgb(var(--accent-rgb) / 0.24);
   --ok: #8a968a;
@@ -32,7 +78,7 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
   --shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.95);
-  --shadow-accent: 0 24px 60px -28px rgba(120, 90, 190, 0.55);
+  --shadow-accent: 0 24px 60px -28px rgba(226, 226, 156, 0.45);
   color-scheme: dark;
 }
 
@@ -625,7 +671,7 @@ button {
 
 .select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239a91b2' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a49c92' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 34px;

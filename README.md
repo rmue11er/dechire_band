@@ -11,7 +11,8 @@ paperwork — and a small public one-pager that is configured from inside it.
 ![Public site – hero](docs/screenshots/site-hero.jpg)
 
 Everything is local: **SQLite via the built-in `node:sqlite`** (no database server, no native dependencies),
-uploads on disk, no cloud, no external services. Warm black, bone, smoke grey – almost no colour. Emotional post-hardcore from Augsburg.
+uploads on disk, no cloud, no external services. Warm black, bone, ash grey and one pale sulfur
+signal – almost no colour. Emotional post-hardcore from Augsburg.
 
 ---
 
@@ -56,7 +57,7 @@ npm run typecheck    # tsc --noEmit
 no second hue in the chrome, no drop shadows. Contrast comes from hairlines, type and space.
 `styles/shell.css` is loaded last and restates the shell plus every shared component, so page styles never fight it.
 
-- **Display voice**: page titles in the serif voice (Instrument Serif), lowercase and roomy; micro labels in
+- **Display voice**: page titles in the serif voice (Redaction), lowercase and roomy; micro labels in
   Inter or Space Mono with wide tracking and a `///` accent tick. Dashboard figures use the same face, so
   numbers read like a poster, not a BI tool.
 - **Shell**: a 246 px sidebar with numbered entries (`01 … 11`), grouped by `/// STUDIO` / `/// SETUP`, a quick-jump
@@ -103,7 +104,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   smart snapping to edges, centre and other elements (with guide lines).
 - **Tools**:
   - **Text** in 6 presets (Display, Headline, Label, Quote, Body, Meta) with **three fonts only**:
-    Instrument Serif (voice), Inter (body) and Space Mono (meta). Weight, size, tracking, line height,
+    Redaction (voice), Inter (body) and Space Mono (meta). Weight, size, tracking, line height,
     alignment, uppercase, italic, outline, shadow effects and text background stay available.
   - **Shapes**: rectangle, circle, triangle, diamond, star, burst, cross, slash, line, frame, tape –
     with solid fill, gradient (adjustable angle), stroke and corner radius.
@@ -114,13 +115,14 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   - **Layers**: list with visibility, lock, order and delete.
 - **12 templates, all grey, dark and quiet**: *Release* (serif type instead of a poster shout), *Show* (date +
   city, thin frame), *Quote* (song line, two hairlines), *Merch* (type only), *Story* (out now),
-  *Statement* (Instrument Serif, no texture), *Portrait* (photo, desaturated grade, lowercase wordmark),
+  *Statement* (Redaction, no texture), *Portrait* (photo, desaturated grade, lowercase wordmark),
   *Close* (full-bleed portrait, whisper), *Note* (one note, no tape), *Elegy* (almost empty black),
   *Noise* (type running off the edges) and *Dates* (Augsburg, Munich, Stuttgart …).
   Templates are drawn in the CI placeholder and are **re-coloured to the live accent** on the way in
   (`recolourDesign()` in `lib/studio.ts`) – change the accent in Settings and every new design, every preview
   and every existing design (via *Directions → Brand accent*) follows.
-- **Three fonts, all self-hosted**: **Instrument Serif** (the voice – headlines, lyrics, quotes),
+- **Three fonts, all self-hosted**: **Redaction** (the voice – headlines, lyrics, quotes; OFL, vendored
+  in `public/fonts`),
   **Inter** (body, captions, UI) and **Space Mono** (meta, labels, dates). No font carousel: everything in the
   studio, the documents, the reels and the public site uses this set.
 - **Free photos in the studio** (`Stock` tab): search **Openverse** (WordPress/Automattic) filtered to
@@ -234,7 +236,7 @@ The band's palette is not guessed any more – it is searched. Everything runs i
   split, triad, tetrad, mono), plus lightness/chroma sliders when you want to drive it yourself.
 - **Scoring**: every candidate is ranked against the palette you already have – hue relationship to the
   nearest colour, lightness separation and contrast to the darkest tone. Each card shows the score bar
-  and a note (*sibling of Lavender*, *counterpoint to Moss*, *exact name match*).
+  and a note (*sibling of Sulfur*, *counterpoint to Moss*, *exact name match*).
 - **Tints & shades**: one click turns the seed into a paper→pastel→soft→base→deep→night ladder.
 - **Generate a set**: builds night, ink, dusk, primary, accent, bone and signal from the seed.
 - **Working palette** with role dropdowns, live preview (headline, button, chip, contrast readout) and a
@@ -269,7 +271,7 @@ as a screen: no paper sheet, no stamps, no badges, no scanlines, no mono labels,
 - **Hero** – the band name in the display face, letter by letter out of the dark, with a soft second print
   underneath it (wet ink, not neon). Beside it **one photo as a taped print**, the tagline in serif italic,
   `@handle` and a quiet `read the note ↓`. Nothing else.
-- **A note from us** – the letter itself: `Instrument Serif` body on black, 54 ch, 1.7 leading, `*word*` marked with
+- **A note from us** – the letter itself: `Redaction` body on black, 54 ch, 1.7 leading, `*word*` marked with
   the accent, italic signature. Right beside it the band's photos as taped prints (paper, tape strip, own
   angle, grayscale that develops into colour on hover). No crew list, no roles, no names.
 - **From the feed** – the same taped-print language as a wall of flyers, made from published posts.
@@ -326,7 +328,7 @@ does not come back) or **reset** (wipe + demo data again).
 - **⌘K / Ctrl+K** opens a command palette that searches posts, assets, notes, documents, milestones,
   designs and snippets and jumps straight there.
 
-### CI palette “Ash”
+### CI palette “Ash / Sulfur”
 The band colours live in the database (`palette`) and are managed through `/api/palette`.
 In settings you can change name, hex value, role and order, add new colours
 and restore the defaults. Every colour picker in the design studio shows the CI as its own
@@ -338,15 +340,17 @@ row “Band CI” above the neutral tones – with names as tooltips.
 | Soot | `#111010` | Base |
 | Ash | `#1a1918` | Deep |
 | Umbra | `#262422` | Deep |
-| Smoke | `#a49c92` | Primary |
+| Sulfur | `#e2e29c` | Primary |
+| Smoke | `#a49c92` | Neutral |
 | Steel | `#6f6a64` | Neutral |
 | Bone | `#e7e0d6` | Paper |
 | Rust | `#553b34` | Warm (print only) |
 | Wound | `#43282b` | Signal (print only) |
 | Moss | `#474b44` | Calm |
 
-The accent is a light smoke grey, not a colour: enough for buttons, kickers and focus, but the page
-stays monochrome. Rust and wound only appear in printed artwork – the screen has no hue to argue about.
+The accent is washed-out acid yellow, not pastel pink: a signal that is unusual enough to
+be recognised, but never bright enough to shout. Rust and wound only appear in printed
+artwork – the screen keeps one strange light.
 
 ### Interface accent colour
 
@@ -365,7 +369,8 @@ partner. It carries the *information* layer of the UI while the primary carries 
 | buttons, active navigation, focus rings, slider tracks, primary markers | page kickers (`.eyebrow`), panel-title icons, `scheduled` badges, meta labels, the document kicker, milestone dates in the timeline, text selection, ghost-button hover, `.chip.secondary` |
 
 Leave it on *Auto* and the second tone is a sibling of the primary (hue +26°, slightly lighter, a bit
-less chroma) – recognisably its own colour, still in the family. Pick a CI colour and it takes over
+less chroma) – recognisably its own colour, still in the family. The Ash/Sulfur CI sets it to a muted
+olive `#8f8f6a` on purpose, so sulfur stays the only signal. Pick a CI colour and it takes over
 everywhere at once (also possible from the colour lab with the `2nd` button on any swatch). Nothing in
 the app hardcodes an accent value any more – every translucent surface uses
 `rgb(var(--accent-rgb) / x)` or `rgb(var(--accent-2-rgb) / x)`, so notes, studio, planner, media,
@@ -470,7 +475,7 @@ The PNG snapshot of the feed is generated client-side via `html-to-image`.
 | ZIP export | `archiver` (v8) |
 | Image dimensions | `image-size` |
 | Design export | `html-to-image` (PNG snapshot of the canvas, 2× resolution) |
-| Fonts | `@fontsource` (Instrument Serif, Inter, Space Mono – three families, bundled locally) |
+| Fonts | Redaction (vendored OFL in `public/fonts`) + `@fontsource` Inter and Space Mono – three families, bundled locally |
 | Styling | hand-written CSS design system in `styles/` (no Tailwind, no runtime) |
 
 ### Project structure
