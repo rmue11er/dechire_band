@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  IconComment,
   IconDocument,
   IconFolder,
   IconMusic,
@@ -404,6 +405,14 @@ export default function DocumentsPage() {
                     {document.shareToken ? (
                       <span className="doc-item-share" title="Public link active">
                         <IconShare size={11} />
+                      </span>
+                    ) : null}
+                    {document.commentCount ? (
+                      <span
+                        className="doc-item-comments"
+                        title={`${document.commentCount} comment${document.commentCount === 1 ? '' : 's'}`}
+                      >
+                        <IconComment size={11} /> {document.commentCount}
                       </span>
                     ) : null}
                   </div>

@@ -40,6 +40,7 @@ export function resetToDemo() {
     DELETE FROM video_shots;
     DELETE FROM video_projects;
     DELETE FROM document_audio;
+    DELETE FROM document_comments;
     DELETE FROM documents;
     DELETE FROM songs;
     DELETE FROM snippets;
@@ -87,6 +88,7 @@ export function removeDemoData() {
     DELETE FROM video_shots;
     DELETE FROM video_projects;
     DELETE FROM document_audio;
+    DELETE FROM document_comments;
     DELETE FROM documents;
     DELETE FROM snippets;
     DELETE FROM post_metrics;

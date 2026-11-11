@@ -8,6 +8,7 @@ import {
   IconClock,
   IconDocument,
   IconFilm,
+  IconGrid,
   IconImage,
   IconMapPin,
   IconMusic,
@@ -31,6 +32,7 @@ import { toast } from '@/lib/toast';
 import {
   durationLabel,
   sectionLabel,
+  shotCoverage,
   shotStatusLabel,
   timecode,
   videoStatusLabel,
@@ -60,6 +62,8 @@ export default function VideoDetailPage() {
   const [projectModal, setProjectModal] = useState(false);
   const [libraryQuery, setLibraryQuery] = useState('');
   const [librarySongOnly, setLibrarySongOnly] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [snap, setSnap] = useState(true);
   const [uploadingShot, setUploadingShot] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const shotInput = useRef<HTMLInputElement>(null);
@@ -152,6 +156,8 @@ export default function VideoDetailPage() {
     return Math.max(60, Math.ceil(planned));
   }, [audioDuration, shots]);
 
+  const coverageInfo = useMemo(() => shotCoverage(shots, duration), [shots, duration]);
+
   useEffect(() => {
     if (time > duration) {
       setTime(0);
@@ -208,6 +214,46 @@ export default function VideoDetailPage() {
     const next = Math.max(0, Math.min(Math.max(0, duration - 0.05), value));
     setTime(next);
     if (audioRef.current) audioRef.current.currentTime = next;
+  };
+
+  /** Drag/trim on the timeline: optimistic, then persist the new timing. */
+  const updateShotTiming = useCallback(
+    async (id: number, start: number, durationValue: number) => {
+      setShots((current) =>
+        [...current.map((shot) => (shot.id === id ? { ...shot, start, duration: durationValue } : shot))].sort(
+          (a, b) => a.start - b.start || a.position - b.position
+        )
+      );
+      try {
+        const response = await fetch(`/api/video-shots/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ start, duration: durationValue }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? 'Could not move the shot');
+        setShots((current) =>
+          [...current.map((shot) => (shot.id === id ? data.shot : shot))].sort(
+            (a, b) => a.start - b.start || a.position - b.position
+          )
+        );
+      } catch (error: any) {
+        toast(error.message ?? 'Could not move the shot', 'error');
+        try {
+          const response = await fetch(`/api/videos/${videoId}/shots`);
+          const data = await response.json();
+          setShots(data.shots ?? []);
+        } catch {
+          // ignore – the next load will restore the timeline
+        }
+      }
+    },
+    [videoId]
+  );
+
+  const addShotAt = (seconds: number) => {
+    seekTo(seconds);
+    setShotModal({ shot: null });
   };
 
   const saveShot = (saved: VideoShot) => {
@@ -327,6 +373,9 @@ export default function VideoDetailPage() {
         </span>
         <span>
           <IconClock size={12} /> {durationLabel(duration)}
+        </span>
+        <span>
+          <IconGrid size={12} /> {Math.round(coverageInfo.ratio * 100)}% covered
         </span>
         {project.audioTitle ? (
           <span>
@@ -458,8 +507,16 @@ export default function VideoDetailPage() {
               time={time}
               shots={shots}
               selectedId={selectedId}
+              zoom={zoom}
+              snap={snap}
               onSeek={seekTo}
               onSelect={(shot) => setSelectedId(shot.id)}
+              onTimingChange={updateShotTiming}
+              onOpenShot={(shot) => {
+                setSelectedId(shot.id);
+                setShotModal({ shot });
+              }}
+              onAddShot={addShotAt}
             />
 
             {project.audioUrl ? (
@@ -476,8 +533,40 @@ export default function VideoDetailPage() {
               />
             ) : null}
 
+            <div className="video-timeline-tools">
+              <span className="video-coverage">
+                {Math.round(coverageInfo.ratio * 100)}% covered
+                {coverageInfo.gaps.length ? <em> · {coverageInfo.gaps.length} gaps</em> : null}
+              </span>
+              <div className="video-timeline-actions">
+                <button
+                  type="button"
+                  className={`video-toggle ${snap ? 'on' : ''}`}
+                  aria-pressed={snap}
+                  onClick={() => setSnap((value) => !value)}
+                  title="Snap to bars and shot edges – hold Shift while dragging to bypass"
+                >
+                  <IconGrid size={12} /> Snap
+                </button>
+                <div className="video-zoom" role="group" aria-label="Timeline zoom">
+                  {[1, 2, 4].map((level) => (
+                    <button
+                      key={level}
+                      type="button"
+                      className={zoom === level ? 'on' : ''}
+                      aria-pressed={zoom === level}
+                      onClick={() => setZoom(level)}
+                    >
+                      {level}×
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <div className="video-wave-note small muted">
-              Klick in die Timeline, um zu springen · Klick auf einen Shot, um ihn auszuwählen.
+              Ziehen: Shot verschieben · an den Rändern: kürzen oder verlängern · Doppelklick in die Spur:
+              neuer Shot · ⇧ hält das Raster an · Pfeiltasten schieben den ausgewählten Shot.
             </div>
           </section>
 
@@ -485,7 +574,10 @@ export default function VideoDetailPage() {
             <div className="video-storyboard-head">
               <div>
                 <span className="label">Storyboard</span>
-                <p className="small muted">{shots.length} shots · {durationLabel(duration)}</p>
+                <p className="small muted">
+                  {shots.length} shots · {durationLabel(duration)} ·{' '}
+                  {Math.round(coverageInfo.ratio * 100)}% covered
+                </p>
               </div>
               <button type="button" className="btn btn-sm btn-primary" onClick={() => setShotModal({ shot: null })}>
                 <IconPlus size={13} /> Shot
@@ -535,7 +627,8 @@ export default function VideoDetailPage() {
                     <div className="shot-main">
                       <div className="shot-top">
                         <span className="shot-time mono">
-                          {timecode(shot.start)} <em>· {shot.duration.toFixed(1)} s</em>
+                          {timecode(shot.start)}{' '}
+                          <em>→ {timecode(shot.start + shot.duration)} · {shot.duration.toFixed(1)} s</em>
                         </span>
                         <span className="chip">{sectionLabel(shot.section)}</span>
                         <span className={`shot-status status-${shot.status}`}>{shotStatusLabel(shot.status)}</span>

@@ -64,6 +64,7 @@ import type {
   BandDocument,
   DocFolder,
   DocumentAudio,
+  DocumentComment,
   DocumentKind,
   MediaItem,
   Profile,
@@ -111,6 +112,8 @@ export default function DocEditor({
   const [audio, setAudio] = useState<DocumentAudio[]>(doc.audio ?? []);
   const [audioOpen, setAudioOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [comments, setComments] = useState<DocumentComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [origin, setOrigin] = useState('');
   const ciPrimary = palette.find((color) => color.role === 'primary')?.hex ?? '#e2e29c';
   const band = profile?.bandName ?? 'déchire';
@@ -369,6 +372,41 @@ export default function DocEditor({
     } catch {
       toast('Could not copy – select the link manually', 'error');
     }
+  };
+
+  /* ------------------------------------------------------- doc comments */
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    let active = true;
+    setCommentsLoading(true);
+    fetch(`/api/documents/${doc.id}/comments`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (active) setComments(data.comments ?? []);
+      })
+      .catch(() => {
+        if (active) toast('Could not load the comments', 'error');
+      })
+      .finally(() => {
+        if (active) setCommentsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [shareOpen, doc.id]);
+
+  const removeComment = async (id: number) => {
+    if (!window.confirm('Delete this comment?')) return;
+    const snapshot = comments;
+    setComments((current) => current.filter((entry) => entry.id !== id));
+    const response = await fetch(`/api/document-comments/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      setComments(snapshot);
+      toast('Could not delete the comment', 'error');
+      return;
+    }
+    toast('Comment deleted');
   };
 
   /* ---------------------------------------------------------- song parts */
@@ -1288,6 +1326,41 @@ export default function DocEditor({
               playable on the shared page.
             </p>
           ) : null}
+
+          <div className="doc-comments-panel">
+            <div className="doc-comments-panel-head">
+              <span className="label">Comments</span>
+              <span className="mono small muted">{comments.length}</span>
+            </div>
+            {commentsLoading ? (
+              <p className="small muted">Loading comments …</p>
+            ) : comments.length ? (
+              <div className="doc-admin-comments">
+                {comments.map((comment) => (
+                  <article key={comment.id} className="doc-admin-comment">
+                    <div className="doc-admin-comment-top">
+                      <strong>{comment.author}</strong>
+                      <span className="mono">{timeAgo(comment.createdAt)}</span>
+                      <button
+                        type="button"
+                        className="btn btn-icon"
+                        title="Delete comment"
+                        aria-label={`Delete comment by ${comment.author}`}
+                        onClick={() => removeComment(comment.id)}
+                      >
+                        <IconTrash size={12} />
+                      </button>
+                    </div>
+                    <p>{comment.body}</p>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="small muted">
+                No comments yet. Readers with the public link can leave a note here.
+              </p>
+            )}
+          </div>
         </div>
       </Modal>
     </div>

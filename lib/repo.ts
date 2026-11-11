@@ -7,6 +7,7 @@ import type {
   Design,
   DocFolder,
   DocumentAudio,
+  DocumentComment,
   InstagramConnection,
   MediaFolder,
   MediaGroup,
@@ -1331,13 +1332,15 @@ function mapDocument(row: any): BandDocument {
     plainText: row.plain_text ?? '',
     tags: parseList(row.tags),
     audio: listDocumentAudio(Number(row.id)),
+    commentCount: Number(row.comment_count ?? 0),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
 const DOCUMENT_SELECT = `
-  SELECT d.*, f.name AS folder_name, s.title AS song_title
+  SELECT d.*, f.name AS folder_name, s.title AS song_title,
+    (SELECT COUNT(*) FROM document_comments c WHERE c.document_id = d.id) AS comment_count
   FROM documents d
   LEFT JOIN doc_folders f ON f.id = d.folder_id
   LEFT JOIN songs s ON s.id = d.song_id`;
@@ -1467,10 +1470,57 @@ export function deleteDocument(id: number) {
       plainText: document.plainText,
       tags: document.tags,
       audio: document.audio.map((entry) => ({ mediaId: entry.mediaId, label: entry.label })),
+      comments: listDocumentComments(id).map((entry) => ({
+        author: entry.author,
+        body: entry.body,
+        createdAt: entry.createdAt,
+      })),
     });
   }
   execute('UPDATE video_projects SET treatment_doc_id = NULL WHERE treatment_doc_id = ?', [id]);
   execute('DELETE FROM documents WHERE id = ?', [id]);
+}
+
+/* --------------------------------------------------------- doc comments */
+
+function mapDocumentComment(row: any): DocumentComment {
+  return {
+    id: Number(row.id),
+    documentId: Number(row.document_id),
+    author: row.author || 'anonymous',
+    body: row.body ?? '',
+    createdAt: row.created_at,
+  };
+}
+
+export function listDocumentComments(documentId: number): DocumentComment[] {
+  return queryAll<any>(
+    'SELECT * FROM document_comments WHERE document_id = ? ORDER BY created_at ASC, id ASC',
+    [documentId]
+  ).map(mapDocumentComment);
+}
+
+export function getDocumentComment(id: number): DocumentComment | null {
+  const row = queryOne<any>('SELECT * FROM document_comments WHERE id = ?', [id]);
+  return row ? mapDocumentComment(row) : null;
+}
+
+export function createDocumentComment(
+  documentId: number,
+  input: { author: string; body: string; createdAt?: string }
+) {
+  const createdAt = input.createdAt ?? new Date().toISOString();
+  const result = execute(
+    'INSERT INTO document_comments (document_id, author, body, created_at) VALUES (?, ?, ?, ?)',
+    [documentId, input.author || 'anonymous', input.body, createdAt]
+  );
+  return getDocumentComment(Number(result.lastInsertRowid));
+}
+
+export function deleteDocumentComment(id: number) {
+  const comment = getDocumentComment(id);
+  execute('DELETE FROM document_comments WHERE id = ?', [id]);
+  return comment;
 }
 
 /* ----------------------------------------------------------------- metrics */

@@ -246,6 +246,15 @@ CREATE TABLE IF NOT EXISTS document_audio (
   FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS document_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  document_id INTEGER NOT NULL,
+  author TEXT NOT NULL DEFAULT 'anonymous',
+  body TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS snippets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   kind TEXT NOT NULL DEFAULT 'caption',
@@ -350,6 +359,7 @@ CREATE INDEX IF NOT EXISTS idx_posts_position ON posts(position);
 CREATE INDEX IF NOT EXISTS idx_milestones_date ON milestones(date);
 CREATE INDEX IF NOT EXISTS idx_documents_kind ON documents(kind);
 CREATE INDEX IF NOT EXISTS idx_document_audio_document ON document_audio(document_id);
+CREATE INDEX IF NOT EXISTS idx_document_comments_document ON document_comments(document_id);
 CREATE INDEX IF NOT EXISTS idx_post_metrics_post ON post_metrics(post_id);
 CREATE INDEX IF NOT EXISTS idx_snippets_kind ON snippets(kind);
 `;

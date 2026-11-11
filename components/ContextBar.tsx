@@ -11,6 +11,7 @@ const LABELS: { href: string; label: string }[] = [
   { href: '/studio', label: 'Design Studio' },
   { href: '/palette', label: 'Colour Lab' },
   { href: '/media', label: 'Media' },
+  { href: '/songs', label: 'Song Index' },
   { href: '/notes', label: 'Notes' },
   { href: '/docs', label: 'Documents' },
   { href: '/website', label: 'Website' },

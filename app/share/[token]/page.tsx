@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import DocComments from '@/components/DocComments';
 import ReleasePlayer from '@/components/ReleasePlayer';
 import { formatDate } from '@/lib/format';
 import { docKindLabel } from '@/lib/kinds';
-import { getDocumentByShareToken, getProfile } from '@/lib/repo';
+import { getDocumentByShareToken, getProfile, listDocumentComments } from '@/lib/repo';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -40,6 +41,7 @@ export default async function SharedDocumentPage({ params }: Props) {
   const profile = getProfile();
   const kindLabel = docKindLabel(document.kind);
   const tagline = profile.bio?.split('\n')[0] || 'emotional post-hardcore /// augsburg';
+  const comments = listDocumentComments(document.id);
 
   return (
     <main className="doc-share">
@@ -104,8 +106,10 @@ export default async function SharedDocumentPage({ params }: Props) {
         </div>
       </article>
 
+      <DocComments token={token} initial={comments} />
+
       <p className="doc-share-note">
-        Private link – not indexed. Anyone with this link can read the document.
+        Private link – not indexed. Anyone with this link can read the document and leave a note.
       </p>
     </main>
   );

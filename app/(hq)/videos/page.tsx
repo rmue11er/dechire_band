@@ -18,7 +18,7 @@ import VideoProjectModal from '@/components/videos/VideoProjectModal';
 import { EmptyState, PageHead, Spinner } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import { toast } from '@/lib/toast';
-import { durationLabel, videoStatusLabel } from '@/lib/videos';
+import { durationLabel, VIDEO_STATUS, videoStatusLabel } from '@/lib/videos';
 import type { BandDocument, MediaItem, Song, VideoProject } from '@/lib/types';
 
 export default function VideosPage() {
@@ -196,6 +196,14 @@ export default function VideosPage() {
                     </div>
                   ) : null}
                 </div>
+                <span className="video-card-flow" aria-hidden="true">
+                  {VIDEO_STATUS.map((entry, index) => (
+                    <i
+                      key={entry.value}
+                      className={index <= VIDEO_STATUS.findIndex((step) => step.value === video.status) ? 'on' : ''}
+                    />
+                  ))}
+                </span>
               </Link>
               <div className="video-card-actions">
                 <button

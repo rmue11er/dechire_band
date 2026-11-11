@@ -23,6 +23,7 @@ const TABLES = [
   'milestones',
   'documents',
   'document_audio',
+  'document_comments',
   'snippets',
   'post_metrics',
   'palette',
@@ -81,6 +82,7 @@ export function backupResponse() {
       designs: countRows('designs'),
       milestones: countRows('milestones'),
       documents: countRows('documents'),
+      comments: countRows('document_comments'),
     },
   };
   archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' });
@@ -166,6 +168,7 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
       DELETE FROM video_shots;
       DELETE FROM video_projects;
       DELETE FROM document_audio;
+      DELETE FROM document_comments;
       DELETE FROM documents;
       DELETE FROM songs;
       DELETE FROM snippets;
@@ -192,6 +195,7 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
     insertAll('milestones', data.milestones);
     insertAll('documents', data.documents);
     insertAll('document_audio', data.document_audio);
+    insertAll('document_comments', data.document_comments);
     insertAll('snippets', data.snippets);
     insertAll('post_metrics', data.post_metrics);
     insertAll('palette', data.palette);

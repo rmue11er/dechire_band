@@ -252,6 +252,15 @@ export interface DocumentAudio {
   media: MediaItem;
 }
 
+/** A public comment left on a shared document. */
+export interface DocumentComment {
+  id: number;
+  documentId: number;
+  author: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface DocFolder {
   id: number;
   name: string;
@@ -272,6 +281,7 @@ export interface BandDocument {
   plainText: string;
   tags: string[];
   audio: DocumentAudio[];
+  commentCount: number;
   createdAt: string;
   updatedAt: string;
 }

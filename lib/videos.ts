@@ -1,5 +1,5 @@
 import { LYRIC_PARTS, guessPartKind } from './kinds';
-import type { BandDocument, ShotStatus, VideoStatus } from './types';
+import type { BandDocument, ShotStatus, VideoShot, VideoStatus } from './types';
 
 export const VIDEO_STATUS: { value: VideoStatus; label: string }[] = [
   { value: 'idea', label: 'Idea' },
@@ -93,4 +93,31 @@ export function blocksFromDocument(document: BandDocument): DocLine[] {
 /** Plain text lines from a treatment document – one block per shot idea. */
 export function linesFromDocument(document: BandDocument) {
   return blocksFromDocument(document).map((line) => line.text);
+}
+
+/**
+ * How much of the song is covered by shots, plus the holes between them.
+ * Overlaps are merged, shots beyond the song are clipped.
+ */
+export function shotCoverage(shots: VideoShot[], duration: number) {
+  const spans = shots
+    .map((shot) => [
+      Math.max(0, shot.start),
+      Math.min(duration, shot.start + shot.duration),
+    ] as [number, number])
+    .filter(([start, end]) => end > start)
+    .sort((a, b) => a[0] - b[0]);
+
+  const gaps: { start: number; end: number }[] = [];
+  let covered = 0;
+  let cursor = 0;
+  for (const [start, end] of spans) {
+    if (start > cursor + 0.05) gaps.push({ start: cursor, end: start });
+    const from = Math.max(start, cursor);
+    if (end > from) covered += end - from;
+    cursor = Math.max(cursor, end);
+  }
+  if (cursor < duration - 0.05) gaps.push({ start: cursor, end: duration });
+
+  return { covered, gaps, ratio: duration > 0 ? Math.min(1, covered / duration) : 0 };
 }

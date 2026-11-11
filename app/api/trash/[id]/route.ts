@@ -2,6 +2,7 @@ import { fail, ok, toInt } from '@/lib/api';
 import {
   attachDocumentAudio,
   createDocument,
+  createDocumentComment,
   createMilestone,
   createNote,
   createPost,
@@ -54,6 +55,18 @@ export async function POST(_request: Request, { params }: Ctx) {
         if (Array.isArray(payload.audio)) {
           for (const track of payload.audio) {
             attachDocumentAudio(document.id, Number(track?.mediaId), String(track?.label ?? ''));
+          }
+        }
+        // Shared-document comments are part of the sheet.
+        if (Array.isArray(payload.comments)) {
+          for (const entry of payload.comments) {
+            const body = String(entry?.body ?? '').trim().slice(0, 2000);
+            if (!body) continue;
+            createDocumentComment(document.id, {
+              author: String(entry?.author ?? 'anonymous').trim().slice(0, 60) || 'anonymous',
+              body,
+              createdAt: typeof entry?.createdAt === 'string' ? entry.createdAt : undefined,
+            });
           }
         }
         const restored = getDocument(document.id) ?? document;
