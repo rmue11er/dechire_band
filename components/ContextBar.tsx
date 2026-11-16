@@ -4,19 +4,19 @@ import { usePathname } from 'next/navigation';
 import { IconSearch } from '@/components/icons';
 
 const LABELS: { href: string; label: string }[] = [
-  { href: '/planner', label: 'Post Planner' },
-  { href: '/calendar', label: 'Calendar' },
-  { href: '/releases', label: 'Release Wave' },
-  { href: '/reels', label: 'Reel Lab' },
-  { href: '/studio', label: 'Design Studio' },
-  { href: '/palette', label: 'Colour Lab' },
-  { href: '/media', label: 'Media' },
-  { href: '/songs', label: 'Song Index' },
-  { href: '/notes', label: 'Notes' },
-  { href: '/docs', label: 'Documents' },
-  { href: '/website', label: 'Website' },
-  { href: '/brand', label: 'Brand Sheet' },
-  { href: '/settings', label: 'Settings' },
+  { href: '/admin/planner', label: 'Post Planner' },
+  { href: '/admin/calendar', label: 'Calendar' },
+  { href: '/admin/releases', label: 'Release Wave' },
+  { href: '/admin/reels', label: 'Reel Lab' },
+  { href: '/admin/studio', label: 'Design Studio' },
+  { href: '/admin/palette', label: 'Colour Lab' },
+  { href: '/admin/media', label: 'Media' },
+  { href: '/admin/songs', label: 'Song Index' },
+  { href: '/admin/notes', label: 'Notes' },
+  { href: '/admin/docs', label: 'Documents' },
+  { href: '/admin/website', label: 'Website' },
+  { href: '/admin/brand', label: 'Brand Sheet' },
+  { href: '/admin/settings', label: 'Settings' },
 ];
 
 /**
@@ -26,7 +26,7 @@ const LABELS: { href: string; label: string }[] = [
 export default function ContextBar() {
   const pathname = usePathname();
   const current = LABELS.find((item) => pathname.startsWith(item.href));
-  const label = pathname === '/' ? 'Overview' : current?.label ?? 'Workspace';
+  const label = pathname === '/admin' ? 'Overview' : current?.label ?? 'Workspace';
 
   const today = new Date()
     .toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })

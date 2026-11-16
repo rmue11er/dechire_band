@@ -64,7 +64,7 @@ export default function ReleasesPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? 'Could not create the release');
       toast('Welle angelegt');
-      router.push(`/releases/${data.release.id}`);
+      router.push(`/admin/releases/${data.release.id}`);
     } catch (error: any) {
       toast(error.message ?? 'Could not create the release', 'error');
       setCreating(false);
@@ -111,7 +111,7 @@ export default function ReleasesPage() {
             const percent = total ? Math.round((done / total) * 100) : 0;
             const days = daysUntil(release.releaseDate);
             return (
-              <Link key={release.id} href={`/releases/${release.id}`} className="release-card">
+              <Link key={release.id} href={`/admin/releases/${release.id}`} className="release-card">
                 <span className="release-cover">
                   {release.coverUrl ? (
                     <img src={release.coverUrl} alt="" />

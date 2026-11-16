@@ -172,7 +172,7 @@ export default function CalendarPage() {
         title: post.caption.split('\n')[0].slice(0, 60) || 'Scheduled post',
         date: key,
         id: `p-${post.id}`,
-        href: `/planner?post=${post.id}`,
+        href: `/admin/planner?post=${post.id}`,
       });
     }
     return list.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8);
@@ -432,7 +432,7 @@ export default function CalendarPage() {
                       ) : (
                         <Link
                           key={`p-${slot.post.id}`}
-                          href={`/planner?post=${slot.post.id}`}
+                          href={`/admin/planner?post=${slot.post.id}`}
                           className="cal-chip post"
                           title={slot.post.caption}
                           onClick={(event) => event.stopPropagation()}
@@ -474,7 +474,7 @@ export default function CalendarPage() {
               ) : (
                 <div className="cal-daylist">
                   {selectedPosts.map(({ post }) => (
-                    <Link key={`dp-${post.id}`} href={`/planner?post=${post.id}`} className="cal-dayrow post">
+                    <Link key={`dp-${post.id}`} href={`/admin/planner?post=${post.id}`} className="cal-dayrow post">
                       <span className="cal-kind post">
                         <IconInstagram size={10} /> {post.status}
                       </span>

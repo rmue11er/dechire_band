@@ -8,10 +8,11 @@ import { SESSION_COOKIE, authEnabled, verifySession } from './lib/auth';
  * `/api/auth/login`, which sets a signed, httpOnly session cookie. The gate only
  * exists when `HQ_PASSWORD` is set, so local development stays open.
  *
- * Public without a session: the one-pager (`/site`), the login itself, uploaded
- * files (Instagram has to fetch them), and the assets those pages need.
+ * Public without a session: the public page (`/`), its old `/site` URL, the login itself,
+ * shared documents, uploaded files (Instagram has to fetch them), and the assets those pages need.
  */
 const PUBLIC_PATHS: RegExp[] = [
+  /^\/$/,
   /^\/site(\/|$)/,
   /^\/share(\/|$)/,
   /^\/login(\/|$)/,

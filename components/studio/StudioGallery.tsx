@@ -71,7 +71,7 @@ export default function StudioGallery() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? 'Could not create the design');
-      router.push(`/studio/${data.design.id}`);
+      router.push(`/admin/studio/${data.design.id}`);
     } catch (error: any) {
       toast(error.message ?? 'Something went wrong', 'error');
       setCreating(false);
@@ -230,7 +230,7 @@ export default function StudioGallery() {
               const previewWidth = design.height > design.width ? 230 * (design.width / design.height) : 260;
               return (
                 <article key={design.id} className="design-card">
-                  <Link href={`/studio/${design.id}`} className="design-preview">
+                  <Link href={`/admin/studio/${design.id}`} className="design-preview">
                     <SurfacePreview design={design} width={previewWidth} />
                   </Link>
                   <div className="design-info">
@@ -240,7 +240,7 @@ export default function StudioGallery() {
                     </span>
                   </div>
                   <div className="design-actions">
-                    <Link href={`/studio/${design.id}`} className="btn btn-sm">
+                    <Link href={`/admin/studio/${design.id}`} className="btn btn-sm">
                       <IconPencil size={13} /> Edit
                     </Link>
                     <button

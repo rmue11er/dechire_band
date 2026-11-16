@@ -57,12 +57,12 @@ const STATUS_LABEL: Record<ReleaseStatus, string> = {
 };
 
 const MODULE_LINK: Record<string, string> = {
-  studio: '/studio',
-  media: '/media',
-  docs: '/docs',
-  website: '/website',
-  press: '/docs',
-  orga: '/calendar',
+  studio: '/admin/studio',
+  media: '/admin/media',
+  docs: '/admin/docs',
+  website: '/admin/website',
+  press: '/admin/docs',
+  orga: '/admin/calendar',
 };
 
 const relative = (iso: string) => {
@@ -316,7 +316,7 @@ export default function ReleaseDetailPage() {
     const response = await fetch(`/api/releases/${releaseId}`, { method: 'DELETE' });
     if (response.ok) {
       toast('Welle gelöscht');
-      router.push('/releases');
+      router.push('/admin/releases');
     }
   };
 
@@ -325,7 +325,7 @@ export default function ReleaseDetailPage() {
     return (
       <div className="panel" style={{ padding: 40, textAlign: 'center' }}>
         <h2 style={{ fontSize: 20 }}>Release nicht gefunden</h2>
-        <Link href="/releases" className="btn btn-primary" style={{ marginTop: 18 }}>
+        <Link href="/admin/releases" className="btn btn-primary" style={{ marginTop: 18 }}>
           Zur Übersicht
         </Link>
       </div>
@@ -335,7 +335,7 @@ export default function ReleaseDetailPage() {
   return (
     <>
       <div className="release-topline">
-        <Link href="/releases" className="btn btn-ghost btn-sm">
+        <Link href="/admin/releases" className="btn btn-ghost btn-sm">
           <IconChevronLeft size={14} /> Alle Releases
         </Link>
         <span className="release-topline-meta">
@@ -581,7 +581,7 @@ export default function ReleaseDetailPage() {
                               {task.documentId && document ? (
                                 <span className="wave-task-asset on">
                                   <IconDocument size={11} />
-                                  <Link href={`/docs?doc=${document.id}`} className="truncate">
+                                  <Link href={`/admin/docs?doc=${document.id}`} className="truncate">
                                     {document.title}
                                   </Link>
                                   <button
@@ -614,7 +614,7 @@ export default function ReleaseDetailPage() {
                               {task.designId && design ? (
                                 <span className="wave-task-asset on">
                                   <IconLayers size={11} />
-                                  <Link href={`/studio/${design.id}`} className="truncate">
+                                  <Link href={`/admin/studio/${design.id}`} className="truncate">
                                     {design.title}
                                   </Link>
                                   <button
@@ -658,7 +658,7 @@ export default function ReleaseDetailPage() {
                           <div className="wave-task-actions">
                             {task.module === 'planner' ? (
                               task.postId ? (
-                                <Link href={`/planner?post=${task.postId}`} className="wave-act">
+                                <Link href={`/admin/planner?post=${task.postId}`} className="wave-act">
                                   <IconExternal size={11} /> Post
                                 </Link>
                               ) : (

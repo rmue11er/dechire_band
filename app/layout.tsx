@@ -6,6 +6,7 @@ import { getProfile } from '@/lib/repo';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://dechire.band'),
   title: 'déchire · Band HQ',
   description: 'Emotional post-hardcore from Augsburg – planning, media, words. Dark, quiet, no big production.',
 };
@@ -19,7 +20,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * Only the document shell lives here. The HQ chrome (sidebar, command palette,
- * toasts) sits in `app/(hq)/layout.tsx`, so the public website can use its own
+ * toasts) sits in `app/admin/layout.tsx`, so the public website can use its own
  * frame without sidebars and toolbar noise.
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {

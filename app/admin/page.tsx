@@ -107,7 +107,7 @@ export default function DashboardPage() {
         date: new Date(post.scheduledAt!),
         title: post.caption?.split('\n')[0]?.trim() || 'Post without caption',
         meta: `${shortWeekday(new Date(post.scheduledAt!))} · ${formatTime(post.scheduledAt)}`,
-        href: `/planner?post=${post.id}`,
+        href: `/admin/planner?post=${post.id}`,
         tone: 'post',
         status: post.status,
         thumb: post.media[0],
@@ -123,7 +123,7 @@ export default function DashboardPage() {
           meta: `${KIND_LABEL[milestone.kind] ?? 'Date'}${
             milestone.checklist.length ? ` · ${open}/${milestone.checklist.length} open` : ''
           }`,
-          href: '/calendar',
+          href: '/admin/calendar',
           tone: 'milestone',
         };
       }),
@@ -147,7 +147,7 @@ export default function DashboardPage() {
         : !hasCaption
           ? 'Draft · caption missing'
           : 'Draft · not scheduled yet',
-      href: `/planner?post=${post.id}`,
+      href: `/admin/planner?post=${post.id}`,
       tone: !hasMedia || !hasCaption ? 'warn' : 'info',
     });
   }
@@ -159,7 +159,7 @@ export default function DashboardPage() {
         key: `media-${post.id}`,
         label: post.caption?.split('\n')[0]?.trim() || 'Scheduled post',
         detail: `Goes live ${relativeDay(post.scheduledAt).toLowerCase()} · no media attached`,
-        href: `/planner?post=${post.id}`,
+        href: `/admin/planner?post=${post.id}`,
         tone: 'warn',
         days,
       });
@@ -176,7 +176,7 @@ export default function DashboardPage() {
         detail: `${KIND_LABEL[milestone.kind] ?? 'Date'} · ${
           days < 0 ? `${Math.abs(days)} d overdue` : relativeDay(milestone.date).toLowerCase()
         } · ${open} task${open === 1 ? '' : 's'} open`,
-        href: '/calendar',
+        href: '/admin/calendar',
         tone: days < 0 || days <= 3 ? 'warn' : 'info',
         days,
       });
@@ -219,15 +219,15 @@ export default function DashboardPage() {
         }
         actions={
           <>
-            <Link className="btn btn-ghost" href="/calendar">
+            <Link className="btn btn-ghost" href="/admin/calendar">
               <IconCalendar size={15} />
               Calendar
             </Link>
-            <Link className="btn btn-ghost" href="/media">
+            <Link className="btn btn-ghost" href="/admin/media">
               <IconUpload size={15} />
               Media
             </Link>
-            <Link className="btn btn-primary" href="/planner">
+            <Link className="btn btn-primary" href="/admin/planner">
               <IconPlus size={15} />
               Plan a post
             </Link>
@@ -242,7 +242,7 @@ export default function DashboardPage() {
               <IconClock size={16} />
               Coming up
             </div>
-            <Link className="mono small" href="/calendar">
+            <Link className="mono small" href="/admin/calendar">
               Calendar →
             </Link>
           </div>
@@ -250,7 +250,7 @@ export default function DashboardPage() {
           {upcoming.length === 0 ? (
             <div className="dash-empty">
               <p className="muted small">Nothing scheduled or dated. Plan the next post or drop a release date.</p>
-              <Link className="btn btn-sm btn-primary" href="/planner">
+              <Link className="btn btn-sm btn-primary" href="/admin/planner">
                 <IconPlus size={14} /> Plan a post
               </Link>
             </div>
@@ -351,7 +351,7 @@ export default function DashboardPage() {
                     <span className="mono small muted">best weekday</span>
                   </div>
                   {lastPublished ? (
-                    <Link href={`/planner?post=${lastPublished.id}`} className="perf-last">
+                    <Link href={`/admin/planner?post=${lastPublished.id}`} className="perf-last">
                       <span className="mono small muted">last published</span>
                       <span className="truncate">
                         {lastPublished.caption.split('\n')[0].slice(0, 46) || 'Post'}
@@ -377,28 +377,28 @@ export default function DashboardPage() {
           </span>
         </div>
         <div className="panel-body quick-links">
-          <Link href="/docs" className="quick-link">
+          <Link href="/admin/docs" className="quick-link">
             <IconDocument size={15} />
             <span>
               <strong>Documents</strong>
               <em className="mono small muted">rider, contracts, press</em>
             </span>
           </Link>
-          <Link href="/studio" className="quick-link">
+          <Link href="/admin/studio" className="quick-link">
             <IconSparkles size={15} />
             <span>
               <strong>Design studio</strong>
               <em className="mono small muted">stories, posters, covers</em>
             </span>
           </Link>
-          <Link href="/notes" className="quick-link">
+          <Link href="/admin/notes" className="quick-link">
             <IconNote size={15} />
             <span>
               <strong>Notes</strong>
               <em className="mono small muted">lyrics, ideas, setlists</em>
             </span>
           </Link>
-          <Link href="/website" className="quick-link">
+          <Link href="/admin/website" className="quick-link">
             <IconMusic size={15} />
             <span>
               <strong>Website</strong>

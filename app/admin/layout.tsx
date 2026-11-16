@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Emotional post-hardcore from Augsburg – planning, media, words. Dark, quiet, no big production.',
 };
 
-/** The internal workspace: sidebar, palette, toasts – everything the public site skips. */
+/** The internal workspace under /admin: sidebar, palette, toasts – everything the public site skips. */
 export default function HqLayout({ children }: { children: React.ReactNode }) {
   return (
     <>

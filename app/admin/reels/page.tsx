@@ -801,7 +801,7 @@ export default function ReelsPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? 'Could not create the post');
       closeExport();
-      router.push(`/planner?post=${data.post.id}`);
+      router.push(`/admin/planner?post=${data.post.id}`);
     } catch (error: any) {
       toast(error.message ?? 'Could not create the post', 'error');
     } finally {
@@ -1308,7 +1308,7 @@ export default function ReelsPage() {
                 {lyricsDocs.length === 0 ? (
                   <p className="small muted reel-lyric-source-empty">
                     Noch kein Lyrics-Dokument gefunden. Lege eins unter{' '}
-                    <Link href="/docs">Documents</Link> an – es erscheint dann hier Zeile für Zeile.
+                    <Link href="/admin/docs">Documents</Link> an – es erscheint dann hier Zeile für Zeile.
                   </p>
                 ) : lyricsDoc && lyricsDocLines.length ? (
                   <>

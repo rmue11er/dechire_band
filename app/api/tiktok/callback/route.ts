@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 const STATE_COOKIE = 'tt_oauth_state';
 
 function back(request: Request, params: Record<string, string>) {
-  const url = new URL('/settings', request.url);
+  const url = new URL('/admin/settings', request.url);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   const response = NextResponse.redirect(url);
   response.cookies.set(STATE_COOKIE, '', { path: '/', maxAge: 0 });

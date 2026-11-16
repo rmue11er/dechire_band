@@ -131,7 +131,7 @@ export default function WebsitePage() {
   const shots = draft.mediaIds
     .map((id) => media.find((item) => item.id === id))
     .filter((item): item is MediaItem => Boolean(item));
-  const previewSrc = `/site?v=${previewKey}`;
+  const previewSrc = `/?v=${previewKey}`;
 
   return (
     <>
@@ -145,7 +145,7 @@ export default function WebsitePage() {
         sub="One page for the outside: who you are, a few photos, and how to reach you. Every block can be switched off."
         actions={
           <>
-            <a className="btn btn-ghost" href="/site" target="_blank" rel="noreferrer">
+            <a className="btn btn-ghost" href="/" target="_blank" rel="noreferrer">
               Open site <IconExternal size={14} />
             </a>
             <button type="button" className="btn btn-primary" onClick={() => save()} disabled={saving}>
@@ -201,7 +201,7 @@ export default function WebsitePage() {
                 <IconEye size={15} />
                 <span>
                   {draft.published
-                    ? 'The page is reachable at /site and shows every block you left on.'
+                    ? 'The page is reachable at / and shows every block you left on.'
                     : 'Draft mode: visitors only see the gate. Nothing else is visible.'}
                 </span>
               </div>
@@ -660,7 +660,7 @@ export default function WebsitePage() {
         {/* -------------------------------------------------------- preview */}
         <aside className="web-preview">
           <div className="web-preview-head">
-            <span className="web-preview-url grow">/site</span>
+            <span className="web-preview-url grow">/</span>
             <div className="seg" role="tablist">
               {(['desktop', 'mobile'] as const).map((option) => (
                 <button

@@ -90,7 +90,7 @@ export default function VideoDetailPage() {
       setDocuments(docsData.documents ?? []);
     } catch {
       toast('Could not load the video project', 'error');
-      router.push('/videos');
+      router.push('/admin/videos');
     } finally {
       setLoading(false);
     }
@@ -313,7 +313,7 @@ export default function VideoDetailPage() {
     const response = await fetch(`/api/videos/${project.id}`, { method: 'DELETE' });
     if (response.ok) {
       toast('Video project deleted');
-      router.push('/videos');
+      router.push('/admin/videos');
     } else {
       toast('Could not delete the project', 'error');
     }
@@ -341,7 +341,7 @@ export default function VideoDetailPage() {
         }
         actions={
           <>
-            <Link className="btn btn-ghost" href="/videos">
+            <Link className="btn btn-ghost" href="/admin/videos">
               <IconChevronLeft size={14} /> All videos
             </Link>
             <button type="button" className="btn btn-ghost" onClick={() => window.print()}>
@@ -666,7 +666,7 @@ export default function VideoDetailPage() {
                   <span className="label">Notizen</span>
                   <p className="small muted">{notesDocument.title}</p>
                 </div>
-                <Link className="btn btn-sm btn-ghost" href={`/docs?doc=${notesDocument.id}`}>
+                <Link className="btn btn-sm btn-ghost" href={`/admin/docs?doc=${notesDocument.id}`}>
                   <IconDocument size={13} /> Dokument öffnen
                 </Link>
               </div>

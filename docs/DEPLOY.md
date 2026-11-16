@@ -2,11 +2,12 @@
 
 Two things run from this one repo:
 
-- the **workspace** (`/`, `/planner`, `/settings`, …) — needs to stay private,
-- the **public one-pager** (`/site`) — should be reachable by everyone.
+- the **public one-pager** (`/`) — should be reachable by everyone,
+- the **workspace** (`/admin`, `/admin/planner`, `/admin/settings`, …) — needs to stay private.
 
 Both are the same Next.js process. The guide below is written for **IONOS with Plesk**, but the second option
-works on any Linux box.
+works on any Linux box. No URL rewrites, subdomains or separate admin build are needed: point the domain at
+the Node app and open `https://your-domain/admin`.
 
 ---
 
@@ -148,7 +149,8 @@ Plesk → **Websites & Domains → your domain → Node.js**:
 | **Custom environment variables** | `NODE_ENV=production`, `HQ_USER=dechire`, `HQ_PASSWORD=<long random>` |
 
 Optional: set `PEXELS_API_KEY` to enable Pexels stock videos in the Reel Lab. Without it the stock video search
-falls back to Wikimedia Commons (CC0 / public domain / CC BY only), no key required.
+falls back to Wikimedia Commons (CC0 / public domain / CC BY only), no key required. Set
+`NEXT_PUBLIC_SITE_URL=https://dechire.band` so canonical/OpenGraph URLs use your domain instead of localhost.
 
 `server.js` is in the repo for exactly this case: Passenger needs a startable module, not a CLI.
 
@@ -236,7 +238,7 @@ Plesk's Let's Encrypt certificate keeps working, because TLS ends at nginx.
 
 ## 5. Protecting the workspace
 
-**The app has no login of its own by default.** Anyone who reaches `/settings` can read the Instagram token,
+**The app has no login of its own by default.** Anyone who reaches `/admin/settings` can read the Instagram token,
 download backups and delete posts. Never expose it unprotected.
 
 The repo ships a **login mask** (`/login`) with a signed session cookie. The gate switches on as soon as
@@ -248,10 +250,10 @@ HQ_USER=dechire            # only cosmetic, shown nowhere secret
 HQ_SESSION_SECRET=<optional>
 ```
 
-- `/` and every internal page redirect to `/login?next=…` and come back after signing in.
+- `/admin` and every internal page redirect to `/login?next=…` and come back after signing in.
 - `/api/*` answers `401` JSON instead of a redirect, so a stale tab does not render HTML in a fetch.
-- Public without signing in: `/site` (the one-pager), `/api/files/*` (images Instagram has to fetch),
-  `/_next/*`, `/icon.svg`.
+- Public without signing in: `/` (the one-pager), its old `/site` URL (redirects to `/`), shared documents,
+  `/api/files/*` (images Instagram has to fetch), `/_next/*`, `/icon.svg`.
 - The cookie is `httpOnly`, `SameSite=Lax`, `Secure` in production and valid for 30 days. It is signed with
   `HQ_SESSION_SECRET` (falls back to a hash of `HQ_PASSWORD`) – **change that value to invalidate all
   sessions**, e.g. after a password reset.
@@ -273,14 +275,14 @@ Two ways to provide the values — pick one:
 Verify it:
 
 ```bash
-curl -sI https://example.com/ | head -3            # HTTP/2 307 + location: /login?next=%2F
-curl -s -o /dev/null -w '%{http_code}\n' https://example.com/site          # 200
-curl -s -o /dev/null -w '%{http_code}\n' https://example.com/api/posts     # 401
+curl -sI https://example.com/admin | head -3            # HTTP/2 307 + location: /login?next=%2Fadmin
+curl -s -o /dev/null -w '%{http_code}\n' https://example.com/          # 200
+curl -s -o /dev/null -w '%{http_code}\n' https://example.com/api/posts # 401
 # in the Plesk app log / journalctl:
 # DECHIRE Band HQ ready on … (production, auth on)
 ```
 
-If the root URL still answers `200` and the log says `auth off`, the variable did not reach the process — set
+If `/admin` still answers `200` and the log says `auth off`, the variable did not reach the process — set
 it again, restart, and check the log line.
 
 > Plesk's own **“Password protect directories”** feature is *not* needed and fights with this: it produces a
@@ -403,7 +405,7 @@ Schema changes run themselves on start (`ensureColumn` in `lib/db.ts`); `data/` 
 | `EACCES: permission denied, open '.../.next/trace'` + `Build directory is not writeable` | `.next` was created by another user (usually `root` from an earlier SSH build) → delete it and rebuild as the subscription user, see §2.1 |
 | `npm ci` → `EACCES … mkdir '…/node_modules'` | the document root itself belongs to `root:psaserv` → `chown -R <sub-user>:psaserv` on the app directory (see §2.1) |
 | `EACCES` on `package-lock.json` after switching Plesk users | same cause → `chown -R <sub-user>:psaserv` on the app directory |
-| login prompt on `/site` (the public page) | the public list in `proxy.ts` must keep `site`, `_next`, `api/files`, `/login` |
+| login prompt on `/` (the public page) | the public list in `proxy.ts` must keep `/`, `site`, `_next`, `api/files`, `/login` |
 | **no** password prompt at all | `HQ_PASSWORD` is not set (or not passed by Plesk) → the gate is opt-in; log line must say `auth on` |
 | Pages look unstyled after an update | stale build → `npm run build` again and restart |
 | Build dies with `Killed` | RAM → add swap: `fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile` |
@@ -481,7 +483,7 @@ ls -la "$WEB" | head
 
 # 4. Does the app answer at all? (bypasses the proxy)
 sudo -u <sub-user> -H bash -lc 'cd "$WEB" && PORT=3999 node server.js' &
-curl -sI http://127.0.0.1:3999/site | head -1     # 200 = app fine, 403 = proxy/permissions
+curl -sI http://127.0.0.1:3999/ | head -1     # 200 = app fine, 403 = proxy/permissions
 kill %1
 ```
 
@@ -501,8 +503,8 @@ Most common causes, in the order they actually happen:
 
 ## 10. Done checklist
 
-- [ ] `https://example.com/site` renders the one-pager without a password prompt
-- [ ] `https://example.com/` asks for user + password, and accepts them
+- [ ] `https://example.com/` renders the one-pager without a password prompt
+- [ ] `https://example.com/admin` redirects to `/login` and works after signing in
 - [ ] `curl -fsS -u user:pass -X POST https://example.com/api/scheduler` returns JSON
 - [ ] Uploading a photo in **Media** works (write permission on `data/uploads`)
 - [ ] **Settings → Backup** downloads a ZIP that contains `band.db` and `uploads/`

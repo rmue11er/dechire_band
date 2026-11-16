@@ -6,7 +6,7 @@ paperwork — and a small public one-pager that is configured from inside it.
 | | |
 |---|---|
 | **Band HQ** (internal) | Post planner with a real Instagram mockup, Canva-style design studio, media library with asset versions, songs as the thread through media and documents, notes, milestone calendar, documents (rider, contracts, orga), release waves, a music-video shot planner with waveform timeline, a beat-synced reel machine, exportable brand sheet, palette/CI editor |
-| **Public site** (`/site`) | A cinematic one-pager that reads like a letter: hero, "a note from us", a media corner, the feed, contact links. Every block can be switched off in `/website` |
+| **Public site** (`/`) | A cinematic one-pager that reads like a letter: hero, "a note from us", a media corner, the feed, contact links. Every block can be switched off in `/admin/website` |
 
 ![Public site – hero](docs/screenshots/site-hero.jpg)
 
@@ -36,8 +36,9 @@ npm run typecheck    # tsc --noEmit
 ```
 
 > **The workspace has a login mask at `/login`.** It contains the Instagram token and everything else in
-> `data/`. On a server, set `HQ_PASSWORD` (see [deployment](docs/DEPLOY.md)) — then every internal page
-> redirects to the mask and only `/site` stays public. Locally it is off, because the variable is empty.
+> `data/`. On a server, set `HQ_PASSWORD` (see [deployment](docs/DEPLOY.md)) — then every internal page under
+> `/admin` redirects to the mask and only `/` stays public. Locally it is off, because the variable is empty.
+> Set `NEXT_PUBLIC_SITE_URL=https://dechire.band` for correct OpenGraph/canonical URLs.
 
 ---
 
@@ -74,7 +75,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 
 ## The tools
 
-### 1. Post planner (`/planner`)
+### 1. Post planner (`/admin/planner`)
 - **Real-time Instagram mockup**: profile grid and a single-post view. **Click a tile → that post opens in the
   single post view** (and in the editor), **drag a tile → it moves in the grid** (the drop target is highlighted),
   prev/next, carousel, likes, caption folding like the real app, plus a **1:1 grid-crop toggle**
@@ -103,7 +104,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   - `Plan as ZIP` – the whole plan (see below).
   - One ZIP per post with images in upload order, `caption.txt`, `post.json` and `README.txt` with step-by-step instructions.
 
-### 2. Design studio / post builder (`/studio`)
+### 2. Design studio / post builder (`/admin/studio`)
 - **Canva feel without the cloud**: canvas with selection frame, 8 resize handles, rotation handle,
   smart snapping to edges, centre and other elements (with guide lines).
 - **Tools**:
@@ -154,8 +155,8 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 - **Export**: PNG at 2× resolution, save “to library” or drop it into the planner as a
   **draft post** with one click (PNG → media → draft). Plus *3 sizes* as a ZIP for feed and story in one go.
 
-### 3. Media library (`/media`)
-- **Folders** (`media_folders`, nestable) work like a file manager: `/media` opens the folder home with
+### 3. Media library (`/admin/media`)
+- **Folders** (`media_folders`, nestable) work like a file manager: `/admin/media` opens the folder home with
   top-level folders and unfiled files, double-click a folder (or click the rail) to enter a level, use the
   breadcrumb / up button to go back, and create a subfolder right in the current level. The rail additionally
   offers *All files* (flat view) and *Unfiled*; deleting a folder moves its files and subfolders one level up.
@@ -166,21 +167,21 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 - Upload via button or **drag & drop** onto the window, images and videos.
 - **Asset groups = versions**: a logo exists as “White/transparent”, “Smoke”, “Sticker 1080×1080”,
   “Social avatar” and so on. Every version downloads on its own (`?download=1`) or via “download version” in the group dialog.
-- **Songs**: every file can point to one song from `/songs`. The toolbar has a song filter (`All songs`, `No song`,
+- **Songs**: every file can point to one song from `/admin/songs`. The toolbar has a song filter (`All songs`, `No song`,
   one specific song); when a song is active, newly uploaded files inherit it. The detail dialog has a
-  `Song` select, cards show the linked song, and `/media?song=12` opens the library pre-filtered.
+  `Song` select, cards show the linked song, and `/admin/media?song=12` opens the library pre-filtered.
 - Search across title, version, tags and filename; filter by images / logos / video.
 - Detail dialog: title, version label, group, tags, alt text, dimensions, size, **where the asset is used**
   (click to open the post) and **replace file** – swap the file, every post keeps the reference.
 - Keeps track of how many posts an asset appears in (usage tracking).
 
-### 4. Notes (`/notes`)
+### 4. Notes (`/admin/notes`)
 - Rich-text editor (TipTap): H1–H3, bold/italic/underline/strike, highlight, lists,
   **checklists**, quotes, code, links, alignment, undo/redo.
 - Folders + tags, pinning, search, autosave (800 ms) with a status indicator, `⌘/Ctrl + S` saves immediately.
 - Exported as clean HTML files in the full ZIP.
 
-### 5. Calendar (`/calendar`)
+### 5. Calendar (`/admin/calendar`)
 - Month grid with **feed posts and milestones on one timeline**: scheduled and published posts, releases, shows,
   print deadlines, meetings, content slots. Posts and milestones can be toggled separately.
 - Click a day to select it, double-click (or “Add milestone”) to create an entry, click an entry to edit it,
@@ -189,7 +190,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 - `.ics` export for Apple/Google Calendar and an optional browser reminder (30 minutes before a post,
   on the day of a milestone).
 
-### 6. Documents (`/docs`)
+### 6. Documents (`/admin/docs`)
 - Word-style editor for the paperwork: **technical rider, booking confirmations, itineraries,
   press texts, stage plot notes, lyrics** – with headings, lists, checklists, quotes, tables and links.
 - Templates for every document type, drawn up in the band’s own wording (line-up, channel list,
@@ -199,7 +200,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   block with a numbered label, its own colour-coded spine (chorus = accent, pre-chorus/bridge = second
   accent, intro/outro dotted, breakdown/solo black) and an optional repeat tag (`×2`, half-time …).
 - **Song link**: every document can point to a song (rider for a tour, lyrics sheet, mix notes …). The
-  sidebar filters by song, the list shows the song, and `/docs?song=12` opens the filtered set. New
+  sidebar filters by song, the list shows the song, and `/admin/docs?song=12` opens the filtered set. New
   documents created while a song filter is active inherit that song.
 - **Part bar**: one click inserts the next part at the cursor and numbers it (`Verse 1`, `Chorus 2` …).
   Click into a part and a second bar appears: change the type, rename it, tag it, jump out with **End part**
@@ -248,7 +249,7 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   inlined as data URLs, the accent is copied as a CSS variable, so the exported file works offline and in
   the band's current colours.
 
-### 7. Colour lab (`/palette`)
+### 7. Colour lab (`/admin/palette`)
 The band's palette is not guessed any more – it is searched. Everything runs in **OKLCH**, so “pastel”,
 “muted” or “a sibling of our smoke” are numbers instead of vibes (`lib/colorlab.ts`).
 
@@ -265,13 +266,13 @@ The band's palette is not guessed any more – it is searched. Everything runs i
   “set as UI accent” action on every swatch. Nothing is stored until you save – the module writes to the
   same `palette` table and `profile.accent_hex` as the settings page.
 
-### 8. Brand sheet (`/brand`)
+### 8. Brand sheet (`/admin/brand`)
 - One page CI guide generated from the live profile and palette: logo on night and bone,
   all colours with hex and role, the four typefaces with specimens, do/don’t rules.
 - Export as **PNG (2×)**, as **SVG** (self-contained, fonts embedded) or print it as PDF.
 - Change a colour in the settings and the sheet follows – no separate design file to maintain.
 
-### 9. Instagram, TikTok & performance (`/planner`, Settings)
+### 9. Instagram, TikTok & performance (`/admin/planner`, Settings)
 - Publishing and insights through the **Meta Graph API** (single image, carousel and Reel video), insights sync
   writes reach/likes/comments/saves/shares per post, the dashboard shows totals, average reach and
   the best weekday from your own numbers.
@@ -294,7 +295,7 @@ The band's palette is not guessed any more – it is searched. Everything runs i
   failed TikTok upload never posts the Reel a second time. The post only switches to `published` when both
   sides are through.
 
-### 10. Public website (`/site`) + configuration (`/website`)
+### 10. Public website (`/`) + configuration (`/admin/website`)
 **Warm black, one accent colour, photos taped to the wall.** No template furniture and nothing that reads
 as a screen: no paper sheet, no stamps, no badges, no scanlines, no mono labels, no cursor effects.
 
@@ -313,7 +314,7 @@ as a screen: no paper sheet, no stamps, no badges, no scanlines, no mono labels,
 - **Blocks**, each switchable in the backend: hero, note, photos, feed, connect, footer.
 - **Pre-launch mode**: switch the site off and visitors only see the gate — name, tagline, `nothing to see
   yet.`, Instagram. `noindex` until it is switched on. No countdown by design.
-- **Configured in the backend** (`/website`) with a **live preview** next to the form (desktop/mobile):
+- **Configured in the backend** (`/admin/website`) with a **live preview** next to the form (desktop/mobile):
   publish on/off, block switches, hero media, the letter, the signature line, photo picker, teaser link,
   tagline, labels, link list, footer note, meta description and the site's own accent colour.
 - It reuses the rest of the app: the photos come from the **media library**, the flyers are made of
@@ -343,7 +344,7 @@ Deliberately small – only what moves the band forward:
 
 No feed preview, no media/notes counters, no wall of tiles.
 
-### Settings (`/settings`)
+### Settings (`/admin/settings`)
 Band profile (name, handle, bio, website, followers, highlights, avatar from the library) –
 feeding straight into the Instagram preview. Plus the **interface accent colour** (primary + optional
 secondary), the **document sheet image**, the **Instagram connection**, **backup & restore**, the **bin**,
@@ -408,7 +409,7 @@ documents, dashboard and the brand sheet all follow the two colours you pick.
 
 ---
 
-### 11. Release wave (`/releases`)
+### 11. Release wave (`/admin/releases`)
 The module that plans a release with you instead of just storing a date. You enter title, format and
 release day – everything else is derived from it.
 
@@ -430,7 +431,7 @@ release day – everything else is derived from it.
 - **Steps are coupled to the modules**: planner steps create real drafts with a tailored caption
   (`{{title}}`, `{{band}}`, `{{date}}`, `{{presave}}`) at 18:00 on the due date; media steps attach an
   image/video/audio; document steps attach a press text, rider or **lyrics sheet** (deep link into
-  `/docs?doc=…`); studio steps attach a design (deep link into `/studio/…`).
+  `/admin/docs?doc=…`); studio steps attach a design (deep link into `/admin/studio/…`).
 - **Music video plan included**: treatment, storyboard & shot list, shoot day, rights & credits, edit —
   with the real delivery specs (16:9 1920 × 1080, MP4/H.264 + AAC‑LC, separate 9:16 cutdowns, Canvas
   3–8 s, Reels ≥ 720 px/30 fps, Content ID via distributor).
@@ -443,24 +444,24 @@ release day – everything else is derived from it.
   Musixmatch, Reels specs, Content ID needs rights — and the honest note that pitching never guarantees
   playlist placement. Steps in a short lead time are flagged: a full new release wants ~8 weeks.
 
-### 12. Press kit (`/brand` → *Press kit .zip*)
+### 12. Press kit (`/admin/brand` → *Press kit .zip*)
 One click builds a ZIP for promoters, blogs and playlist editors:
 `index.html` (clickable overview with photos and documents), `README.txt`, `bio-short.txt`,
 `bio-long.txt`, `links.txt`, `press-photos/`, `logos/` and `documents/` – rider, stage plot, booking and
 press text rendered as printable HTML pages in the CI accent. Everything is generated from the profile,
 the media library and the document module, so the kit is never out of date.
 
-### 13. Songs (`/songs`)
+### 13. Songs (`/admin/songs`)
 - A single **overview table** instead of a heavy detail desk: catalogue number, title + note preview, status,
   key / tempo / length, linked media / documents / videos and last update. Search, status chips and sorting stay
   on top; the edit dialog holds title, status, key, BPM, length and notes.
 - Every song shows how many media files, documents and music videos point at it and links straight to the
-  filtered lists: `/media?song=id`, `/docs?song=id` and `/videos?song=id`.
+  filtered lists: `/admin/media?song=id`, `/admin/docs?song=id` and `/admin/videos?song=id`.
 - Media files and documents carry `song_id`. Deleting a song only removes the link – assets and documents stay.
 - In the media library and document list there is a **song filter**; the document editor has a `Song` select.
   Global ⌘K search finds songs by title, key or notes.
 
-### 14. Video Lab (`/videos`)
+### 14. Video Lab (`/admin/videos`)
 - One project per music video: title, song, audio file for the timeline, treatment document, status
   (Idea → Pre-production → Shoot → Edit → Done), shoot date, location, director and notes.
 - **Shot planner**: every shot has a start second, duration, song section (Intro/Verse/Chorus/…), description,
@@ -473,11 +474,11 @@ the media library and the document module, so the kit is never out of date.
   create a new shot from an asset at the current playhead. The storyboard below lists every shot with thumb,
   timecode, description and metadata.
 - **Treatment import**: choose a document, each paragraph becomes one shot, distributed across the audio
-  length (or 60 s when no audio is linked). The document is stored on the project and linked back to `/docs`.
+  length (or 60 s when no audio is linked). The document is stored on the project and linked back to `/admin/docs`.
 - **Storyboard print**: `window.print()` produces a clean shot list with title, song, date, location and
   thumbs – the version you take to the shoot.
 
-### 15. Reel Lab (`/reels`)
+### 15. Reel Lab (`/admin/reels`)
 The mini reel machine: clips from the library, one song, three steps, one MP4.
 - **Presets** – Still 8 s, Slow 15 s, Grain 20 s, Long 30 s. Each one sets length, grade, grain,
 vignette and motion in a click – warm or black and white, no strobe.
@@ -558,23 +559,24 @@ The PNG snapshot of the feed is generated client-side via `html-to-image`.
 ```
 app/
   layout.tsx               Document shell (fonts, accent tokens)
-  (hq)/layout.tsx          Workspace chrome: sidebar, command palette, toasts, scheduler
-  (hq)/page.tsx            Dashboard
-  (hq)/planner/page.tsx    Post planner
-  (hq)/calendar/page.tsx   Milestone calendar
-  (hq)/studio/page.tsx     Design studio (gallery + templates)
-  (hq)/studio/[id]/page.tsx Design editor
-  (hq)/palette/page.tsx    Colour lab (guided palette search, harmonies, generator)
-  (hq)/media/page.tsx      Media library
-  (hq)/notes/page.tsx      Notes
-  (hq)/docs/page.tsx       Documents (rider, contracts, orga)
-  (hq)/songs/page.tsx      Songs – collection overview with linked counts
-  (hq)/videos/page.tsx     Video Lab – music video projects
-  (hq)/videos/[id]/page.tsx Video planner – waveform timeline, shots, treatment import
-  (hq)/reels/page.tsx      Reel Lab – clips, beat cuts, text layer, ffmpeg export
-  (hq)/website/page.tsx    Public site: blocks, letter, crew, media corner, live preview
-  (hq)/brand/page.tsx      Brand sheet (CI guide, export)
-  (hq)/settings/page.tsx   Profile, accent, Instagram, backup, bin, palette
+  admin/layout.tsx         Workspace chrome: sidebar, command palette, toasts, scheduler
+  admin/page.tsx           Dashboard
+  admin/planner/page.tsx   Post planner
+  admin/calendar/page.tsx  Milestone calendar
+  admin/studio/page.tsx    Design studio (gallery + templates)
+  admin/studio/[id]/page.tsx Design editor
+  admin/palette/page.tsx   Colour lab (guided palette search, harmonies, generator)
+  admin/media/page.tsx     Media library
+  admin/notes/page.tsx     Notes
+  admin/docs/page.tsx      Documents (rider, contracts, orga)
+  admin/songs/page.tsx     Songs – collection overview with linked counts
+  admin/videos/page.tsx    Video Lab – music video projects
+  admin/videos/[id]/page.tsx Video planner – waveform timeline, shots, treatment import
+  admin/reels/page.tsx     Reel Lab – clips, beat cuts, text layer, ffmpeg export
+  admin/website/page.tsx   Public site: blocks, letter, crew, media corner, live preview
+  admin/brand/page.tsx     Brand sheet (CI guide, export)
+  admin/settings/page.tsx  Profile, accent, Instagram, backup, bin, palette
+  page.tsx                 Public one-pager at /
   site/                    Public one-pager with its own layout (no sidebar)
   api/                     REST endpoints (posts, media, media-groups, notes, designs, palette,
                            milestones, documents, profile, stats, site, files, export/*, reset)
@@ -695,8 +697,8 @@ Things that actually matter:
 - **`data/` must persist and be writable** by the app user — database, uploads, WAL files. Exclude it from
   deploys; that is the whole backup.
 - **Node 24+** (or 22 with `NODE_OPTIONS=--experimental-sqlite`); build and runtime should use the same major.
-- **Protect the workspace**: `/site` is public, everything else is not. Set `HQ_USER` + `HQ_PASSWORD` and the
-  gate in `proxy.ts` locks every path except `/site`, `/_next`, `/api/files` and the icon.
+- **Protect the workspace**: `/` is public, everything under `/admin` is not. Set `HQ_USER` + `HQ_PASSWORD` and the
+  gate in `proxy.ts` locks every path except `/`, `/site`, `/_next`, `/api/files`, `/api/share` and the icon.
 - **Scheduler without an open tab**: cron every 5 minutes →
   `curl -fsS -X POST https://your.domain/api/scheduler`
 - **Instagram publishing on the server**: set the public base URL in Settings to the real domain, because
@@ -718,7 +720,7 @@ Things that actually matter:
   for real content. The band profile is kept (emptied) – otherwise the app would reseed itself on the next
   start, because it seeds whenever the profile is missing.
 - The demo images are generated SVG artwork in the band look; just upload real photos/logos.
-- The public page lives at `/site` and is meant to be put behind a real domain later; the workspace keeps
-  `/`. Saved posts can still be published by the scheduler — the ZIP export stays the manual fallback.
+- The public page lives at `/`; the workspace lives under `/admin`. Saved posts can still be published by the
+  scheduler — the ZIP export stays the manual fallback.
 - The SQLite connection never writes on connect (only when seeding an empty database), so the dev
   server does not rebuild itself in a loop while serving requests.

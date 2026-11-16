@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       id: Number(row.id),
       title: clip(row.caption, 70) || `Post #${row.id}`,
       subtitle: `Post · ${row.status}`,
-      href: `/planner?post=${row.id}`,
+      href: `/admin/planner?post=${row.id}`,
     });
   }
 
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
       id: Number(row.id),
       title: row.title,
       subtitle: `Asset${row.variant_label ? ` · ${row.variant_label}` : ''}`,
-      href: '/media',
+      href: '/admin/media',
     });
   }
 
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
       id: Number(row.id),
       title: row.title,
       subtitle: `Song · ${row.status}`,
-      href: '/songs',
+      href: '/admin/songs',
     });
   }
 
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
       id: Number(row.id),
       title: row.title,
       subtitle: `Video · ${row.status}${row.location ? ` · ${row.location}` : ''}`,
-      href: `/videos/${row.id}`,
+      href: `/admin/videos/${row.id}`,
     });
   }
 
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
       id: Number(row.id),
       title: row.title || 'Untitled note',
       subtitle: `Note · ${row.folder}`,
-      href: '/notes',
+      href: '/admin/notes',
     });
   }
 
@@ -100,7 +100,7 @@ export async function GET(request: Request) {
       id: Number(row.id),
       title: row.title || 'Untitled document',
       subtitle: `Document · ${row.kind}`,
-      href: '/docs',
+      href: '/admin/docs',
     });
   }
 
@@ -113,7 +113,7 @@ export async function GET(request: Request) {
       id: Number(row.id),
       title: row.title,
       subtitle: `Milestone · ${row.date}`,
-      href: '/calendar',
+      href: '/admin/calendar',
     });
   }
 
@@ -123,7 +123,7 @@ export async function GET(request: Request) {
       id: Number(row.id),
       title: row.title,
       subtitle: 'Design',
-      href: `/studio/${row.id}`,
+      href: `/admin/studio/${row.id}`,
     });
   }
 
@@ -136,7 +136,7 @@ export async function GET(request: Request) {
       id: Number(row.id),
       title: row.label,
       subtitle: `Snippet · ${row.kind}`,
-      href: '/planner',
+      href: '/admin/planner',
     });
   }
 

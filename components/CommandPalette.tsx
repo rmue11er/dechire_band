@@ -13,13 +13,13 @@ type Hit = {
 };
 
 const QUICK: Hit[] = [
-  { kind: 'action', id: -1, title: 'New post', subtitle: 'Planner · ⌘K', href: '/planner' },
-  { kind: 'action', id: -2, title: 'Add milestone', subtitle: 'Calendar', href: '/calendar' },
-  { kind: 'action', id: -3, title: 'New document', subtitle: 'Documents', href: '/docs' },
-  { kind: 'action', id: -4, title: 'New design', subtitle: 'Design studio', href: '/studio' },
-  { kind: 'action', id: -5, title: 'Upload media', subtitle: 'Library', href: '/media' },
-  { kind: 'action', id: -6, title: 'Brand sheet', subtitle: 'CI guide & export', href: '/brand' },
-  { kind: 'action', id: -7, title: 'Settings', subtitle: 'Profile, accent, palette', href: '/settings' },
+  { kind: 'action', id: -1, title: 'New post', subtitle: 'Planner · ⌘K', href: '/admin/planner' },
+  { kind: 'action', id: -2, title: 'Add milestone', subtitle: 'Calendar', href: '/admin/calendar' },
+  { kind: 'action', id: -3, title: 'New document', subtitle: 'Documents', href: '/admin/docs' },
+  { kind: 'action', id: -4, title: 'New design', subtitle: 'Design studio', href: '/admin/studio' },
+  { kind: 'action', id: -5, title: 'Upload media', subtitle: 'Library', href: '/admin/media' },
+  { kind: 'action', id: -6, title: 'Brand sheet', subtitle: 'CI guide & export', href: '/admin/brand' },
+  { kind: 'action', id: -7, title: 'Settings', subtitle: 'Profile, accent, palette', href: '/admin/settings' },
 ];
 
 const KIND_LABEL: Record<string, string> = {

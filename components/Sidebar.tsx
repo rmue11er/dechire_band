@@ -25,51 +25,51 @@ import {
 
 type NavItem = { href: string; label: string; icon: typeof IconLayout };
 
-const DASHBOARD: NavItem = { href: '/', label: 'Dashboard', icon: IconLayout };
+const DASHBOARD: NavItem = { href: '/admin', label: 'Dashboard', icon: IconLayout };
 
 const GROUPS: { id: string; label: string; items: NavItem[] }[] = [
   {
     id: 'plan',
     label: 'Plan',
     items: [
-      { href: '/planner', label: 'Post Planner', icon: IconInstagram },
-      { href: '/calendar', label: 'Calendar', icon: IconCalendar },
-      { href: '/releases', label: 'Release Wave', icon: IconZap },
+      { href: '/admin/planner', label: 'Post Planner', icon: IconInstagram },
+      { href: '/admin/calendar', label: 'Calendar', icon: IconCalendar },
+      { href: '/admin/releases', label: 'Release Wave', icon: IconZap },
     ],
   },
   {
     id: 'music',
     label: 'Music',
     items: [
-      { href: '/songs', label: 'Songs', icon: IconMusic },
-      { href: '/reels', label: 'Reel Lab', icon: IconFilm },
-      { href: '/videos', label: 'Video Lab', icon: IconVideo },
+      { href: '/admin/songs', label: 'Songs', icon: IconMusic },
+      { href: '/admin/reels', label: 'Reel Lab', icon: IconFilm },
+      { href: '/admin/videos', label: 'Video Lab', icon: IconVideo },
     ],
   },
   {
     id: 'design',
     label: 'Design',
     items: [
-      { href: '/studio', label: 'Design Studio', icon: IconSparkles },
-      { href: '/palette', label: 'Colour Lab', icon: IconSwatch },
+      { href: '/admin/studio', label: 'Design Studio', icon: IconSparkles },
+      { href: '/admin/palette', label: 'Colour Lab', icon: IconSwatch },
     ],
   },
   {
     id: 'library',
     label: 'Library',
     items: [
-      { href: '/media', label: 'Media', icon: IconImage },
-      { href: '/notes', label: 'Notes', icon: IconNote },
-      { href: '/docs', label: 'Documents', icon: IconDocument },
+      { href: '/admin/media', label: 'Media', icon: IconImage },
+      { href: '/admin/notes', label: 'Notes', icon: IconNote },
+      { href: '/admin/docs', label: 'Documents', icon: IconDocument },
     ],
   },
   {
     id: 'setup',
     label: 'Setup',
     items: [
-      { href: '/website', label: 'Website', icon: IconGlobe },
-      { href: '/brand', label: 'Brand Sheet', icon: IconBookmark },
-      { href: '/settings', label: 'Settings', icon: IconSettings },
+      { href: '/admin/website', label: 'Website', icon: IconGlobe },
+      { href: '/admin/brand', label: 'Brand Sheet', icon: IconBookmark },
+      { href: '/admin/settings', label: 'Settings', icon: IconSettings },
     ],
   },
 ];
@@ -83,7 +83,8 @@ export default function Sidebar() {
   const [locked, setLocked] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [navReady, setNavReady] = useState(false);
-  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
+  const isActive = (href: string) =>
+    href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
   const activeGroup = GROUPS.find((group) => group.items.some((item) => isActive(item.href)))?.id;
 
   /* remember which groups are open – but always reveal the current page */
@@ -130,7 +131,7 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <Link href="/" className="brand">
+      <Link href="/admin" className="brand">
         <div className="brand-mark">D</div>
         <div className="brand-text">
           <span className="brand-name">
@@ -149,8 +150,8 @@ export default function Sidebar() {
       <nav className="nav" aria-label="Band HQ">
         <Link
           href={DASHBOARD.href}
-          className={`nav-item nav-dashboard ${pathname === '/' ? 'active' : ''}`}
-          aria-current={pathname === '/' ? 'page' : undefined}
+          className={`nav-item nav-dashboard ${isActive(DASHBOARD.href) ? 'active' : ''}`}
+          aria-current={isActive(DASHBOARD.href) ? 'page' : undefined}
         >
           <span className="nav-index">00</span>
           <IconLayout size={17} />
@@ -201,7 +202,7 @@ export default function Sidebar() {
         <strong>Dark. Honest. Close.</strong>
         <span className="mono">POST-HARDCORE /// AUGSBURG</span>
         <div className="sidebar-links">
-          <a className="mono" href="/site" target="_blank" rel="noreferrer">
+          <a className="mono" href="/" target="_blank" rel="noreferrer">
             Public site ↗
           </a>
           {locked ? (

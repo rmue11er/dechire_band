@@ -155,7 +155,7 @@ export default function VideosPage() {
         <div className="video-grid">
           {filtered.map((video) => (
             <article key={video.id} className="video-card">
-              <Link href={`/videos/${video.id}`} className="video-card-link">
+              <Link href={`/admin/videos/${video.id}`} className="video-card-link">
                 <div className="video-cover">
                   {video.coverUrl ? (
                     <img src={video.coverUrl} alt="" loading="lazy" />
@@ -242,7 +242,7 @@ export default function VideosPage() {
               : [video, ...current]
           );
           setModal(null);
-          if (!modal?.video) window.location.href = `/videos/${video.id}`;
+          if (!modal?.video) window.location.href = `/admin/videos/${video.id}`;
         }}
       />
     </div>

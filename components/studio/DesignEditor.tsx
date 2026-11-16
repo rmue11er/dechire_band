@@ -906,7 +906,7 @@ export default function DesignEditor({ designId }: { designId: number }) {
         });
         if (!postResponse.ok) throw new Error('Could not create the post');
         toast('Post draft created – continue in the planner');
-        router.push('/planner');
+        router.push('/admin/planner');
       } catch (error: any) {
         console.error(error);
         toast(error.message ?? 'Export failed', 'error');
@@ -999,7 +999,7 @@ export default function DesignEditor({ designId }: { designId: number }) {
         <p className="muted" style={{ margin: '10px 0 20px' }}>
           Maybe it was deleted. Head back to the overview and start again.
         </p>
-        <Link href="/studio" className="btn btn-primary">
+        <Link href="/admin/studio" className="btn btn-primary">
           Go to the design studio
         </Link>
       </div>
@@ -1021,7 +1021,7 @@ export default function DesignEditor({ designId }: { designId: number }) {
     <div className="studio-shell">
       <header className="studio-topbar">
         <div className="studio-topbar-left">
-          <Link href="/studio" className="btn btn-icon" title="Back to gallery">
+          <Link href="/admin/studio" className="btn btn-icon" title="Back to gallery">
             <IconChevronLeft size={16} />
           </Link>
           <input

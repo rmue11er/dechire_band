@@ -984,7 +984,7 @@ export default function MediaPage() {
                 ) : (
                   <div className="media-usage-list">
                     {usage.map((entry) => (
-                      <Link key={entry.id} href={`/planner?post=${entry.id}`} className="media-usage-row">
+                      <Link key={entry.id} href={`/admin/planner?post=${entry.id}`} className="media-usage-row">
                         <span className={`status ${entry.status}`}>
                           <span className="dot" />
                           {entry.status}

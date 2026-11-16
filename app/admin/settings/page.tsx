@@ -131,7 +131,7 @@ export default function SettingsPage() {
     } else if (result === 'error') {
       toast(params.get('reason') || 'TikTok connection failed', 'error');
     }
-    if (result) window.history.replaceState({}, '', '/settings');
+    if (result) window.history.replaceState({}, '', '/admin/settings');
 
     fetch('/api/instagram')
       .then((response) => response.json())

@@ -14,11 +14,11 @@ export const metadata = {
  * without it the page redirects straight into the HQ.
  */
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; out?: string }> }) {
-  if (!authEnabled()) redirect('/');
+  if (!authEnabled()) redirect('/admin');
 
   const params = await searchParams;
   const requested = typeof params.next === 'string' ? params.next : '';
-  const next = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
+  const next = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/admin';
 
   return (
     <main className="login">
@@ -36,7 +36,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <LoginForm next={next} />
 
         <div className="login-foot">
-          <a href="/site">the public page ↗</a>
+          <a href="/">the public page ↗</a>
           <span className="mono">2026</span>
         </div>
       </div>

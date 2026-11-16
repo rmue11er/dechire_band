@@ -376,15 +376,15 @@ export default function SongsPage() {
                   </div>
 
                   <div className="song-table-links">
-                    <Link href={`/media?song=${song.id}`} title="Media for this song">
+                    <Link href={`/admin/media?song=${song.id}`} title="Media for this song">
                       <IconImage size={12} />
                       <em>{song.mediaCount}</em>
                     </Link>
-                    <Link href={`/docs?song=${song.id}`} title="Documents for this song">
+                    <Link href={`/admin/docs?song=${song.id}`} title="Documents for this song">
                       <IconDocument size={12} />
                       <em>{song.docCount}</em>
                     </Link>
-                    <Link href={`/videos?song=${song.id}`} title="Video projects for this song">
+                    <Link href={`/admin/videos?song=${song.id}`} title="Video projects for this song">
                       <IconFilm size={12} />
                       <em>{song.videoCount}</em>
                     </Link>
