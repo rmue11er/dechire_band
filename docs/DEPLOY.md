@@ -325,6 +325,12 @@ chmod -R u+rwX data
 tar czf /var/backups/dechire-$(date +%F).tgz -C /var/www/vhosts/example.com/bandhq data
 ```
 
+> **Large backup restores:** the app streams the ZIP to disk and accepts up to 512 MB, but the web server in
+> front has its own limit. In Plesk → **Apache & nginx Settings → Additional nginx directives** add
+> `client_max_body_size 512m;` and `proxy_read_timeout 300s;` (or raise the Apache `LimitRequestBody` when
+> Apache proxies the app). Without that, nginx rejects the upload before it reaches the app and the browser
+> only reports “could not read the upload”.
+
 ---
 
 ## 7. Auto-publish without an open browser tab

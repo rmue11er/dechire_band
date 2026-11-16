@@ -49,5 +49,5 @@ export const config = {
    * Everything except the public one-pager and Next's own assets. The list above
    * additionally opens the login route and the uploaded files.
    */
-  matcher: ['/((?!site|share|_next/static|_next/image|api/files|api/share|icon\\.svg|favicon\\.ico).*)'],
+  matcher: ['/((?!site|share|_next/static|_next/image|api/files|api/share|api/restore|icon\\.svg|favicon\\.ico).*)'],
 };

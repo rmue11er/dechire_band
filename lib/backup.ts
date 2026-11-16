@@ -104,7 +104,18 @@ type ImportResult = {
  * files – that keeps the open connection valid and works without a restart.
  */
 export function restoreFromZip(buffer: Buffer): ImportResult {
-  const zip = new AdmZip(buffer);
+  const tempZip = path.join(DATA_DIR, `.restore-buffer-${Date.now()}.zip`);
+  fs.writeFileSync(tempZip, buffer);
+  try {
+    return restoreFromZipFile(tempZip);
+  } finally {
+    fs.rmSync(tempZip, { force: true });
+  }
+}
+
+/** Restores from a ZIP already on disk – lets the API stream large uploads. */
+export function restoreFromZipFile(zipPath: string): ImportResult {
+  const zip = new AdmZip(zipPath);
   const entries = zip.getEntries();
   const fileNames = new Set(entries.map((entry) => entry.entryName));
 
@@ -113,120 +124,130 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
   const workDir = path.join(DATA_DIR, `.restore-${Date.now()}`);
   fs.mkdirSync(workDir, { recursive: true });
   const tempDbPath = path.join(workDir, 'band.db');
-  fs.writeFileSync(tempDbPath, zip.readFile('band.db') as Buffer);
+  let source: DatabaseSync | null = null;
 
-  let manifest: any = {};
-  if (fileNames.has('manifest.json')) {
-    try {
-      manifest = JSON.parse(zip.readAsText('manifest.json'));
-    } catch {
-      manifest = {};
-    }
-  }
-  if (manifest.app && manifest.app !== 'dechire-band-hq') throw new Error('This backup comes from another app');
-
-  // Import into a throwaway connection so the live handle never sees a half-restored file.
-  const source = new DatabaseSync(tempDbPath, { readOnly: true });
-
-  const dump = (table: string) => {
-    try {
-      return source.prepare(`SELECT * FROM ${table}`).all() as Record<string, any>[];
-    } catch {
-      return [];
-    }
-  };
-
-  const data: Record<string, Record<string, any>[]> = {};
-  for (const table of TABLES) data[table] = dump(table);
-
-  source.close();
-  fs.rmSync(workDir, { recursive: true, force: true });
-
-  const insertAll = (table: string, rows: Record<string, any>[] | undefined) => {
-    if (!rows || !rows.length) return;
-    const columns = Object.keys(rows[0]);
-    const statement = db.prepare(
-      `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`
-    );
-    for (const row of rows) statement.run(...columns.map((column) => row[column] ?? null));
-  };
-
-  const counts: Record<string, number> = {};
-  db.exec('BEGIN IMMEDIATE');
   try {
-    db.exec(`
-      DELETE FROM post_media;
-      DELETE FROM post_metrics;
-      DELETE FROM posts;
-      DELETE FROM media;
-      DELETE FROM media_folders;
-      DELETE FROM media_groups;
-      DELETE FROM notes;
-      DELETE FROM designs;
-      DELETE FROM release_tasks;
-      DELETE FROM releases;
-      DELETE FROM milestones;
-      DELETE FROM video_shots;
-      DELETE FROM video_projects;
-      DELETE FROM document_audio;
-      DELETE FROM document_comments;
-      DELETE FROM documents;
-      DELETE FROM songs;
-      DELETE FROM snippets;
-      DELETE FROM connections;
-      DELETE FROM tiktok_connection;
-      DELETE FROM palette;
-      DELETE FROM profile;
-      DELETE FROM site;
-      DELETE FROM trash;
-    `);
+    fs.writeFileSync(tempDbPath, zip.readFile('band.db') as Buffer);
 
-    // parents before children, children before their parents for post_media
-    insertAll('media_groups', data.media_groups);
-    insertAll('media_folders', data.media_folders);
-    insertAll('songs', data.songs);
-    insertAll('video_projects', data.video_projects);
-    insertAll('media', data.media);
-    insertAll('video_shots', data.video_shots);
-    insertAll('posts', data.posts);
-    insertAll('post_media', data.post_media);
-    insertAll('notes', data.notes);
-    insertAll('designs', data.designs);
-    insertAll('releases', data.releases);
-    insertAll('release_tasks', data.release_tasks);
-    insertAll('milestones', data.milestones);
-    insertAll('documents', data.documents);
-    insertAll('document_audio', data.document_audio);
-    insertAll('document_comments', data.document_comments);
-    insertAll('snippets', data.snippets);
-    insertAll('post_metrics', data.post_metrics);
-    insertAll('palette', data.palette);
-    insertAll('profile', data.profile);
-    insertAll('connections', data.connections);
-    insertAll('tiktok_connection', data.tiktok_connection);
-    insertAll('site', data.site);
-    insertAll('trash', data.trash);
-
-    for (const table of TABLES) counts[table] = data[table]?.length ?? 0;
-    db.exec('COMMIT');
-  } catch (error) {
-    try {
-      db.exec('ROLLBACK');
-    } catch {
-      /* nothing to roll back */
+    let manifest: any = {};
+    if (fileNames.has('manifest.json')) {
+      try {
+        manifest = JSON.parse(zip.readAsText('manifest.json'));
+      } catch {
+        manifest = {};
+      }
     }
-    throw error;
-  }
+    if (manifest.app && manifest.app !== 'dechire-band-hq') throw new Error('This backup comes from another app');
 
-  let uploads = 0;
-  for (const entry of entries) {
-    if (entry.isDirectory) continue;
-    if (!entry.entryName.startsWith('uploads/')) continue;
-    const name = path.basename(entry.entryName);
-    if (!name) continue;
-    fs.writeFileSync(path.join(UPLOAD_DIR, name), entry.getData());
-    uploads += 1;
-  }
+    // Import into a throwaway connection so the live handle never sees a half-restored file.
+    source = new DatabaseSync(tempDbPath, { readOnly: true });
 
-  return { manifest, counts, uploads, skipped: [] as string[] };
+    const dump = (table: string) => {
+      try {
+        return source!.prepare(`SELECT * FROM ${table}`).all() as Record<string, any>[];
+      } catch {
+        return [];
+      }
+    };
+
+    const data: Record<string, Record<string, any>[]> = {};
+    for (const table of TABLES) data[table] = dump(table);
+    source.close();
+    source = null;
+
+    const insertAll = (table: string, rows: Record<string, any>[] | undefined) => {
+      if (!rows || !rows.length) return;
+      const columns = Object.keys(rows[0]);
+      const statement = db.prepare(
+        `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`
+      );
+      for (const row of rows) statement.run(...columns.map((column) => row[column] ?? null));
+    };
+
+    const counts: Record<string, number> = {};
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      db.exec(`
+        DELETE FROM post_media;
+        DELETE FROM post_metrics;
+        DELETE FROM posts;
+        DELETE FROM media;
+        DELETE FROM media_folders;
+        DELETE FROM media_groups;
+        DELETE FROM notes;
+        DELETE FROM designs;
+        DELETE FROM release_tasks;
+        DELETE FROM releases;
+        DELETE FROM milestones;
+        DELETE FROM video_shots;
+        DELETE FROM video_projects;
+        DELETE FROM document_audio;
+        DELETE FROM document_comments;
+        DELETE FROM documents;
+        DELETE FROM songs;
+        DELETE FROM snippets;
+        DELETE FROM connections;
+        DELETE FROM tiktok_connection;
+        DELETE FROM palette;
+        DELETE FROM profile;
+        DELETE FROM site;
+        DELETE FROM trash;
+      `);
+
+      // parents before children, children before their parents for post_media
+      insertAll('media_groups', data.media_groups);
+      insertAll('media_folders', data.media_folders);
+      insertAll('songs', data.songs);
+      insertAll('video_projects', data.video_projects);
+      insertAll('media', data.media);
+      insertAll('video_shots', data.video_shots);
+      insertAll('posts', data.posts);
+      insertAll('post_media', data.post_media);
+      insertAll('notes', data.notes);
+      insertAll('designs', data.designs);
+      insertAll('releases', data.releases);
+      insertAll('release_tasks', data.release_tasks);
+      insertAll('milestones', data.milestones);
+      insertAll('documents', data.documents);
+      insertAll('document_audio', data.document_audio);
+      insertAll('document_comments', data.document_comments);
+      insertAll('snippets', data.snippets);
+      insertAll('post_metrics', data.post_metrics);
+      insertAll('palette', data.palette);
+      insertAll('profile', data.profile);
+      insertAll('connections', data.connections);
+      insertAll('tiktok_connection', data.tiktok_connection);
+      insertAll('site', data.site);
+      insertAll('trash', data.trash);
+
+      for (const table of TABLES) counts[table] = data[table]?.length ?? 0;
+      db.exec('COMMIT');
+    } catch (error) {
+      try {
+        db.exec('ROLLBACK');
+      } catch {
+        /* nothing to roll back */
+      }
+      throw error;
+    }
+
+    let uploads = 0;
+    for (const entry of entries) {
+      if (entry.isDirectory) continue;
+      if (!entry.entryName.startsWith('uploads/')) continue;
+      const name = path.basename(entry.entryName);
+      if (!name) continue;
+      fs.writeFileSync(path.join(UPLOAD_DIR, name), entry.getData());
+      uploads += 1;
+    }
+
+    return { manifest, counts, uploads, skipped: [] as string[] };
+  } finally {
+    try {
+      source?.close();
+    } catch {
+      /* already closed */
+    }
+    fs.rmSync(workDir, { recursive: true, force: true });
+  }
 }

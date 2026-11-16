@@ -454,14 +454,34 @@ export default function SettingsPage() {
 
   const restoreBackup = async (file: File | null | undefined) => {
     if (!file) return;
+    if (file.size > 512 * 1024 * 1024) {
+      toast('The backup is larger than 512 MB', 'error');
+      if (restoreInput.current) restoreInput.current.value = '';
+      return;
+    }
     if (!window.confirm('Replace ALL current data with this backup?')) return;
     setBackupBusy('restore');
     try {
-      const form = new FormData();
-      form.append('file', file);
-      const response = await fetch('/api/restore', { method: 'POST', body: form });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? 'Restore failed');
+      const response = await fetch('/api/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/zip' },
+        body: file,
+      });
+      const text = await response.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = {};
+      }
+      if (!response.ok) {
+        throw new Error(
+          data.error ??
+            (response.status === 413
+              ? 'The server rejected the upload as too large – raise client_max_body_size for the domain'
+              : `Restore failed (${response.status})`)
+        );
+      }
       toast('Backup restored – reloading');
       setTimeout(() => window.location.reload(), 900);
     } catch (error: any) {
