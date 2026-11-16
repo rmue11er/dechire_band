@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  IconChevronDown,
   IconChevronLeft,
   IconClock,
   IconDocument,
@@ -17,12 +18,14 @@ import {
   IconPlay,
   IconPlus,
   IconSearch,
+  IconSparkles,
   IconTrash,
   IconUpload,
   IconVideo,
+  IconX,
 } from '@/components/icons';
 import { MediaThumb } from '@/components/MediaThumb';
-import { PageHead, Spinner } from '@/components/ui';
+import { Field, PageHead, Spinner } from '@/components/ui';
 import VideoProjectModal from '@/components/videos/VideoProjectModal';
 import VideoShotModal from '@/components/videos/VideoShotModal';
 import VideoTimeline from '@/components/videos/VideoTimeline';
@@ -30,6 +33,9 @@ import { analyseAudioBuffer, audioPeaks, type BeatAnalysis } from '@/lib/beats';
 import { formatDate } from '@/lib/format';
 import { toast } from '@/lib/toast';
 import {
+  SHOT_IDEAS,
+  SHOT_MOODS,
+  SHOT_SECTIONS,
   durationLabel,
   sectionLabel,
   shotCoverage,
@@ -38,6 +44,27 @@ import {
   videoStatusLabel,
 } from '@/lib/videos';
 import type { BandDocument, MediaItem, Song, VideoProject, VideoShot } from '@/lib/types';
+
+const LOOK_SUGGESTIONS = [
+  'kalt',
+  'nass',
+  'leer',
+  'still',
+  'nah',
+  'Gegenlicht',
+  'Handkamera',
+  'Staub',
+  'Nacht',
+  'Grau',
+];
+
+const CHAPTERS = [
+  { id: 'song', label: 'Song & Ton' },
+  { id: 'idee', label: 'Die Idee' },
+  { id: 'ablauf', label: 'Ablauf' },
+  { id: 'dreh', label: 'Drehtag' },
+  { id: 'pitch', label: 'Pitch' },
+];
 
 export default function VideoDetailPage() {
   const params = useParams<{ id: string }>();
@@ -50,6 +77,7 @@ export default function VideoDetailPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [documents, setDocuments] = useState<BandDocument[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [peaks, setPeaks] = useState<number[]>([]);
@@ -57,16 +85,26 @@ export default function VideoDetailPage() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [analysing, setAnalysing] = useState(false);
   const [audioError, setAudioError] = useState(false);
+
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [shotModal, setShotModal] = useState<{ shot: VideoShot | null } | null>(null);
   const [projectModal, setProjectModal] = useState(false);
   const [libraryQuery, setLibraryQuery] = useState('');
-  const [librarySongOnly, setLibrarySongOnly] = useState(true);
+  const [uploadingShot, setUploadingShot] = useState(false);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [snap, setSnap] = useState(true);
-  const [uploadingShot, setUploadingShot] = useState(false);
+
+  /* the pitch fields are edited in place and saved quietly */
+  const [concept, setConcept] = useState('');
+  const [needs, setNeeds] = useState('');
+  const [lookWords, setLookWords] = useState<string[]>([]);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [wordDraft, setWordDraft] = useState('');
+
   const audioRef = useRef<HTMLAudioElement>(null);
   const shotInput = useRef<HTMLInputElement>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -89,7 +127,7 @@ export default function VideoDetailPage() {
       setMedia(mediaData.media ?? []);
       setDocuments(docsData.documents ?? []);
     } catch {
-      toast('Could not load the video project', 'error');
+      toast('Konnte das Video nicht laden', 'error');
       router.push('/admin/videos');
     } finally {
       setLoading(false);
@@ -99,6 +137,44 @@ export default function VideoDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  /* fill the editable pitch fields once per project */
+  useEffect(() => {
+    if (!project) return;
+    setConcept(project.concept);
+    setNeeds(project.needs);
+    setLookWords(project.lookWords);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.id]);
+
+  const patchProject = useCallback(
+    async (patch: Record<string, any>) => {
+      try {
+        const response = await fetch(`/api/videos/${videoId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patch),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? 'Speichern fehlgeschlagen');
+        setProject((current) => (current ? { ...current, ...data.video } : data.video));
+        setSavedAt(new Date().toISOString());
+      } catch (error: any) {
+        toast(error.message ?? 'Speichern fehlgeschlagen', 'error');
+      }
+    },
+    [videoId]
+  );
+
+  const queueSave = useCallback(
+    (patch: Record<string, any>) => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => patchProject(patch), 700);
+    },
+    [patchProject]
+  );
+
+  /* ------------------------------------------------------------- audio */
 
   useEffect(() => {
     const url = project?.audioUrl;
@@ -158,37 +234,24 @@ export default function VideoDetailPage() {
 
   const coverageInfo = useMemo(() => shotCoverage(shots, duration), [shots, duration]);
 
-  useEffect(() => {
-    if (time > duration) {
-      setTime(0);
-      if (audioRef.current) audioRef.current.currentTime = 0;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [duration]);
-
   const currentSection =
     [...shots].filter((shot) => shot.start <= time).sort((a, b) => b.start - a.start)[0]?.section ?? 'verse';
 
-  const library = useMemo(() => {
-    return media
-      .filter((item) => {
-        if (!(item.mime.startsWith('image/') || item.mime.startsWith('video/'))) return false;
-        if (item.mime === 'image/svg+xml') return false;
-        if (librarySongOnly && project?.songId && item.songId !== project.songId) return false;
-        if (!libraryQuery.trim()) return true;
-        const haystack = [item.title, item.variantLabel, item.groupName, item.tags.join(' ')]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-        return haystack.includes(libraryQuery.toLowerCase());
-      })
-      .slice(0, 60);
-  }, [media, project?.songId, librarySongOnly, libraryQuery]);
+  const orderedShots = useMemo(
+    () => [...shots].sort((a, b) => a.start - b.start || a.position - b.position),
+    [shots]
+  );
+
+  const sectionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const shot of shots) counts[shot.section] = (counts[shot.section] ?? 0) + 1;
+    return counts;
+  }, [shots]);
 
   const togglePlay = async () => {
     const audio = audioRef.current;
     if (!project?.audioUrl || !audio) {
-      toast('Link the song audio in the project settings first', 'error');
+      toast('Verknüpfe zuerst den Song im Projekt.', 'error');
       return;
     }
     if (playing) {
@@ -196,17 +259,13 @@ export default function VideoDetailPage() {
       setPlaying(false);
       return;
     }
-    if (time >= duration - 0.05) {
-      audio.currentTime = 0;
-      setTime(0);
-    } else {
-      audio.currentTime = time;
-    }
+    audio.currentTime = time >= duration - 0.05 ? 0 : time;
+    if (time >= duration - 0.05) setTime(0);
     try {
       await audio.play();
       setPlaying(true);
     } catch {
-      toast('The browser could not play the song', 'error');
+      toast('Der Browser konnte den Song nicht abspielen', 'error');
     }
   };
 
@@ -216,7 +275,8 @@ export default function VideoDetailPage() {
     if (audioRef.current) audioRef.current.currentTime = next;
   };
 
-  /** Drag/trim on the timeline: optimistic, then persist the new timing. */
+  /* -------------------------------------------------------------- shots */
+
   const updateShotTiming = useCallback(
     async (id: number, start: number, durationValue: number) => {
       setShots((current) =>
@@ -231,30 +291,18 @@ export default function VideoDetailPage() {
           body: JSON.stringify({ start, duration: durationValue }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error ?? 'Could not move the shot');
+        if (!response.ok) throw new Error(data.error ?? 'Konnte den Shot nicht verschieben');
         setShots((current) =>
           [...current.map((shot) => (shot.id === id ? data.shot : shot))].sort(
             (a, b) => a.start - b.start || a.position - b.position
           )
         );
       } catch (error: any) {
-        toast(error.message ?? 'Could not move the shot', 'error');
-        try {
-          const response = await fetch(`/api/videos/${videoId}/shots`);
-          const data = await response.json();
-          setShots(data.shots ?? []);
-        } catch {
-          // ignore – the next load will restore the timeline
-        }
+        toast(error.message ?? 'Konnte den Shot nicht verschieben', 'error');
       }
     },
-    [videoId]
+    []
   );
-
-  const addShotAt = (seconds: number) => {
-    seekTo(seconds);
-    setShotModal({ shot: null });
-  };
 
   const saveShot = (saved: VideoShot) => {
     if (saved.media) {
@@ -279,6 +327,56 @@ export default function VideoDetailPage() {
     setShotModal(null);
   };
 
+  const addIdea = async (idea: (typeof SHOT_IDEAS)[number]) => {
+    const mood = SHOT_MOODS.find((entry) => entry.value === idea.mood);
+    setBusyAction(idea.id);
+    try {
+      const response = await fetch(`/api/videos/${videoId}/shots`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: idea.description,
+          section: currentSection,
+          start: Number(time.toFixed(1)),
+          duration: 3,
+          location: project?.location ?? '',
+          status: 'idea',
+          shotType: mood?.shotType ?? '',
+          movement: mood?.movement ?? '',
+          lighting: mood?.lighting ?? '',
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Konnte den Shot nicht anlegen');
+      saveShot(data.shot);
+      toast(`„${idea.label}“ hinzugefügt – Text gern anpassen`);
+    } catch (error: any) {
+      toast(error.message ?? 'Konnte den Shot nicht anlegen', 'error');
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const distribute = async () => {
+    if (!shots.length) return;
+    setBusyAction('distribute');
+    try {
+      const response = await fetch(`/api/videos/${videoId}/shots`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'distribute', duration }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Konnte nicht verteilen');
+      setShots(data.shots ?? []);
+      toast('Shots gleichmäßig über den Song verteilt');
+    } catch (error: any) {
+      toast(error.message ?? 'Konnte nicht verteilen', 'error');
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   const addShotFromMedia = async (item: MediaItem) => {
     setUploadingShot(true);
     try {
@@ -296,12 +394,11 @@ export default function VideoDetailPage() {
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? 'Could not add the shot');
+      if (!response.ok) throw new Error(data.error ?? 'Konnte den Shot nicht anlegen');
       saveShot(data.shot);
-      setShotModal({ shot: data.shot });
-      toast('Shot added from the library');
+      toast('Shot aus der Mediathek angelegt');
     } catch (error: any) {
-      toast(error.message ?? 'Could not add the shot', 'error');
+      toast(error.message ?? 'Konnte den Shot nicht anlegen', 'error');
     } finally {
       setUploadingShot(false);
     }
@@ -309,197 +406,371 @@ export default function VideoDetailPage() {
 
   const removeProject = async () => {
     if (!project) return;
-    if (!window.confirm(`Delete “${project.title}” and all ${shots.length} shots?`)) return;
+    if (!window.confirm(`„${project.title}“ und alle ${shots.length} Shots löschen?`)) return;
     const response = await fetch(`/api/videos/${project.id}`, { method: 'DELETE' });
     if (response.ok) {
-      toast('Video project deleted');
+      toast('Video gelöscht');
       router.push('/admin/videos');
     } else {
-      toast('Could not delete the project', 'error');
+      toast('Konnte das Video nicht löschen', 'error');
     }
   };
 
-  if (loading) return <Spinner label="Building the timeline" />;
+  const library = useMemo(
+    () =>
+      media
+        .filter((item) => item.mime.startsWith('image/') || item.mime.startsWith('video/'))
+        .filter((item) => item.mime !== 'image/svg+xml')
+        .filter((item) => (libraryQuery.trim() ? item.title.toLowerCase().includes(libraryQuery.toLowerCase()) : true))
+        .slice(0, 40),
+    [media, libraryQuery]
+  );
+
+  if (loading) return <Spinner label="Projekt wird geladen" />;
   if (!project) return null;
 
   const notesDocument = documents.find((entry) => entry.id === project.treatmentDocId) ?? null;
+  const addWord = (word: string) => {
+    const value = word.trim().slice(0, 24);
+    if (!value || lookWords.includes(value)) return;
+    const next = [...lookWords, value].slice(0, 12);
+    setLookWords(next);
+    void patchProject({ lookWords: next });
+    setWordDraft('');
+  };
+  const removeWord = (word: string) => {
+    const next = lookWords.filter((entry) => entry !== word);
+    setLookWords(next);
+    void patchProject({ lookWords: next });
+  };
 
   return (
-    <div className="video-detail">
+    <div className="video-detail video-guided">
       <PageHead
-        eyebrow="Music video"
+        eyebrow="Musikvideo"
         title={project.title}
         sub={
-          [
-            project.songTitle,
-            project.director ? `director ${project.director}` : '',
-            project.shootDate ? formatDate(project.shootDate) : '',
-            project.location,
-          ]
+          [project.songTitle, project.director ? `Regie ${project.director}` : '', project.location]
             .filter(Boolean)
-            .join(' · ') || 'Song, seconds, shots.'
+            .join(' · ') || 'Song, Idee, Ablauf – in dieser Reihenfolge.'
         }
         actions={
           <>
             <Link className="btn btn-ghost" href="/admin/videos">
-              <IconChevronLeft size={14} /> All videos
+              <IconChevronLeft size={14} /> Alle Videos
             </Link>
-            <button type="button" className="btn btn-ghost" onClick={() => window.print()}>
-              <IconFilm size={14} /> Storyboard drucken
-            </button>
+            <Link className="btn btn-primary" href={`/admin/videos/${project.id}/pitch`}>
+              <IconSparkles size={14} /> Pitch öffnen
+            </Link>
             <button type="button" className="btn btn-ghost" onClick={() => setProjectModal(true)}>
               <IconPencil size={14} /> Projekt
             </button>
-            <button type="button" className="btn btn-danger" onClick={removeProject} title="Delete project">
+            <button type="button" className="btn btn-danger" onClick={removeProject} title="Video löschen">
               <IconTrash size={14} />
             </button>
           </>
         }
       />
 
-      <div className="video-print-head">
-        <h1>{project.title}</h1>
-        <p>
-          {[project.songTitle, project.shootDate ? formatDate(project.shootDate) : '', project.location]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
-      </div>
-
-      <div className="video-detail-meta">
-        <span className={`video-status ${project.status}`}>{videoStatusLabel(project.status)}</span>
-        <span>
-          <IconFilm size={12} /> {shots.length} shots
+      <nav className="video-chapters">
+        {CHAPTERS.map((chapter, index) => (
+          <a key={chapter.id} href={`#${chapter.id}`} className="video-chapter">
+            <span className="mono">{String(index + 1).padStart(2, '0')}</span>
+            {chapter.label}
+          </a>
+        ))}
+        <span className="video-chapter-meta mono small muted">
+          {shots.length} Shots · {durationLabel(duration)} · {Math.round(coverageInfo.ratio * 100)} % Ablauf
         </span>
-        <span>
-          <IconClock size={12} /> {durationLabel(duration)}
-        </span>
-        <span>
-          <IconGrid size={12} /> {Math.round(coverageInfo.ratio * 100)}% covered
-        </span>
-        {project.audioTitle ? (
-          <span>
-            <IconMusic size={12} /> {project.audioTitle}
-          </span>
-        ) : (
-          <span className="muted">No audio linked</span>
-        )}
-      </div>
+      </nav>
 
-      {project.notes ? <p className="video-project-notes">{project.notes}</p> : null}
-
-      <div className="video-plan-grid">
-        <aside className="video-library panel">
-          <div className="video-library-head">
-            <div>
-              <span className="label">Shot library</span>
-              <p className="small muted">Material you can cut to.</p>
-            </div>
-            <button
-              type="button"
-              className="btn btn-icon"
-              title="Upload shot"
-              onClick={() => shotInput.current?.click()}
-            >
-              <IconUpload size={14} />
-            </button>
-            <input
-              ref={shotInput}
-              type="file"
-              accept="image/*,video/*"
-              hidden
-              onChange={async (event) => {
-                const file = event.target.files?.[0];
-                if (!file) return;
-                const form = new FormData();
-                form.append('files', file);
-                if (project.songId) form.append('songId', String(project.songId));
-                const response = await fetch('/api/media', { method: 'POST', body: form });
-                const data = await response.json();
-                if (response.ok && data.media?.[0]) {
-                  setMedia((current) => [...data.media, ...current]);
-                  toast('Shot uploaded to the library');
-                } else {
-                  toast(data.error ?? 'Upload failed', 'error');
-                }
-                if (shotInput.current) shotInput.current.value = '';
-              }}
-            />
+      {/* ---------------------------------------------------- 01 song */}
+      <section className="panel video-section" id="song">
+        <div className="video-section-head">
+          <div>
+            <span className="video-section-no mono">01</span>
+            <h2>Song &amp; Ton</h2>
+            <p>Der Song ist der Takt. Ohne ihn kann niemand einen Ablauf planen.</p>
           </div>
-
-          <div className="video-library-search">
-            <IconSearch size={14} />
-            <input
-              className="input"
-              value={libraryQuery}
-              placeholder="Search shots …"
-              onChange={(event) => setLibraryQuery(event.target.value)}
-            />
-          </div>
-
-          <label className="video-library-toggle">
-            <input
-              type="checkbox"
-              checked={librarySongOnly && !!project.songId}
-              disabled={!project.songId}
-              onChange={(event) => setLibrarySongOnly(event.target.checked)}
-            />
-            Only this song’s media
-          </label>
-
-          <div className="video-library-list">
-            {library.length === 0 ? (
-              <p className="small muted">No media found. Upload a reference or link media to the song.</p>
-            ) : (
-              library.map((item) => (
-                <div key={item.id} className="video-library-item">
-                  <MediaThumb media={item} className="video-library-thumb" />
-                  <div className="grow">
-                    <div className="truncate">{item.title}</div>
-                    <span className="mono small muted">{item.songTitle ?? item.groupName ?? item.mime}</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-ghost"
-                    disabled={uploadingShot}
-                    onClick={() => addShotFromMedia(item)}
-                  >
-                    <IconPlus size={12} /> Shot
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </aside>
-
-        <div className="video-plan-main">
-          <section className="panel video-player">
-            <div className="video-controls">
+          <span className={`video-status ${project.status}`}>{videoStatusLabel(project.status)}</span>
+        </div>
+        <div className="video-section-body">
+          {project.audioUrl ? (
+            <div className="video-song-row">
               <button type="button" className="btn btn-primary btn-sm" onClick={togglePlay}>
                 {playing ? <IconPause size={14} /> : <IconPlay size={14} />}
-                {playing ? 'Pause' : 'Play'}
+                {playing ? 'Pause' : 'Anhören'}
               </button>
               <span className="mono video-time">
                 {timecode(time)} <em>/ {timecode(duration)}</em>
               </span>
               <span className="mono small muted">
-                {analysis
-                  ? `${analysis.bpm} BPM`
-                  : analysing
-                    ? 'Analysing audio …'
-                    : audioError
-                      ? 'Audio not analysable'
-                      : 'No waveform'}
+                {analysis ? `${analysis.bpm} BPM` : analysing ? 'Analysiere …' : audioError ? 'Kein Waveform' : ''}
               </span>
-              <button
-                type="button"
-                className="btn btn-sm btn-ghost video-add-shot"
-                onClick={() => setShotModal({ shot: null })}
-              >
-                <IconPlus size={13} /> Shot at {timecode(time)}
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => setShotModal({ shot: null })}>
+                <IconPlus size={13} /> Shot bei {timecode(time)}
               </button>
+              <audio
+                ref={audioRef}
+                src={project.audioUrl}
+                onTimeUpdate={(event) => setTime(event.currentTarget.currentTime)}
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onEnded={() => {
+                  setPlaying(false);
+                  setTime(duration);
+                }}
+              />
             </div>
+          ) : (
+            <p className="video-hint">
+              Noch kein Audio verknüpft. <button type="button" className="linkish" onClick={() => setProjectModal(true)}>Song hinzufügen</button>
+            </p>
+          )}
 
+          <div className="video-sections">
+            {SHOT_SECTIONS.filter((section) => section.value !== 'other').map((section) => (
+              <span key={section.value} className={`video-section-chip ${sectionCounts[section.value] ? 'has-shots' : ''}`}>
+                {section.label}
+                {sectionCounts[section.value] ? <em>{sectionCounts[section.value]}</em> : null}
+              </span>
+            ))}
+          </div>
+          <p className="video-hint">
+            {project.songTitle ? `Song: ${project.songTitle}` : 'Kein Song verknüpft'} · Shots bekommen automatisch den
+            Abschnitt, in dem der Playhead gerade steht.
+          </p>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------- 02 idea */}
+      <section className="panel video-section" id="idee">
+        <div className="video-section-head">
+          <div>
+            <span className="video-section-no mono">02</span>
+            <h2>Die Idee</h2>
+            <p>Drei Antworten reichen – daraus entsteht später die Pitch-Präsentation.</p>
+          </div>
+          {savedAt ? <span className="mono small muted">gespeichert</span> : null}
+        </div>
+        <div className="video-section-body">
+          <Field
+            label="Worum geht es?"
+            hint={<span className="count">Was passiert, wie fühlt es sich an, wie endet es?</span>}
+          >
+            <textarea
+              className="textarea video-concept"
+              rows={5}
+              value={concept}
+              placeholder={
+                'Ein Raum, eine Person, ein Song.\n\nEs fängt still an, wird lauter, und am Ende steht niemand mehr im Bild.'
+              }
+              onChange={(event) => {
+                setConcept(event.target.value);
+                queueSave({ concept: event.target.value });
+              }}
+            />
+          </Field>
+
+          <Field label="Wie sieht es aus?" hint={<span className="count">Stichworte – sie werden zur Bildsprache im Pitch.</span>}>
+            <div className="video-words">
+              {lookWords.map((word) => (
+                <button key={word} type="button" className="video-word on" onClick={() => removeWord(word)}>
+                  {word} <IconX size={11} />
+                </button>
+              ))}
+              {LOOK_SUGGESTIONS.filter((word) => !lookWords.includes(word)).map((word) => (
+                <button key={word} type="button" className="video-word" onClick={() => addWord(word)}>
+                  {word}
+                </button>
+              ))}
+              <input
+                className="video-word-input"
+                placeholder="eigenes Wort …"
+                value={wordDraft}
+                onChange={(event) => setWordDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    addWord(wordDraft);
+                  }
+                }}
+              />
+            </div>
+          </Field>
+
+          {notesDocument ? (
+            <details className="video-fold" open>
+              <summary>
+                <IconDocument size={13} /> {notesDocument.title}
+                <Link className="btn btn-sm btn-ghost" href={`/admin/docs?doc=${notesDocument.id}`}>
+                  Öffnen
+                </Link>
+              </summary>
+              <div
+                className="prose video-notes-body"
+                dangerouslySetInnerHTML={{ __html: notesDocument.content || '<p>Keine Notizen hinterlegt.</p>' }}
+              />
+            </details>
+          ) : (
+            <p className="video-hint">
+              Notizen als Dokument?{' '}
+              <button type="button" className="linkish" onClick={() => setProjectModal(true)}>
+                Dokument verknüpfen
+              </button>
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* --------------------------------------------------- 03 shots */}
+      <section className="panel video-section" id="ablauf">
+        <div className="video-section-head">
+          <div>
+            <span className="video-section-no mono">03</span>
+            <h2>Ablauf</h2>
+            <p>Ein Satz pro Bild. Klick dich durch die Ideen – niemand verlangt eine Shotliste.</p>
+          </div>
+          <div className="row" style={{ gap: 8 }}>
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={distribute}
+              disabled={!shots.length || busyAction === 'distribute'}
+              title="Verteilt alle Shots gleichmäßig über den Song"
+            >
+              <IconGrid size={13} /> {busyAction === 'distribute' ? 'Verteilt …' : 'Gleichmäßig verteilen'}
+            </button>
+            <button type="button" className="btn btn-sm btn-primary" onClick={() => setShotModal({ shot: null })}>
+              <IconPlus size={13} /> Shot
+            </button>
+          </div>
+        </div>
+
+        <div className="video-section-body">
+          <div className="video-ideas">
+            {SHOT_IDEAS.map((idea) => (
+              <button
+                key={idea.id}
+                type="button"
+                className="video-idea"
+                onClick={() => addIdea(idea)}
+                disabled={busyAction === idea.id}
+                title={idea.description}
+              >
+                <span>{idea.label}</span>
+                <em>{idea.description.split(':')[0]}</em>
+              </button>
+            ))}
+          </div>
+
+          {orderedShots.length === 0 ? (
+            <div className="video-empty">
+              <IconVideo size={24} />
+              <h3>Noch kein Bild</h3>
+              <p>Wähle oben eine Idee – sie landet genau an der Stelle, an der du gerade hörst.</p>
+            </div>
+          ) : (
+            <div className="shot-list">
+              {orderedShots.map((shot, index) => (
+                <article
+                  key={shot.id}
+                  className={`shot-row ${selectedId === shot.id ? 'on' : ''}`}
+                  onClick={() => {
+                    setSelectedId(shot.id);
+                    seekTo(shot.start);
+                  }}
+                >
+                  <span className="shot-number mono">{String(index + 1).padStart(2, '0')}</span>
+                  <button
+                    type="button"
+                    className="shot-thumb"
+                    title="Bearbeiten"
+                    aria-label="Shot bearbeiten"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedId(shot.id);
+                      setShotModal({ shot });
+                    }}
+                  >
+                    {shot.sketch ? (
+                      <img src={shot.sketch} alt="" className="shot-thumb-img shot-thumb-sketch" />
+                    ) : shot.media ? (
+                      <MediaThumb media={shot.media} className="shot-thumb-img" />
+                    ) : (
+                      <IconImage size={18} />
+                    )}
+                  </button>
+                  <div className="shot-main">
+                    <div className="shot-top">
+                      <span className="shot-time mono">
+                        {timecode(shot.start)} <em>· {shot.duration.toFixed(1)} s</em>
+                      </span>
+                      <span className="chip">{sectionLabel(shot.section)}</span>
+                      <span className={`shot-status status-${shot.status}`}>{shotStatusLabel(shot.status)}</span>
+                    </div>
+                    <p className="shot-description">{shot.description || 'Ohne Beschreibung'}</p>
+                    <div className="shot-meta mono">
+                      {shot.location ? (
+                        <span>
+                          <IconMapPin size={10} /> {shot.location}
+                        </span>
+                      ) : null}
+                      {shot.shotType ? <span>{shot.shotType}</span> : null}
+                      {shot.movement ? <span>{shot.movement}</span> : null}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-icon shot-edit"
+                    title="Bearbeiten"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedId(shot.id);
+                      setShotModal({ shot });
+                    }}
+                  >
+                    <IconPencil size={13} />
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+
+          <details className="video-fold">
+            <summary>
+              <IconClock size={13} /> Timeline – Shots schieben und kürzen
+              <span className="mono small muted">
+                {Math.round(coverageInfo.ratio * 100)} % abgedeckt
+                {coverageInfo.gaps.length ? ` · ${coverageInfo.gaps.length} Lücken` : ''}
+              </span>
+            </summary>
+            <div className="video-timeline-tools">
+              <div className="video-timeline-actions">
+                <button
+                  type="button"
+                  className={`video-toggle ${snap ? 'on' : ''}`}
+                  aria-pressed={snap}
+                  onClick={() => setSnap((value) => !value)}
+                  title="Rastet auf Takte und Shotkanten – ⇧ beim Ziehen hebt das Raster auf"
+                >
+                  <IconGrid size={12} /> Raster
+                </button>
+                <div className="video-zoom" role="group" aria-label="Zoom">
+                  {[1, 2, 4].map((level) => (
+                    <button
+                      key={level}
+                      type="button"
+                      className={zoom === level ? 'on' : ''}
+                      aria-pressed={zoom === level}
+                      onClick={() => setZoom(level)}
+                    >
+                      {level}×
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
             <VideoTimeline
               peaks={peaks}
               duration={duration}
@@ -516,168 +787,184 @@ export default function VideoDetailPage() {
                 setSelectedId(shot.id);
                 setShotModal({ shot });
               }}
-              onAddShot={addShotAt}
+              onAddShot={(seconds) => {
+                seekTo(seconds);
+                setShotModal({ shot: null });
+              }}
             />
+            <p className="video-hint">
+              Ziehen: verschieben · an den Rändern: kürzen · Doppelklick in die Spur: neuer Shot · ⇧ hält das
+              Raster an.
+            </p>
+          </details>
 
-            {project.audioUrl ? (
-              <audio
-                ref={audioRef}
-                src={project.audioUrl}
-                onTimeUpdate={(event) => setTime(event.currentTarget.currentTime)}
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
-                onEnded={() => {
-                  setPlaying(false);
-                  setTime(duration);
+          <details className="video-fold">
+            <summary>
+              <IconImage size={13} /> Material aus der Mediathek
+              <span className="mono small muted">{library.length} Bilder & Videos</span>
+            </summary>
+            <div className="video-library-search">
+              <IconSearch size={14} />
+              <input
+                className="input"
+                value={libraryQuery}
+                placeholder="Suchen …"
+                onChange={(event) => setLibraryQuery(event.target.value)}
+              />
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => shotInput.current?.click()}>
+                <IconUpload size={13} /> Hochladen
+              </button>
+              <input
+                ref={shotInput}
+                type="file"
+                accept="image/*,video/*"
+                hidden
+                onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  const form = new FormData();
+                  form.append('files', file);
+                  if (project.songId) form.append('songId', String(project.songId));
+                  const response = await fetch('/api/media', { method: 'POST', body: form });
+                  const data = await response.json();
+                  if (response.ok && data.media?.[0]) {
+                    setMedia((current) => [...data.media, ...current]);
+                    toast('Datei liegt in der Mediathek');
+                  } else {
+                    toast(data.error ?? 'Upload fehlgeschlagen', 'error');
+                  }
+                  if (shotInput.current) shotInput.current.value = '';
                 }}
               />
-            ) : null}
-
-            <div className="video-timeline-tools">
-              <span className="video-coverage">
-                {Math.round(coverageInfo.ratio * 100)}% covered
-                {coverageInfo.gaps.length ? <em> · {coverageInfo.gaps.length} gaps</em> : null}
-              </span>
-              <div className="video-timeline-actions">
-                <button
-                  type="button"
-                  className={`video-toggle ${snap ? 'on' : ''}`}
-                  aria-pressed={snap}
-                  onClick={() => setSnap((value) => !value)}
-                  title="Snap to bars and shot edges – hold Shift while dragging to bypass"
-                >
-                  <IconGrid size={12} /> Snap
-                </button>
-                <div className="video-zoom" role="group" aria-label="Timeline zoom">
-                  {[1, 2, 4].map((level) => (
-                    <button
-                      key={level}
-                      type="button"
-                      className={zoom === level ? 'on' : ''}
-                      aria-pressed={zoom === level}
-                      onClick={() => setZoom(level)}
-                    >
-                      {level}×
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
-
-            <div className="video-wave-note small muted">
-              Ziehen: Shot verschieben · an den Rändern: kürzen oder verlängern · Doppelklick in die Spur:
-              neuer Shot · ⇧ hält das Raster an · Pfeiltasten schieben den ausgewählten Shot.
-            </div>
-          </section>
-
-          <section className="video-storyboard">
-            <div className="video-storyboard-head">
-              <div>
-                <span className="label">Storyboard</span>
-                <p className="small muted">
-                  {shots.length} shots · {durationLabel(duration)} ·{' '}
-                  {Math.round(coverageInfo.ratio * 100)}% covered
-                </p>
-              </div>
-              <button type="button" className="btn btn-sm btn-primary" onClick={() => setShotModal({ shot: null })}>
-                <IconPlus size={13} /> Shot
-              </button>
-            </div>
-
-            {shots.length === 0 ? (
-              <div className="video-empty">
-                <IconVideo size={24} />
-                <h3>No shots yet</h3>
-                <p>Start with a shot at the playhead, then sketch the frame while the idea is fresh.</p>
-                <button type="button" className="btn btn-primary btn-sm" onClick={() => setShotModal({ shot: null })}>
-                  <IconPlus size={13} /> First shot
-                </button>
-              </div>
-            ) : (
-              <div className="shot-list">
-                {shots.map((shot, index) => (
-                  <article
-                    key={shot.id}
-                    className={`shot-row ${selectedId === shot.id ? 'on' : ''}`}
-                    onClick={() => {
-                      setSelectedId(shot.id);
-                      seekTo(shot.start);
-                    }}
+            <div className="video-library-list">
+              {library.map((item) => (
+                <div key={item.id} className="video-library-item">
+                  <MediaThumb media={item} className="video-library-thumb" />
+                  <div className="grow">
+                    <div className="truncate">{item.title}</div>
+                    <span className="mono small muted">{item.mime}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    disabled={uploadingShot}
+                    onClick={() => addShotFromMedia(item)}
                   >
-                    <span className="shot-number mono">{String(index + 1).padStart(2, '0')}</span>
-                    <button
-                      type="button"
-                      className="shot-thumb"
-                      title={shot.sketch ? 'Skizze bearbeiten' : 'Frame skizzieren'}
-                      aria-label={shot.sketch ? 'Edit sketch' : 'Sketch frame'}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setSelectedId(shot.id);
-                        setShotModal({ shot });
-                      }}
-                    >
-                      {shot.sketch ? (
-                        <img src={shot.sketch} alt="" className="shot-thumb-img shot-thumb-sketch" />
-                      ) : shot.media ? (
-                        <MediaThumb media={shot.media} className="shot-thumb-img" />
-                      ) : (
-                        <IconImage size={18} />
-                      )}
-                    </button>
-                    <div className="shot-main">
-                      <div className="shot-top">
-                        <span className="shot-time mono">
-                          {timecode(shot.start)}{' '}
-                          <em>→ {timecode(shot.start + shot.duration)} · {shot.duration.toFixed(1)} s</em>
-                        </span>
-                        <span className="chip">{sectionLabel(shot.section)}</span>
-                        <span className={`shot-status status-${shot.status}`}>{shotStatusLabel(shot.status)}</span>
-                      </div>
-                      <p className="shot-description">{shot.description || 'Untitled shot'}</p>
-                      <div className="shot-meta mono">
-                        {shot.location ? <span><IconMapPin size={10} /> {shot.location}</span> : null}
-                        {shot.shotType ? <span>{shot.shotType}</span> : null}
-                        {shot.movement ? <span>{shot.movement}</span> : null}
-                        {shot.lighting ? <span>{shot.lighting}</span> : null}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-icon shot-edit"
-                      title="Edit shot"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setSelectedId(shot.id);
-                        setShotModal({ shot });
-                      }}
-                    >
-                      <IconPencil size={13} />
-                    </button>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {notesDocument ? (
-            <section className="panel video-notes">
-              <div className="video-notes-head">
-                <div>
-                  <span className="label">Notizen</span>
-                  <p className="small muted">{notesDocument.title}</p>
+                    <IconPlus size={12} /> Shot
+                  </button>
                 </div>
-                <Link className="btn btn-sm btn-ghost" href={`/admin/docs?doc=${notesDocument.id}`}>
-                  <IconDocument size={13} /> Dokument öffnen
-                </Link>
-              </div>
-              <div
-                className="prose video-notes-body"
-                dangerouslySetInnerHTML={{ __html: notesDocument.content || '<p>Keine Notizen hinterlegt.</p>' }}
+              ))}
+              {library.length === 0 ? <p className="small muted">Nichts gefunden.</p> : null}
+            </div>
+          </details>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------- 04 shoot */}
+      <section className="panel video-section" id="dreh">
+        <div className="video-section-head">
+          <div>
+            <span className="video-section-no mono">04</span>
+            <h2>Drehtag</h2>
+            <p>Ein Tag, ein Ort, ein kleines Team. Mehr braucht es für den Anfang nicht.</p>
+          </div>
+        </div>
+        <div className="video-section-body">
+          <div className="form-row">
+            <Field label="Datum">
+              <input
+                className="input"
+                type="date"
+                value={project.shootDate}
+                onChange={(event) => setProject({ ...project, shootDate: event.target.value })}
+                onBlur={(event) => patchProject({ shootDate: event.target.value })}
               />
-            </section>
+            </Field>
+            <Field label="Ort">
+              <input
+                className="input"
+                value={project.location}
+                placeholder="z. B. alte Turnhalle, Augsburg"
+                onChange={(event) => setProject({ ...project, location: event.target.value })}
+                onBlur={(event) => patchProject({ location: event.target.value })}
+              />
+            </Field>
+            <Field label="Regie">
+              <input
+                className="input"
+                value={project.director}
+                placeholder="Du selbst reicht"
+                onChange={(event) => setProject({ ...project, director: event.target.value })}
+                onBlur={(event) => patchProject({ director: event.target.value })}
+              />
+            </Field>
+          </div>
+          <Field
+            label="Was brauchen wir?"
+            hint={<span className="count">Leute, Technik, Genehmigung – erscheint im Pitch unter „Dreh“.</span>}
+          >
+            <textarea
+              className="textarea"
+              rows={3}
+              value={needs}
+              placeholder={'Zwei Lampen, ein Stativ, drei Leute, die mitspielen.\nDreh von 16 bis 20 Uhr.'}
+              onChange={(event) => {
+                setNeeds(event.target.value);
+                queueSave({ needs: event.target.value });
+              }}
+            />
+          </Field>
+          {orderedShots.filter((shot) => shot.location).length ? (
+            <p className="video-hint">
+              <IconMapPin size={12} /> Drehorte in den Shots: {[...new Set(orderedShots.map((shot) => shot.location).filter(Boolean))].join(', ')}
+            </p>
           ) : null}
         </div>
-      </div>
+      </section>
+
+      {/* ---------------------------------------------------- 05 pitch */}
+      <section className="panel video-section video-pitch-teaser" id="pitch">
+        <div className="video-section-head">
+          <div>
+            <span className="video-section-no mono">05</span>
+            <h2>Pitch</h2>
+            <p>
+              Aus Song, Idee, Bildsprache, Storyboard und Drehtag wird automatisch eine kleine Präsentation –
+              zum Zeigen, Verschicken, Begeistern.
+            </p>
+          </div>
+          <div className="row" style={{ gap: 8 }}>
+            <Link className="btn btn-sm btn-primary" href={`/admin/videos/${project.id}/pitch`}>
+              <IconSparkles size={13} /> Präsentation öffnen
+            </Link>
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => window.print()}>
+              <IconFilm size={13} /> Storyboard drucken
+            </button>
+          </div>
+        </div>
+        <div className="video-section-body">
+          <div className="video-pitch-facts">
+            <span>
+              <IconMusic size={12} /> {project.songTitle ?? 'kein Song'}
+            </span>
+            <span>
+              <IconVideo size={12} /> {orderedShots.length} Shots
+            </span>
+            <span>
+              <IconClock size={12} /> {durationLabel(duration)}
+            </span>
+            <span>
+              <IconMapPin size={12} /> {project.location || 'Ort offen'}
+            </span>
+            <span>{lookWords.length ? lookWords.join(' · ') : 'noch keine Bildworte'}</span>
+          </div>
+          <p className="video-hint">
+            Die Präsentation entsteht bei jedem Öffnen neu aus deinen Daten. „Als HTML“ exportiert eine einzelne
+            Datei mit allen Bildern – die kannst du per Mail verschicken, sie läuft in jedem Browser.
+          </p>
+        </div>
+      </section>
 
       <VideoProjectModal
         open={projectModal}

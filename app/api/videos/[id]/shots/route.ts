@@ -1,6 +1,13 @@
 import { fail, ok, readJson, toInt, toOptionalId } from '@/lib/api';
-import { bulkCreateVideoShots, createVideoShot, getMedia, getVideoProject, listVideoShots } from '@/lib/repo';
-import { SHOT_STATUS } from '@/lib/videos';
+import {
+  bulkCreateVideoShots,
+  createVideoShot,
+  getMedia,
+  getVideoProject,
+  listVideoShots,
+  updateVideoShot,
+} from '@/lib/repo';
+import { SHOT_STATUS, distributeShots } from '@/lib/videos';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -57,6 +64,19 @@ export async function POST(request: Request, { params }: Ctx) {
   if (!getVideoProject(videoId)) return fail('Video project not found', 404);
 
   const body = await readJson<Record<string, any>>(request);
+
+  /* One click: spread the existing shots evenly over the song. */
+  if (body.action === 'distribute') {
+    const shots = listVideoShots(videoId);
+    if (!shots.length) return fail('No shots yet');
+    const planned = shots.reduce((max, shot) => Math.max(max, shot.start + shot.duration), 0);
+    const total = Math.max(4, Number(body.duration) || planned || 60);
+    for (const item of distributeShots(shots, total)) {
+      updateVideoShot(item.id, { start: item.start, duration: item.duration });
+    }
+    return ok({ shots: listVideoShots(videoId) });
+  }
+
   if (Array.isArray(body.shots)) {
     if (!body.shots.length || body.shots.length > 80) return fail('Add 1–80 shots at a time');
     if (hasInvalidMedia(body.shots)) return fail('Media not found');

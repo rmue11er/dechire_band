@@ -26,6 +26,83 @@ export const SHOT_TYPES = ['Wide', 'Medium', 'Close-up', 'Detail', 'Insert', 'PO
 export const CAMERA_MOVES = ['Static', 'Handheld', 'Push in', 'Pull out', 'Pan', 'Tilt', 'Tracking', 'Dolly', 'Crane'];
 export const LIGHTING_OPTIONS = ['Natural', 'Low key', 'Backlit', 'Practical', 'Strobe', 'Silhouette', 'Dark'];
 
+/**
+ * "Wirkung" instead of cinematography. One choice in the simple editor sets the
+ * three technical fields, so a non-videographer never has to think in shot lists.
+ */
+export const SHOT_MOODS: {
+  value: string;
+  label: string;
+  hint: string;
+  shotType: string;
+  movement: string;
+  lighting: string;
+}[] = [
+  { value: 'still', label: 'Still und weit', hint: 'Totale, ruhige Kamera – Raum atmen lassen.', shotType: 'Wide', movement: 'Static', lighting: 'Natural' },
+  { value: 'nah', label: 'Ganz nah', hint: 'Close-up, nichts bewegt sich – Gesicht, Hände, Mund.', shotType: 'Close-up', movement: 'Static', lighting: 'Low key' },
+  { value: 'hand', label: 'Handkamera', hint: 'Nah dran und unruhig, als wärst du dabei.', shotType: 'Medium', movement: 'Handheld', lighting: 'Practical' },
+  { value: 'dunkel', label: 'Dunkel / Silhouette', hint: 'Gegenlicht, Körper als Schatten.', shotType: 'Medium', movement: 'Static', lighting: 'Silhouette' },
+  { value: 'licht', label: 'Hartes Licht', hint: 'Kanten, Staub, Kontrast – Blitz oder Scheinwerfer.', shotType: 'Close-up', movement: 'Push in', lighting: 'Backlit' },
+  { value: 'bewegung', label: 'Bewegung', hint: 'Dolly, Fahrt, Drohne – der Song trägt den Bildfluss.', shotType: 'Wide', movement: 'Dolly', lighting: 'Natural' },
+  { value: 'detail', label: 'Detail', hint: 'Kabel, Hände, Schweiß, Boden – das Kleine groß.', shotType: 'Detail', movement: 'Static', lighting: 'Low key' },
+  { value: 'publikum', label: 'Publikum', hint: 'Von hinten über die Köpfe, Hände, Lärm.', shotType: 'Crowd', movement: 'Handheld', lighting: 'Strobe' },
+];
+
+export const shotMoodLabel = (value: string) =>
+  SHOT_MOODS.find((entry) => entry.value === value)?.label ?? '';
+
+/** Derives the mood back from the technical fields – for shots from older projects. */
+export function guessShotMood(shot: { shotType: string; movement: string; lighting: string }) {
+  const match = SHOT_MOODS.find(
+    (mood) =>
+      mood.shotType === shot.shotType && mood.movement === shot.movement && mood.lighting === shot.lighting
+  );
+  return match?.value ?? '';
+}
+
+/**
+ * Ready-made shots so the storyboard can be built by clicking instead of writing.
+ * `position` is a nudge, the song section is chosen by the user.
+ */
+export const SHOT_IDEAS: { id: string; label: string; description: string; mood: string }[] = [
+  { id: 'empty-room', label: 'Leerer Raum', description: 'Weite: der leere Raum, eine Lampe, Staub in der Luft. Niemand da.', mood: 'still' },
+  { id: 'face-still', label: 'Gesicht, still', description: 'Close-up: das Gesicht, still, Blick knapp an der Kamera vorbei.', mood: 'nah' },
+  { id: 'hands', label: 'Hände / Instrument', description: 'Detail: Hände am Instrument, Saiten, Atem, kleine Bewegung.', mood: 'detail' },
+  { id: 'silhouette', label: 'Silhouette', description: 'Gegenlicht: die Band als Silhouette, Rauch, harte Kante.', mood: 'dunkel' },
+  { id: 'walking', label: 'Gehen', description: 'Handkamera hinterher: jemand geht durch einen Gang, Licht flackert.', mood: 'hand' },
+  { id: 'band', label: 'Band spielt', description: 'Halbtotale: die Band spielt, Kamera langsam rein, alles laut.', mood: 'bewegung' },
+  { id: 'crowd', label: 'Publikum', description: 'Von hinten über die Köpfe: Hände, Schultern, Bewegung.', mood: 'publikum' },
+  { id: 'outside', label: 'Draußen', description: 'Weite: draußen, Wind, Himmel, eine Person klein im Bild.', mood: 'still' },
+  { id: 'object', label: 'Gegenstand', description: 'Detail: ein Gegenstand, der alles erzählt – ohne Worte.', mood: 'detail' },
+  { id: 'light', label: 'Licht / Schatten', description: 'Hartes Licht: Schatten wandert über Wand, Gesicht, Hände.', mood: 'licht' },
+];
+
+/** Order of sections as the song actually runs – used to sort the storyboard. */
+export const sectionOrder = (value: string) =>
+  Math.max(0, SHOT_SECTIONS.findIndex((entry) => entry.value === value));
+
+/**
+ * Spreads shots evenly over the song (or over their section order), so a rough
+ * plan exists without typing a single timecode. Shortest shot: 0.8 s.
+ */
+export function distributeShots(
+  shots: { id: number; start: number; duration: number; section: string; position: number }[],
+  total: number
+) {
+  if (!shots.length) return [];
+  const ordered = [...shots].sort(
+    (a, b) => sectionOrder(a.section) - sectionOrder(b.section) || a.position - b.position || a.id - b.id
+  );
+  const length = Math.max(4, total || 60);
+  const each = Math.max(0.8, length / ordered.length);
+  return ordered.map((shot, index) => ({
+    id: shot.id,
+    start: Math.round(index * each * 10) / 10,
+    duration: Math.round(Math.min(each, length - index * each) * 10) / 10,
+  }));
+}
+
+
 export const videoStatusLabel = (value: string) =>
   VIDEO_STATUS.find((entry) => entry.value === value)?.label ?? value;
 export const shotStatusLabel = (value: string) =>

@@ -39,6 +39,13 @@ export interface VideoProject {
   location: string;
   director: string;
   notes: string;
+  /** Plain-language pitch: what happens, what it feels like, how it ends. */
+  concept: string;
+  /** Mood words for the pitch deck ("kalt", "leer", "Gegenlicht" …). */
+  lookWords: string[];
+  /** What the shoot needs: people, gear, permits. */
+  needs: string;
+  coverMediaId: number | null;
   shotCount: number;
   plannedDuration: number;
   coverUrl: string | null;

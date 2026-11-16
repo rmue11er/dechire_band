@@ -462,21 +462,26 @@ the media library and the document module, so the kit is never out of date.
   Global ⌘K search finds songs by title, key or notes.
 
 ### 14. Video Lab (`/admin/videos`)
-- One project per music video: title, song, audio file for the timeline, treatment document, status
-  (Idea → Pre-production → Shoot → Edit → Done), shoot date, location, director and notes.
-- **Shot planner**: every shot has a start second, duration, song section (Intro/Verse/Chorus/…), description,
-  location, shot type, camera move, light, status (Idea → Scouted → Ready → Shot → Edited), notes and an
-  optional reference from the media library.
-- **Waveform timeline** decoded in the browser (`analyseAudioBuffer` + `audioPeaks`): playhead, beat ticks,
-  time axis, shot blocks coloured by status, click to seek, click a shot to select it. The audio element is
-  the actual song playback, so “what happens at 1:12” is visible and audible at the same time.
-- **Shot library** on the left: media linked to the project song (or all media), searchable, with *Shot* to
-  create a new shot from an asset at the current playhead. The storyboard below lists every shot with thumb,
-  timecode, description and metadata.
-- **Treatment import**: choose a document, each paragraph becomes one shot, distributed across the audio
-  length (or 60 s when no audio is linked). The document is stored on the project and linked back to `/admin/docs`.
-- **Storyboard print**: `window.print()` produces a clean shot list with title, song, date, location and
-  thumbs – the version you take to the shoot.
+Built for people who are not videographers: the project is a guided path of five chapters, not a shot-list
+spreadsheet.
+- **01 Song & Ton** – play the song, see BPM and which song sections already have shots. New shots inherit the
+  section the playhead is standing in.
+- **02 Die Idee** – three answers instead of a treatment: *Worum geht es?* (free text), *Wie sieht es aus?*
+  (mood words like kalt / leer / Gegenlicht, clickable suggestions) and an optional notes document. Exactly
+  this text becomes the pitch later.
+- **03 Ablauf** – ten ready-made **shot ideas** (“Leerer Raum”, “Gesicht, still”, “Silhouette”, “Publikum” …)
+  land at the playhead with one click; each shot needs one sentence and one **Wirkung** (still & weit, ganz
+  nah, Handkamera, dunkel, hartes Licht, Bewegung, Detail, Publikum) which sets shot type, camera move and
+  lighting automatically. **Gleichmäßig verteilen** spreads every shot over the song, so a rough plan exists
+  without typing a single timecode. The waveform timeline (drag, trim, snap, zoom) is still there, folded away
+  under “Timeline – Shots schieben und kürzen”, as is the media library.
+- **04 Drehtag** – date, location, director and *Was brauchen wir?* (people, gear, permits).
+- **05 Pitch** – builds a **presentation** from all of the above: cover with band/song/date/length, the idea,
+  the visual language with frames, the storyboard in pages of six, the shoot day and a contact slide. Arrow
+  keys and dots navigate, fullscreen for the room, print produces one slide per page (light), and **Als HTML**
+  exports a single self-contained file with every image inlined – send it, open it anywhere.
+- Technical details (exact start/duration, status, shot type, camera, light, notes, frame sketch, media
+  reference) are still stored per shot; they simply hide behind “Zeit & Profi-Details”.
 
 ### 15. Reel Lab (`/admin/reels`)
 The mini reel machine: clips from the library, one song, three steps, one MP4.
@@ -594,7 +599,8 @@ app/
   admin/docs/page.tsx      Documents (rider, contracts, orga)
   admin/songs/page.tsx     Songs – collection overview with linked counts
   admin/videos/page.tsx    Video Lab – music video projects
-  admin/videos/[id]/page.tsx Video planner – waveform timeline, shots, treatment import
+  admin/videos/[id]/page.tsx Video planner – guided song, idea, shots, shoot day
+  admin/videos/[id]/pitch/page.tsx Pitch deck – slides from the plan, HTML export
   admin/reels/page.tsx     Reel Lab – clips, beat cuts, text layer, ffmpeg export
   admin/booking/page.tsx   Booking – guide, contacts, templates, mailbox
   admin/website/page.tsx   Public site: blocks, letter, crew, media corner, live preview

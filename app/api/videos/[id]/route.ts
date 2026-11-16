@@ -61,6 +61,18 @@ export async function PATCH(request: Request, { params }: Ctx) {
   if (body.location !== undefined) patch.location = String(body.location ?? '').slice(0, 160);
   if (body.director !== undefined) patch.director = String(body.director ?? '').slice(0, 120);
   if (body.notes !== undefined) patch.notes = String(body.notes ?? '').slice(0, 4000);
+  if (body.concept !== undefined) patch.concept = String(body.concept ?? '').slice(0, 8000);
+  if (body.needs !== undefined) patch.needs = String(body.needs ?? '').slice(0, 2000);
+  if (body.lookWords !== undefined) {
+    patch.lookWords = Array.isArray(body.lookWords)
+      ? body.lookWords.map((word: any) => String(word).slice(0, 24)).filter(Boolean).slice(0, 12)
+      : [];
+  }
+  if (body.coverMediaId !== undefined) {
+    const coverId = toOptionalId(body.coverMediaId);
+    if (coverId === false || (coverId !== null && !getMedia(coverId))) return fail('Cover image not found');
+    patch.coverMediaId = coverId;
+  }
 
   const video = updateVideoProject(videoId, patch);
   return ok({ video });

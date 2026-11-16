@@ -619,6 +619,11 @@ function createConnection(): DatabaseSync {
   ensureColumn(db, 'documents', 'song_id', 'INTEGER');
   ensureColumn(db, 'documents', 'share_token', 'TEXT');
   ensureColumn(db, 'video_shots', 'sketch', 'TEXT');
+  /* video pitch: what the video is about, not how it is shot */
+  ensureColumn(db, 'video_projects', 'concept', "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, 'video_projects', 'look_words', "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn(db, 'video_projects', 'needs', "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, 'video_projects', 'cover_media_id', 'INTEGER');
   ensureIndex(db, 'media', 'idx_media_song', 'CREATE INDEX idx_media_song ON media(song_id)');
   ensureIndex(db, 'documents', 'idx_documents_song', 'CREATE INDEX idx_documents_song ON documents(song_id)');
   ensureIndex(db, 'documents', 'idx_documents_folder', 'CREATE INDEX idx_documents_folder ON documents(folder_id)');

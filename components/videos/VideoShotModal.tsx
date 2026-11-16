@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { IconImage, IconTrash, IconX } from '@/components/icons';
+import { IconImage, IconPencil, IconTrash, IconX } from '@/components/icons';
 import MediaPicker from '@/components/MediaPicker';
 import { MediaThumb } from '@/components/MediaThumb';
 import ShotSketchPad from '@/components/videos/ShotSketchPad';
@@ -10,14 +10,21 @@ import { toast } from '@/lib/toast';
 import {
   CAMERA_MOVES,
   LIGHTING_OPTIONS,
+  SHOT_MOODS,
   SHOT_SECTIONS,
   SHOT_STATUS,
   SHOT_TYPES,
+  guessShotMood,
   sectionLabel,
   timecode,
 } from '@/lib/videos';
 import type { MediaItem, VideoProject, VideoShot } from '@/lib/types';
 
+/**
+ * Deliberately small: one text field, one "Wirkung", one song section, one image.
+ * Everything a videographer would ask for lives behind "Zeit & Profi-Details" and
+ * only shows up when someone opens it.
+ */
 export default function VideoShotModal({
   open,
   shot,
@@ -51,6 +58,8 @@ export default function VideoShotModal({
   const [notes, setNotes] = useState('');
   const [mediaId, setMediaId] = useState('');
   const [sketch, setSketch] = useState<string | null>(null);
+  const [mood, setMood] = useState('');
+  const [sketchOpen, setSketchOpen] = useState(false);
   const [uploadedMedia, setUploadedMedia] = useState<MediaItem[]>([]);
   const [mediaPicker, setMediaPicker] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -70,6 +79,7 @@ export default function VideoShotModal({
   useEffect(() => {
     if (!open) return;
     setUploadedMedia([]);
+    setSketchOpen(false);
     if (shot) {
       setDescription(shot.description);
       setSection(shot.section);
@@ -83,6 +93,7 @@ export default function VideoShotModal({
       setNotes(shot.notes);
       setMediaId(shot.mediaId ? String(shot.mediaId) : '');
       setSketch(shot.sketch);
+      setMood(guessShotMood(shot));
       return;
     }
     const next = [...shots]
@@ -91,7 +102,7 @@ export default function VideoShotModal({
     const previous = [...shots]
       .filter((entry) => entry.start <= playhead)
       .sort((a, b) => b.start - a.start)[0];
-    setDescription('New shot');
+    setDescription('');
     setSection(previous?.section ?? 'verse');
     setStatus('idea');
     setStart(playhead.toFixed(1));
@@ -103,6 +114,7 @@ export default function VideoShotModal({
     setNotes('');
     setMediaId('');
     setSketch(null);
+    setMood('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, shot, playhead]);
 
@@ -113,42 +125,46 @@ export default function VideoShotModal({
       .sort((a, b) => a.start - b.start)[0];
   }, [shots, shot, start]);
 
+  const pickMood = (value: string) => {
+    const entry = SHOT_MOODS.find((item) => item.value === value);
+    setMood(mood === value ? '' : value);
+    if (!entry) return;
+    setShotType(entry.shotType);
+    setMovement(entry.movement);
+    setLighting(entry.lighting);
+  };
+
   const save = async () => {
-    const startValue = Math.max(0, Number(start) || 0);
-    const durationValue = Math.max(0.2, Number(duration) || 0.2);
     if (!description.trim()) {
-      toast('Describe the shot in one line', 'error');
+      toast('Schreib in einem Satz, was im Bild passiert.', 'error');
       return;
     }
     setSaving(true);
     try {
-      const response = await fetch(
-        shot ? `/api/video-shots/${shot.id}` : `/api/videos/${project.id}/shots`,
-        {
-          method: shot ? 'PATCH' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            description,
-            section,
-            status,
-            start: startValue,
-            duration: durationValue,
-            location,
-            shotType,
-            movement,
-            lighting,
-            notes,
-            mediaId: mediaId ? Number(mediaId) : null,
-            sketch,
-          }),
-        }
-      );
+      const response = await fetch(shot ? `/api/video-shots/${shot.id}` : `/api/videos/${project.id}/shots`, {
+        method: shot ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description,
+          section,
+          status,
+          start: Math.max(0, Number(start) || 0),
+          duration: Math.max(0.2, Number(duration) || 0.2),
+          location,
+          shotType,
+          movement,
+          lighting,
+          notes,
+          mediaId: mediaId ? Number(mediaId) : null,
+          sketch,
+        }),
+      });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? 'Could not save the shot');
+      if (!response.ok) throw new Error(data.error ?? 'Konnte den Shot nicht speichern');
       onSaved(data.shot);
-      toast(shot ? 'Shot updated' : 'Shot added');
+      toast(shot ? 'Shot aktualisiert' : 'Shot hinzugefügt');
     } catch (error: any) {
-      toast(error.message ?? 'Could not save the shot', 'error');
+      toast(error.message ?? 'Konnte den Shot nicht speichern', 'error');
     } finally {
       setSaving(false);
     }
@@ -156,14 +172,14 @@ export default function VideoShotModal({
 
   const remove = async () => {
     if (!shot) return;
-    if (!window.confirm(`Delete shot “${shot.description}”?`)) return;
+    if (!window.confirm(`Shot „${shot.description}“ löschen?`)) return;
     try {
       const response = await fetch(`/api/video-shots/${shot.id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Could not delete the shot');
+      if (!response.ok) throw new Error('Konnte den Shot nicht löschen');
       onDeleted(shot.id);
-      toast('Shot deleted');
+      toast('Shot gelöscht');
     } catch (error: any) {
-      toast(error.message ?? 'Could not delete the shot', 'error');
+      toast(error.message ?? 'Konnte den Shot nicht löschen', 'error');
     }
   };
 
@@ -172,49 +188,58 @@ export default function VideoShotModal({
       <Modal
         open={open}
         onClose={onClose}
-        title={shot ? `Shot ${shotNumber}` : 'New shot'}
-        subtitle={
-          shot
-            ? `${timecode(shot.start)} · ${sectionLabel(shot.section)}`
-            : `Starts at ${timecode(Number(start) || 0)} · ${sectionLabel(section)}`
-        }
+        title={shot ? `Shot ${shotNumber}` : 'Neuer Shot'}
+        subtitle={`${sectionLabel(section)} · ab ${timecode(Number(start) || 0)} · ${Number(duration || 0).toFixed(1)} s`}
         footer={
           <>
             {shot ? (
               <button type="button" className="btn btn-danger" onClick={remove}>
-                <IconTrash size={14} /> Delete
+                <IconTrash size={14} /> Löschen
               </button>
             ) : null}
             <button type="button" className="btn btn-ghost" onClick={onClose}>
-              <IconX size={14} /> Cancel
+              <IconX size={14} /> Abbrechen
             </button>
             <button type="button" className="btn btn-primary" onClick={save} disabled={saving}>
-              {saving ? 'Saving …' : shot ? 'Save shot' : 'Add shot'}
+              {saving ? 'Speichert …' : shot ? 'Speichern' : 'Hinzufügen'}
             </button>
           </>
         }
       >
-        <div className="shot-form">
-          <Field label="What happens?">
+        <div className="shot-form shot-form-simple">
+          <Field
+            label="Was passiert im Bild?"
+            hint={<span className="count">Ein Satz reicht – das ist dein Storyboard.</span>}
+          >
             <textarea
-              className="textarea"
+              className="textarea shot-description-input"
               rows={3}
               value={description}
               autoFocus
-              placeholder="Wide: singer alone in the empty hall, lights flicker on the first hit."
+              placeholder="Totale: leerer Raum, eine Lampe flackert, niemand da."
               onChange={(event) => setDescription(event.target.value)}
             />
           </Field>
 
-          <Field
-            label="Frame-Skizze"
-            hint={<span className="count">Grob zeichnen – erscheint als Storyboard-Frame</span>}
-          >
-            <ShotSketchPad key={shot?.id ?? 'new'} value={sketch} onChange={setSketch} />
+          <Field label="Wirkung" hint={<span className="count">Bestimmt Bild, Kamera und Licht automatisch.</span>}>
+            <div className="shot-moods">
+              {SHOT_MOODS.map((entry) => (
+                <button
+                  key={entry.value}
+                  type="button"
+                  className={`shot-mood ${mood === entry.value ? 'on' : ''}`}
+                  aria-pressed={mood === entry.value}
+                  title={entry.hint}
+                  onClick={() => pickMood(entry.value)}
+                >
+                  {entry.label}
+                </button>
+              ))}
+            </div>
           </Field>
 
-          <div className="video-form-row">
-            <Field label="Song section">
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <Field label="Im Song">
               <select className="select" value={section} onChange={(event) => setSection(event.target.value)}>
                 {SHOT_SECTIONS.map((entry) => (
                   <option key={entry.value} value={entry.value}>
@@ -223,147 +248,147 @@ export default function VideoShotModal({
                 ))}
               </select>
             </Field>
-            <Field label="Start (seconds)">
-              <div className="shot-time-row">
-                <input
-                  className="input"
-                  type="number"
-                  min={0}
-                  step={0.1}
-                  value={start}
-                  onChange={(event) => setStart(event.target.value)}
-                />
-                <button type="button" className="btn btn-sm btn-ghost" onClick={() => setStart(playhead.toFixed(1))}>
-                  Playhead
-                </button>
-              </div>
-            </Field>
-            <Field label="Duration (seconds)">
-              <div className="shot-time-row">
-                <input
-                  className="input"
-                  type="number"
-                  min={0.2}
-                  step={0.1}
-                  value={duration}
-                  onChange={(event) => setDuration(event.target.value)}
-                />
+            <Field label="Bild">
+              <div className="row" style={{ gap: 6 }}>
                 <button
                   type="button"
-                  className="btn btn-sm btn-ghost"
-                  disabled={!nextShot}
-                  onClick={() =>
-                    nextShot &&
-                    setDuration(
-                      String(Math.max(0.2, nextShot.start - (Number(start) || 0)).toFixed(1))
-                    )
-                  }
+                  className={`btn btn-sm ${sketch || selectedMedia ? 'btn-ghost' : ''}`}
+                  onClick={() => setSketchOpen((value) => !value)}
                 >
-                  To next
+                  <IconPencil size={13} /> Skizze
                 </button>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => setMediaPicker(true)}>
+                  <IconImage size={13} /> {selectedMedia ? 'Ändern' : 'Referenz'}
+                </button>
+                {sketch && !sketchOpen ? (
+                  <img src={sketch} alt="" className="shot-inline-thumb" onClick={() => setSketchOpen(true)} />
+                ) : selectedMedia ? (
+                  <MediaThumb media={selectedMedia} className="shot-inline-thumb" />
+                ) : null}
               </div>
             </Field>
-            <Field label="Status">
-              <select className="select" value={status} onChange={(event) => setStatus(event.target.value)}>
-                {SHOT_STATUS.map((entry) => (
-                  <option key={entry.value} value={entry.value}>
-                    {entry.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
           </div>
 
-          <div className="video-form-row">
-            <Field label="Location">
-              <input
-                className="input"
-                value={location}
-                placeholder="e.g. staircase, backyard, van"
-                onChange={(event) => setLocation(event.target.value)}
-              />
+          {sketchOpen ? (
+            <Field label="Frame-Skizze" hint={<span className="count">Grob reicht – es geht um die Idee.</span>}>
+              <ShotSketchPad key={shot?.id ?? 'new'} value={sketch} onChange={setSketch} />
             </Field>
-            <Field label="Shot type">
-              <input
-                className="input"
-                list="video-shot-types"
-                value={shotType}
-                placeholder="Wide, close-up …"
-                onChange={(event) => setShotType(event.target.value)}
-              />
-              <datalist id="video-shot-types">
-                {SHOT_TYPES.map((entry) => (
-                  <option key={entry} value={entry} />
-                ))}
-              </datalist>
-            </Field>
-            <Field label="Camera">
-              <input
-                className="input"
-                list="video-camera-moves"
-                value={movement}
-                placeholder="Static, handheld …"
-                onChange={(event) => setMovement(event.target.value)}
-              />
-              <datalist id="video-camera-moves">
-                {CAMERA_MOVES.map((entry) => (
-                  <option key={entry} value={entry} />
-                ))}
-              </datalist>
-            </Field>
-            <Field label="Light">
-              <input
-                className="input"
-                list="video-lighting"
-                value={lighting}
-                placeholder="Low key, practical …"
-                onChange={(event) => setLighting(event.target.value)}
-              />
-              <datalist id="video-lighting">
-                {LIGHTING_OPTIONS.map((entry) => (
-                  <option key={entry} value={entry} />
-                ))}
-              </datalist>
-            </Field>
-          </div>
+          ) : null}
 
-          <Field label="Reference / available shot" hint={<span className="count">From the media library</span>}>
-            <div className="video-reference">
-              {selectedMedia ? (
-                <>
-                  <MediaThumb media={selectedMedia} className="video-reference-thumb" />
-                  <div className="grow">
-                    <strong>{selectedMedia.title}</strong>
-                    <span className="mono small muted">
-                      {selectedMedia.width && selectedMedia.height
-                        ? `${selectedMedia.width}×${selectedMedia.height}`
-                        : selectedMedia.mime}
-                    </span>
-                  </div>
-                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => setMediaPicker(true)}>
-                    Change
+          <details className="shot-advanced">
+            <summary>Zeit &amp; Profi-Details</summary>
+            <div className="video-form-row">
+              <Field label="Start (Sekunden)">
+                <div className="shot-time-row">
+                  <input
+                    className="input"
+                    type="number"
+                    min={0}
+                    step={0.1}
+                    value={start}
+                    onChange={(event) => setStart(event.target.value)}
+                  />
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => setStart(playhead.toFixed(1))}>
+                    Playhead
                   </button>
-                  <button type="button" className="btn btn-icon" onClick={() => setMediaId('')} title="Remove reference">
-                    <IconX size={13} />
+                </div>
+              </Field>
+              <Field label="Länge (Sekunden)">
+                <div className="shot-time-row">
+                  <input
+                    className="input"
+                    type="number"
+                    min={0.2}
+                    step={0.1}
+                    value={duration}
+                    onChange={(event) => setDuration(event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    disabled={!nextShot}
+                    onClick={() =>
+                      nextShot && setDuration(String(Math.max(0.2, nextShot.start - (Number(start) || 0)).toFixed(1)))
+                    }
+                  >
+                    Bis zum nächsten
                   </button>
-                </>
-              ) : (
-                <button type="button" className="btn btn-sm btn-ghost" onClick={() => setMediaPicker(true)}>
-                  <IconImage size={14} /> Attach media
-                </button>
-              )}
+                </div>
+              </Field>
+              <Field label="Status">
+                <select className="select" value={status} onChange={(event) => setStatus(event.target.value)}>
+                  {SHOT_STATUS.map((entry) => (
+                    <option key={entry.value} value={entry.value}>
+                      {entry.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
             </div>
-          </Field>
 
-          <Field label="Notes">
-            <textarea
-              className="textarea"
-              rows={3}
-              value={notes}
-              placeholder="Props, safety, who is in frame, what you still need …"
-              onChange={(event) => setNotes(event.target.value)}
-            />
-          </Field>
+            <div className="video-form-row">
+              <Field label="Ort">
+                <input
+                  className="input"
+                  value={location}
+                  placeholder="z. B. Treppenhaus, Hinterhof, Van"
+                  onChange={(event) => setLocation(event.target.value)}
+                />
+              </Field>
+              <Field label="Einstellung">
+                <input
+                  className="input"
+                  list="video-shot-types"
+                  value={shotType}
+                  placeholder="Wide, Close-up …"
+                  onChange={(event) => setShotType(event.target.value)}
+                />
+                <datalist id="video-shot-types">
+                  {SHOT_TYPES.map((entry) => (
+                    <option key={entry} value={entry} />
+                  ))}
+                </datalist>
+              </Field>
+              <Field label="Kamera">
+                <input
+                  className="input"
+                  list="video-camera-moves"
+                  value={movement}
+                  placeholder="Static, Handheld …"
+                  onChange={(event) => setMovement(event.target.value)}
+                />
+                <datalist id="video-camera-moves">
+                  {CAMERA_MOVES.map((entry) => (
+                    <option key={entry} value={entry} />
+                  ))}
+                </datalist>
+              </Field>
+              <Field label="Licht">
+                <input
+                  className="input"
+                  list="video-lighting"
+                  value={lighting}
+                  placeholder="Low key, Backlit …"
+                  onChange={(event) => setLighting(event.target.value)}
+                />
+                <datalist id="video-lighting">
+                  {LIGHTING_OPTIONS.map((entry) => (
+                    <option key={entry} value={entry} />
+                  ))}
+                </datalist>
+              </Field>
+            </div>
+
+            <Field label="Notizen">
+              <textarea
+                className="textarea"
+                rows={2}
+                value={notes}
+                placeholder="Requisiten, wer im Bild ist, was du noch brauchst …"
+                onChange={(event) => setNotes(event.target.value)}
+              />
+            </Field>
+          </details>
         </div>
       </Modal>
 

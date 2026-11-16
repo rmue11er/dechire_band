@@ -187,6 +187,17 @@ function mapVideoProject(row: any): VideoProject {
     location: row.location ?? '',
     director: row.director ?? '',
     notes: row.notes ?? '',
+    concept: row.concept ?? '',
+    lookWords: (() => {
+      try {
+        const parsed = JSON.parse(String(row.look_words ?? '[]'));
+        return Array.isArray(parsed) ? parsed.map(String) : [];
+      } catch {
+        return [];
+      }
+    })(),
+    needs: row.needs ?? '',
+    coverMediaId: row.cover_media_id == null ? null : Number(row.cover_media_id),
     shotCount: Number(row.shot_count ?? 0),
     plannedDuration: Number(row.planned_duration ?? 0),
     coverUrl: row.cover_filename ? `/api/files/${row.cover_filename}` : null,
@@ -253,6 +264,8 @@ export function updateVideoProject(id: number, patch: Record<string, any>) {
     location: 'location',
     director: 'director',
     notes: 'notes',
+    concept: 'concept',
+    needs: 'needs',
   };
   for (const [key, column] of Object.entries(map)) {
     if (patch[key] === undefined) continue;
@@ -262,6 +275,14 @@ export function updateVideoProject(id: number, patch: Record<string, any>) {
     } else {
       params.push(String(patch[key] ?? ''));
     }
+  }
+  if (patch.lookWords !== undefined) {
+    sets.push('look_words = ?');
+    params.push(JSON.stringify(Array.isArray(patch.lookWords) ? patch.lookWords.map(String) : []));
+  }
+  if (patch.coverMediaId !== undefined) {
+    sets.push('cover_media_id = ?');
+    params.push(patch.coverMediaId ? Number(patch.coverMediaId) : null);
   }
   if (!sets.length) return getVideoProject(id);
   sets.push('updated_at = ?');
