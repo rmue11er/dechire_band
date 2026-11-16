@@ -2028,3 +2028,179 @@
   background: rgb(var(--accent-rgb) / 0.08);
   box-shadow: inset 2px 0 0 var(--accent);
 }
+
+/* ============================================================
+   Wizard layout v2 – transport + notes panel
+   ============================================================ */
+
+.vwizard {
+  max-width: min(1720px, 100%);
+}
+
+.vwizard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 18px;
+  align-items: start;
+}
+
+.vwizard-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.vwizard-card {
+  position: static;
+}
+
+/* ------------------------------------------------------- transport */
+
+.vwizard-transport {
+  position: sticky;
+  top: calc(var(--ctx-h) + 6px);
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.vwizard-transport.is-empty {
+  justify-content: space-between;
+}
+
+.vwizard-transport-time {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.vwizard-transport-time em {
+  font-style: normal;
+  color: var(--muted-2);
+}
+
+.vwizard-scrub {
+  flex: 1 1 180px;
+  min-width: 140px;
+  height: 3px;
+  appearance: none;
+  background: var(--line-strong);
+  cursor: pointer;
+}
+
+.vwizard-scrub::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 0;
+}
+
+.vwizard-scrub::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ---------------------------------------------------- notes panel */
+
+.vwizard-doc {
+  position: sticky;
+  top: calc(var(--ctx-h) + 6px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - var(--ctx-h) - 40px);
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.vwizard-doc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vwizard-doc-select {
+  width: 100%;
+  font-size: 12px;
+}
+
+.vwizard-doc-body {
+  flex: 1;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  font-size: 12.5px;
+}
+
+.vwizard-doc-body .prose {
+  max-width: none;
+}
+
+/* ---------------------------------------------- storyboard rows */
+
+.vwizard-shot {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--panel);
+  border: 0;
+  transition: background 0.12s ease;
+}
+
+.vwizard-shot-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) 58px auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px 8px 12px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.vwizard-shot-edit {
+  margin: 0 6px;
+  align-self: center;
+  opacity: 0.65;
+}
+
+.vwizard-shot:hover {
+  background: var(--panel-2);
+}
+
+.vwizard-shot:hover .vwizard-shot-edit {
+  opacity: 1;
+}
+
+.vwizard-shot.is-selected {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+@media (max-width: 1400px) {
+  .vwizard-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vwizard-doc {
+    position: static;
+    max-height: 420px;
+  }
+}

@@ -435,29 +435,86 @@ export default function VideoDetailPage() {
         }
       />
 
-      {/* ---------------------------------------------------------- rail */}
-      <nav className="vwizard-rail" aria-label="Schritte">
-        {STEPS.map((entry, index) => (
-          <button
-            key={entry.key}
-            type="button"
-            className={`vwizard-step ${index === step ? 'is-active' : ''} ${done[index] ? 'is-done' : ''}`}
-            aria-current={index === step ? 'step' : undefined}
-            onClick={() => goTo(index)}
-          >
-            <span className="vwizard-step-no mono">{done[index] ? <IconCheck size={11} /> : String(index + 1).padStart(2, '0')}</span>
-            <span className="vwizard-step-label">{entry.label}</span>
-          </button>
-        ))}
-      </nav>
+      <div className="vwizard-layout">
+        <div className="vwizard-main">
+          {/* -------------------------------------------------------- rail */}
+          <nav className="vwizard-rail" aria-label="Schritte">
+            {STEPS.map((entry, index) => (
+              <button
+                key={entry.key}
+                type="button"
+                className={`vwizard-step ${index === step ? 'is-active' : ''} ${done[index] ? 'is-done' : ''}`}
+                aria-current={index === step ? 'step' : undefined}
+                onClick={() => goTo(index)}
+              >
+                <span className="vwizard-step-no mono">{done[index] ? <IconCheck size={11} /> : String(index + 1).padStart(2, '0')}</span>
+                <span className="vwizard-step-label">{entry.label}</span>
+              </button>
+            ))}
+          </nav>
 
-      <section className="panel vwizard-card">
-        <div className="vwizard-head">
-          <span className="mono small muted">
-            Schritt {step + 1} von {STEPS.length}
-          </span>
-          <h2>{STEPS[step].question}</h2>
-        </div>
+          {/* always available: the song is the clock of the whole plan */}
+          <div className={`vwizard-transport ${project.audioUrl ? '' : 'is-empty'}`}>
+            {project.audioUrl ? (
+              <>
+                <button type="button" className="btn btn-primary btn-sm" onClick={togglePlay}>
+                  {playing ? <IconPause size={14} /> : <IconPlay size={14} />}
+                  {playing ? 'Pause' : 'Play'}
+                </button>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => seekTo(time - 10)} title="10 Sekunden zurück">
+                  −10 s
+                </button>
+                <input
+                  className="vwizard-scrub"
+                  type="range"
+                  min={0}
+                  max={Math.max(1, Math.round(duration * 10) / 10)}
+                  step={0.1}
+                  value={Math.min(time, duration)}
+                  onChange={(event) => seekTo(Number(event.target.value))}
+                  aria-label="Im Song springen"
+                />
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => seekTo(time + 10)} title="10 Sekunden vor">
+                  +10 s
+                </button>
+                <span className="mono vwizard-transport-time">
+                  {timecode(time)} <em className="muted">/ {timecode(duration)}</em>
+                </span>
+                <span className="mono small muted">{sectionLabel(currentSection)}</span>
+                {analysis ? <span className="mono small muted">{analysis.bpm} BPM</span> : null}
+                <button type="button" className="linkish" onClick={() => seekTo(0)}>
+                  Anfang
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="mono small muted">Kein Audio verknüpft</span>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => setAudioPicker(true)}>
+                  <IconMusic size={13} /> Song hinzufügen
+                </button>
+              </>
+            )}
+          </div>
+
+          <audio
+            ref={audioRef}
+            src={project.audioUrl ?? undefined}
+            onTimeUpdate={(event) => setTime(event.currentTarget.currentTime)}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onEnded={() => {
+              setPlaying(false);
+              setTime(duration);
+            }}
+          />
+
+          <section className="panel vwizard-card">
+            <div className="vwizard-head">
+              <span className="mono small muted">
+                Schritt {step + 1} von {STEPS.length}
+              </span>
+              <h2>{STEPS[step].question}</h2>
+            </div>
 
         {/* ----------------------------------------------------- 01 song */}
         {step === 0 ? (
@@ -489,35 +546,11 @@ export default function VideoDetailPage() {
               </Field>
             </div>
 
-            {project.audioUrl ? (
-              <div className="vwizard-player">
-                <button type="button" className="btn btn-primary" onClick={togglePlay}>
-                  {playing ? <IconPause size={15} /> : <IconPlay size={15} />}
-                  {playing ? 'Pause' : 'Anhören'}
-                </button>
-                <span className="mono">
-                  {timecode(time)} <em className="muted">/ {timecode(duration)}</em>
-                </span>
-                <span className="mono small muted">
-                  {analysis ? `${analysis.bpm} BPM` : analysing ? 'Analysiere …' : audioError ? 'kein Waveform' : ''}
-                </span>
-                <audio
-                  ref={audioRef}
-                  src={project.audioUrl}
-                  onTimeUpdate={(event) => setTime(event.currentTarget.currentTime)}
-                  onPlay={() => setPlaying(true)}
-                  onPause={() => setPlaying(false)}
-                  onEnded={() => {
-                    setPlaying(false);
-                    setTime(duration);
-                  }}
-                />
-              </div>
-            ) : (
-              <p className="vwizard-hint">
-                Ohne Audio kannst du trotzdem planen – die Länge wird dann auf 60 Sekunden geschätzt.
-              </p>
-            )}
+            <p className="vwizard-hint">
+              {project.audioUrl
+                ? 'Oben läuft der Song mit – mit dem Regler springst du an jede Stelle.'
+                : 'Ohne Audio kannst du trotzdem planen – die Länge wird dann auf 60 Sekunden geschätzt.'}
+            </p>
 
             <p className="vwizard-hint">
               Der Song hat Teile: Intro, Strophe, Refrain, Bridge, Outro. Im nächsten Schritt beschreibst du, was
@@ -653,26 +686,45 @@ export default function VideoDetailPage() {
                       </button>
                     </div>
                     {group.shots.map((shot) => (
-                      <button
+                      <div
                         key={shot.id}
-                        type="button"
                         className={`vwizard-shot ${selectedId === shot.id ? 'is-selected' : ''}`}
-                        onClick={() => setShotModal({ shot })}
                       >
-                        <span className="vwizard-shot-thumb">
-                          {shot.sketch ? (
-                            <img src={shot.sketch} alt="" />
-                          ) : shot.media ? (
-                            <MediaThumb media={shot.media} className="vwizard-shot-img" />
-                          ) : (
-                            <IconImage size={16} />
-                          )}
-                        </span>
-                        <span className="vwizard-shot-text">{shot.description || 'Ohne Beschreibung'}</span>
-                        <span className="vwizard-shot-time mono">{timecode(shot.start)}</span>
-                        <span className={`shot-status status-${shot.status}`}>{shotStatusLabel(shot.status)}</span>
-                        <IconPencil size={13} />
-                      </button>
+                        <button
+                          type="button"
+                          className="vwizard-shot-main"
+                          onClick={() => {
+                            setSelectedId(shot.id);
+                            seekTo(shot.start);
+                          }}
+                          title="An diese Stelle springen"
+                        >
+                          <span className="vwizard-shot-thumb">
+                            {shot.sketch ? (
+                              <img src={shot.sketch} alt="" />
+                            ) : shot.media ? (
+                              <MediaThumb media={shot.media} className="vwizard-shot-img" />
+                            ) : (
+                              <IconImage size={16} />
+                            )}
+                          </span>
+                          <span className="vwizard-shot-text">{shot.description || 'Ohne Beschreibung'}</span>
+                          <span className="vwizard-shot-time mono">{timecode(shot.start)}</span>
+                          <span className={`shot-status status-${shot.status}`}>{shotStatusLabel(shot.status)}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-icon vwizard-shot-edit"
+                          onClick={() => {
+                            setSelectedId(shot.id);
+                            setShotModal({ shot });
+                          }}
+                          aria-label="Bild bearbeiten"
+                          title="Bild bearbeiten"
+                        >
+                          <IconPencil size={13} />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 ))}
@@ -839,6 +891,46 @@ export default function VideoDetailPage() {
           </button>
         </div>
       </section>
+        </div>
+
+        {/* ------------------------------------------------ notes panel */}
+        <aside className="vwizard-doc">
+          <div className="vwizard-doc-head">
+            <span className="mono small muted">Notizen</span>
+            <Link
+              className="btn btn-sm btn-ghost"
+              href={notesDocument ? `/admin/docs?doc=${notesDocument.id}` : '/admin/docs'}
+            >
+              <IconDocument size={13} /> {notesDocument ? 'Öffnen' : 'Dokumente'}
+            </Link>
+          </div>
+          <select
+            className="input vwizard-doc-select"
+            value={project.treatmentDocId ?? ''}
+            onChange={(event) => patchProject({ treatmentDocId: event.target.value ? Number(event.target.value) : null })}
+            aria-label="Verknüpftes Dokument"
+          >
+            <option value="">– kein Dokument –</option>
+            {documents.map((document) => (
+              <option key={document.id} value={document.id}>
+                {document.title || 'Ohne Titel'}
+              </option>
+            ))}
+          </select>
+          <div className="vwizard-doc-body">
+            {notesDocument ? (
+              <div
+                className="prose"
+                dangerouslySetInnerHTML={{ __html: notesDocument.content || '<p>Leeres Dokument.</p>' }}
+              />
+            ) : (
+              <p className="vwizard-hint">
+                Wähle oben ein Dokument – es bleibt beim Planen immer sichtbar, während du Shots anlegst.
+              </p>
+            )}
+          </div>
+        </aside>
+      </div>
 
       <VideoProjectModal
         open={projectModal}
