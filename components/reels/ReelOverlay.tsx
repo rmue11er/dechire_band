@@ -49,7 +49,7 @@ export function ReelOverlay({
   return (
     <div
       className={`reel-overlay style-${text.style} align-${text.align} place-${text.place}${
-        lyric ? ' is-lyric' : ''
+        lyric ? ` is-lyric motion-${text.lyricMotion ?? 'fade'}` : ''
       }`}
       style={{
         top: REEL_SAFE.top,
@@ -60,6 +60,9 @@ export function ReelOverlay({
     >
       <div className="reel-copy">
         {kicker ? <span className="reel-kicker">{kicker}</span> : null}
+        {lyric && text.showRule !== false ? (
+          <span className="reel-lyric-rule" aria-hidden="true" />
+        ) : null}
         {lines.length ? (
           <div className="reel-hook" style={{ fontSize: hookSize(text, longest) }}>
             {lines.map((line, index) => (

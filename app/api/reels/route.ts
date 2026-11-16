@@ -45,6 +45,7 @@ export async function POST(request: Request) {
     plan?: ReelPlan;
     overlay?: string | null;
     overlays?: { start?: number; end?: number; png?: string }[];
+    cards?: { start?: number; end?: number; png?: string }[];
   }>(request);
   if (!validPlan(body.plan)) return fail('The reel plan is incomplete');
   if (!ffmpegStatus().ok) return fail('ffmpeg is not installed on this server', 503);
@@ -53,6 +54,15 @@ export async function POST(request: Request) {
   const duration = plan.clips.reduce((sum, clip) => sum + clip.duration, 0);
   const overlays = Array.isArray(body.overlays)
     ? body.overlays.slice(0, 80).filter(
+        (entry) =>
+          Number.isFinite(entry?.start) &&
+          Number.isFinite(entry?.end) &&
+          Number(entry?.end) > Number(entry?.start) &&
+          String(entry?.png ?? '').startsWith('data:image/png;base64,')
+      )
+    : [];
+  const cards = Array.isArray(body.cards)
+    ? body.cards.slice(0, 4).filter(
         (entry) =>
           Number.isFinite(entry?.start) &&
           Number.isFinite(entry?.end) &&
@@ -72,6 +82,7 @@ export async function POST(request: Request) {
     plan,
     body.overlay ?? null,
     overlays.map((entry) => ({ start: Number(entry.start), end: Number(entry.end), png: String(entry.png) })),
+    cards.map((entry) => ({ start: Number(entry.start), end: Number(entry.end), png: String(entry.png) })),
     (progress) => {
       updateReelJob(job.id, { progress });
     }

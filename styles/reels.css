@@ -74,6 +74,24 @@
   }
 }
 
+@keyframes reel-pan-left {
+  from {
+    transform: scale(1.12) translateX(4.7%);
+  }
+  to {
+    transform: scale(1.12) translateX(-4.7%);
+  }
+}
+
+@keyframes reel-pan-right {
+  from {
+    transform: scale(1.12) translateX(-4.7%);
+  }
+  to {
+    transform: scale(1.12) translateX(4.7%);
+  }
+}
+
 .reel-grain {
   position: absolute;
   inset: 0;
@@ -88,6 +106,73 @@
   inset: 0;
   pointer-events: none;
   background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 0.85) 100%);
+}
+
+/* Film scrim under the copy – keeps lyric lines readable on blown-out frames. */
+.reel-scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46%;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(4, 4, 4, 0.78),
+    rgba(4, 4, 4, 0.34) 46%,
+    rgba(4, 4, 4, 0)
+  );
+}
+
+/* Print language: hairline frame or crop marks, rasterised into the overlay. */
+.reel-marks {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.reel-marks.is-frame::before {
+  content: '';
+  position: absolute;
+  inset: 34px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.26);
+}
+
+.reel-marks.is-crop i {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border: 0 solid rgb(var(--accent-rgb) / 0.55);
+}
+
+.reel-marks.is-crop i.tl {
+  top: 32px;
+  left: 32px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+
+.reel-marks.is-crop i.tr {
+  top: 32px;
+  right: 32px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+
+.reel-marks.is-crop i.bl {
+  bottom: 32px;
+  left: 32px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+
+.reel-marks.is-crop i.br {
+  bottom: 32px;
+  right: 32px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
 }
 
 /* Cinema window: 4:3 or 16:9 inside the 9:16 frame. The bars stay black. */
@@ -1077,8 +1162,40 @@
   animation: reel-lyric-in 0.22s ease-out both;
 }
 
+.reel-overlay.is-lyric.motion-cut .reel-hook {
+  animation: none;
+}
+
+.reel-overlay.is-lyric.motion-rise .reel-hook {
+  animation: reel-lyric-rise 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes reel-lyric-rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.reel-lyric-rule {
+  display: block;
+  width: 84px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.85;
+}
+
+.reel-overlay.align-center .reel-lyric-rule {
+  margin: 0 auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .reel-overlay.is-lyric .reel-hook {
+  .reel-overlay.is-lyric .reel-hook,
+  .reel-overlay.is-lyric.motion-rise .reel-hook {
     animation: none;
   }
 }
@@ -1096,6 +1213,121 @@
 
 .reel-mark-e {
   color: var(--accent);
+}
+
+/* ------------------------------------------------------------ bookends */
+
+.reel-card-frame {
+  width: 1080px;
+  height: 1920px;
+  background: transparent;
+}
+
+.reel-card {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: #f7f3ec;
+}
+
+.reel-card-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 78%, rgb(var(--accent-rgb) / 0.07), transparent 55%),
+    linear-gradient(180deg, rgba(7, 7, 7, 0.94), rgba(7, 7, 7, 0.985) 45%, #070707);
+}
+
+.reel-card-copy {
+  position: absolute;
+  left: 64px;
+  right: 64px;
+  bottom: 42%;
+  display: grid;
+  gap: 20px;
+}
+
+.reel-card-kicker {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.reel-card-kicker::before {
+  content: '/// ';
+  opacity: 0.7;
+}
+
+.reel-card h2 {
+  margin: 0;
+  font-family: var(--font-display, 'Instrument Serif', Georgia, serif);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: 0.005em;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+
+.reel-card-rule {
+  display: block;
+  width: 96px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.85;
+}
+
+.reel-card p {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(247, 243, 236, 0.72);
+}
+
+.reel-card.is-outro .reel-card-copy {
+  bottom: 38%;
+}
+
+.reel-card-handle {
+  position: absolute;
+  left: 64px;
+  bottom: 36%;
+  font-family: var(--font-mono);
+  font-size: 22px;
+  letter-spacing: 0.18em;
+  color: rgba(247, 243, 236, 0.55);
+}
+
+.reel-card .reel-mark {
+  top: 269px;
+  right: 65px;
+  font-size: 40px;
+}
+
+/* ------------------------------------------------------------- editions */
+
+.reel-editions {
+  display: grid;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.reel-editions-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reel-editions .reel-look-hint {
+  margin: 0;
 }
 
 .reel-look-hint {

@@ -44,21 +44,37 @@ function sourcePath(mediaId: number) {
   return { media, absolute };
 }
 
-function clipFilter(motion: ReelPlan['clips'][number]['motion'], index: number) {
-  const zoom =
-    motion === 'in'
-      ? `zoompan=z='min(1+0.0011*on,1.12)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${REEL_W}x${REEL_H}:fps=${REEL_FPS},`
-      : motion === 'out'
-        ? `zoompan=z='max(1.12-0.0011*on,1)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${REEL_W}x${REEL_H}:fps=${REEL_FPS},`
-        : '';
+function clipFilter(motion: ReelPlan['clips'][number]['motion'], index: number, duration: number) {
+  const frames = Math.max(1, Math.round(duration * REEL_FPS));
+  let move = '';
+  if (motion === 'in') {
+    move = `zoompan=z='min(1+0.0011*on,1.12)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${REEL_W}x${REEL_H}:fps=${REEL_FPS},`;
+  } else if (motion === 'out') {
+    move = `zoompan=z='max(1.12-0.0011*on,1)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${REEL_W}x${REEL_H}:fps=${REEL_FPS},`;
+  } else if (motion === 'left' || motion === 'right') {
+    const x =
+      motion === 'left'
+        ? `(iw-iw/zoom)*(1-on/${frames})`
+        : `(iw-iw/zoom)*(on/${frames})`;
+    move = `zoompan=z='1.12':x='${x}':y='ih/2-(ih/zoom/2)':d=1:s=${REEL_W}x${REEL_H}:fps=${REEL_FPS},`;
+  }
   return (
     `[${index}:v]scale=${REEL_W}:${REEL_H}:force_original_aspect_ratio=increase,` +
-    `crop=${REEL_W}:${REEL_H},setsar=1,fps=${REEL_FPS},${zoom}` +
+    `crop=${REEL_W}:${REEL_H},setsar=1,fps=${REEL_FPS},${move}` +
     `format=yuv420p,settb=AVTB,setpts=PTS-STARTPTS[v${index}]`
   );
 }
 
 function gradeChain(grade: ReelPlan['look']['grade']) {
+  if (grade === 'ash') {
+    return 'eq=saturation=0.58:contrast=1.05:brightness=-0.008,colorbalance=rs=0.012:gs=0.008:bs=0.004';
+  }
+  if (grade === 'sulfur') {
+    return 'eq=saturation=0.82:contrast=1.06:brightness=0.004,colorbalance=rs=-0.01:gs=0.012:bs=-0.02:rm=0.012:gm=0.016:bm=-0.028:rh=0.03:gh=0.026:bh=-0.035';
+  }
+  if (grade === 'rust') {
+    return 'eq=saturation=0.72:contrast=1.09:brightness=-0.012,colorbalance=rs=0.05:gs=-0.012:bs=-0.03:rm=0.02:gm=-0.008:bm=-0.02:rh=0.01:gh=0:bh=-0.012';
+  }
   if (grade === 'warm') {
     return 'eq=contrast=1.03:saturation=0.72:brightness=-0.012,colorbalance=rs=0.03:gs=0.005:bs=-0.025';
   }
@@ -90,6 +106,7 @@ export async function renderReel(
   plan: ReelPlan,
   overlayDataUrl: string | null,
   lyricOverlays: RenderOverlayCue[],
+  cardOverlays: RenderOverlayCue[],
   onProgress: (progress: number) => void
 ): Promise<RenderResult> {
   const status = ffmpegStatus();
@@ -121,7 +138,7 @@ export async function renderReel(
       } else {
         inputArgs.push('-loop', '1', '-framerate', String(REEL_FPS), '-t', clip.duration.toFixed(3), '-i', absolute);
       }
-      filters.push(clipFilter(clip.motion, index));
+      filters.push(clipFilter(clip.motion, index, clip.duration));
     });
 
     let overlayIndex: number | null = null;
@@ -155,7 +172,33 @@ export async function renderReel(
       );
     });
 
-    const audioIndex = clips.length + (overlayIndex == null ? 0 : 1) + cues.length;
+    const cards = (Array.isArray(cardOverlays) ? cardOverlays : [])
+      .map((card) => ({
+        start: Math.max(0, Math.min(duration - 0.05, Number(card.start) || 0)),
+        end: Math.max(0.1, Math.min(duration, Number(card.end) || 0)),
+        png: card.png,
+      }))
+      .filter((card) => card.end > card.start + 0.1 && card.png.startsWith('data:image/png;base64,'))
+      .slice(0, 4)
+      .sort((a, b) => a.start - b.start);
+    const firstCardIndex = clips.length + (overlayIndex == null ? 0 : 1) + cues.length;
+    cards.forEach((card, index) => {
+      const cardPath = path.join(tmp, `card-${index}.png`);
+      fs.writeFileSync(cardPath, Buffer.from(card.png.split(',')[1], 'base64'));
+      inputArgs.push(
+        '-loop',
+        '1',
+        '-framerate',
+        String(REEL_FPS),
+        '-t',
+        Math.max(0.1, card.end - card.start).toFixed(3),
+        '-i',
+        cardPath
+      );
+    });
+
+    const audioIndex =
+      clips.length + (overlayIndex == null ? 0 : 1) + cues.length + cards.length;
     const { absolute: audioPath } = sourcePath(plan.audio.mediaId);
     inputArgs.push('-ss', plan.audio.start.toFixed(3), '-t', duration.toFixed(3), '-i', audioPath);
 
@@ -192,8 +235,9 @@ export async function renderReel(
     const firstCueIndex = clips.length + (overlayIndex == null ? 0 : 1);
     cues.forEach((cue, index) => {
       const nextLabel = `lyric${index}`;
-      if (plan.text.lyricFade !== false) {
-        const cueDuration = Math.max(0.1, cue.end - cue.start);
+      const cueDuration = Math.max(0.1, cue.end - cue.start);
+      const motion = plan.text.lyricMotion ?? 'fade';
+      if (motion !== 'cut') {
         const fade = Math.min(0.24, cueDuration / 4);
         filters.push(
           `[${firstCueIndex + index}:v]format=rgba,` +
@@ -201,14 +245,40 @@ export async function renderReel(
             `fade=t=out:st=${(cueDuration - fade).toFixed(3)}:d=${fade.toFixed(3)}:alpha=1,` +
             `setpts=PTS-STARTPTS+${cue.start.toFixed(3)}/TB[lyricart${index}]`
         );
+        const y =
+          motion === 'rise'
+            ? `y='(1-min(1,max(0,(t-${cue.start.toFixed(3)})/0.32)))*26'`
+            : 'y=0';
         filters.push(
-          `[${label}][lyricart${index}]overlay=0:0:format=auto:enable='between(t,${cue.start.toFixed(3)},${cue.end.toFixed(3)})':eof_action=pass[${nextLabel}]`
+          `[${label}][lyricart${index}]overlay=x=0:${y}:format=auto:enable='between(t,${cue.start.toFixed(
+            3
+          )},${cue.end.toFixed(3)})':eof_action=pass[${nextLabel}]`
         );
       } else {
         filters.push(
-          `[${label}][${firstCueIndex + index}:v]overlay=0:0:format=auto:enable='between(t,${cue.start.toFixed(3)},${cue.end.toFixed(3)})'[${nextLabel}]`
+          `[${label}][${firstCueIndex + index}:v]overlay=0:0:format=auto:enable='between(t,${cue.start.toFixed(
+            3
+          )},${cue.end.toFixed(3)})'[${nextLabel}]`
         );
       }
+      label = nextLabel;
+    });
+
+    cards.forEach((card, index) => {
+      const nextLabel = `card${index}`;
+      const cardDuration = Math.max(0.1, card.end - card.start);
+      const fade = Math.min(0.28, cardDuration / 4);
+      filters.push(
+        `[${firstCardIndex + index}:v]format=rgba,` +
+          `fade=t=in:st=0:d=${fade.toFixed(3)}:alpha=1,` +
+          `fade=t=out:st=${(cardDuration - fade).toFixed(3)}:d=${fade.toFixed(3)}:alpha=1,` +
+          `setpts=PTS-STARTPTS+${card.start.toFixed(3)}/TB[cardart${index}]`
+      );
+      filters.push(
+        `[${label}][cardart${index}]overlay=0:0:format=auto:enable='between(t,${card.start.toFixed(
+          3
+        )},${card.end.toFixed(3)})':eof_action=pass[${nextLabel}]`
+      );
       label = nextLabel;
     });
 

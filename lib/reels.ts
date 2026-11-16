@@ -20,11 +20,17 @@ export const REEL_SAFE = {
 
 export const REEL_MAX_SECONDS = 60;
 
-export type ReelMotion = 'none' | 'in' | 'out';
-export type ReelGrade = 'none' | 'warm' | 'mono' | 'bleach';
+export type ReelMotion = 'none' | 'in' | 'out' | 'left' | 'right';
+export type ReelGrade = 'none' | 'ash' | 'warm' | 'sulfur' | 'rust' | 'mono' | 'bleach';
 export type ReelFrame = 'full' | '4:3' | '16:9';
 export type ReelTextStyle = 'serif' | 'sans' | 'mono';
 export type ReelTextPlace = 'top' | 'middle' | 'low';
+export type ReelMarks = 'none' | 'frame' | 'crop';
+export type ReelLyricMotion = 'cut' | 'fade' | 'rise';
+
+/** Bookend cards – short enough to leave the song alone. */
+export const CARD_INTRO_SECONDS = 1.3;
+export const CARD_OUTRO_SECONDS = 2.1;
 
 export interface ReelClip {
   mediaId: number;
@@ -46,6 +52,8 @@ export interface ReelLook {
   fadeOut: boolean;
   /** Cut the clips on the beat grid instead of equal shares. */
   beatCut: boolean;
+  /** Print language: clean, hairline frame or crop marks. */
+  marks: ReelMarks;
 }
 
 export interface ReelText {
@@ -60,8 +68,13 @@ export interface ReelText {
   showMark: boolean;
   /** Timed lyric cues in playback order. Empty = use the static hook. */
   lyrics: ReelLyric[];
-  /** Soft fade each cue in/out instead of a hard cut. */
-  lyricFade: boolean;
+  /** How each lyric cue arrives. */
+  lyricMotion: ReelLyricMotion;
+  /** Thin accent rule above lyric lines. */
+  showRule: boolean;
+  /** Dark title card at the start / end. */
+  introCard: boolean;
+  outroCard: boolean;
 }
 
 export interface ReelLyric {
@@ -146,17 +159,134 @@ export const REEL_DURATIONS = [8, 15, 20, 30, 45, 60];
 
 export const GRADE_LABEL: Record<ReelGrade, string> = {
   none: 'Neutral',
+  ash: 'Ash',
   warm: 'Ember',
+  sulfur: 'Sulfur',
+  rust: 'Rust',
   mono: 'Mono',
   bleach: 'Bleach',
 };
 
 export const GRADE_HINT: Record<ReelGrade, string> = {
   none: 'Nur Licht und Kontrast – die Farben bleiben, wie sie gefilmt wurden.',
-  warm: 'Warme Schatten, weniger Sättigung, kein Farbstich – der ruhige Hausstandard.',
+  ash: 'Grau, weich, leicht entsättigt – der ruhige Hausstandard ohne Farbstich.',
+  warm: 'Warme Schatten, weniger Sättigung – staubig, aber nicht orange.',
+  sulfur: 'Blasses Gelb in den Lichtern, kühle Schatten. Die CI-Farbe als Licht, nicht als Fläche.',
+  rust: 'Rostbraun in den Schatten, harte Mitten – dunkel, aber nicht schwarz.',
   mono: 'Hartes Schwarzweiß, mehr Korn, null Ablenkung.',
   bleach: 'Ausgeblichen und hart: fast farblos, tiefe Schwarztöne, mehr Kontrast.',
 };
+
+export const REEL_GRADES: ReelGrade[] = ['ash', 'warm', 'sulfur', 'rust', 'mono', 'bleach', 'none'];
+
+export const MARK_LABEL: Record<ReelMarks, string> = {
+  none: 'Clean',
+  frame: 'Rahmen',
+  crop: 'Crop-Marks',
+};
+
+export const MARK_HINT: Record<ReelMarks, string> = {
+  none: 'Kein Rahmen – das Bild allein trägt.',
+  frame: 'Hauchdünne Linie im Safe-Area-Rand – wie ein Print im Passepartout.',
+  crop: 'Vier Eckmarken wie auf einem Kontaktabzug – ruhig, aber unverkennbar.',
+};
+
+export const LYRIC_MOTION_LABEL: Record<ReelLyricMotion, string> = {
+  cut: 'Hart',
+  fade: 'Fade',
+  rise: 'Rise',
+};
+
+/* ------------------------------------------------------------- editions */
+
+export interface ReelEdition {
+  id: string;
+  label: string;
+  hint: string;
+  look: Partial<Pick<ReelLook, 'grade' | 'grain' | 'vignette' | 'marks'>>;
+  text: Partial<
+    Pick<ReelText, 'style' | 'align' | 'place' | 'lyricMotion' | 'showRule' | 'introCard' | 'outroCard'>
+  >;
+}
+
+/** Named bundles – each one is a complete look, not a slider preset. */
+export const REEL_EDITIONS: ReelEdition[] = [
+  {
+    id: 'ash',
+    label: 'Ash',
+    hint: 'Grau, Rahmen, ruhige Schrift. Der Hausstandard für alles, was noch nicht entschieden ist.',
+    look: { grade: 'ash', grain: 18, vignette: 0.52, marks: 'frame' },
+    text: {
+      style: 'serif',
+      align: 'left',
+      place: 'low',
+      lyricMotion: 'rise',
+      showRule: true,
+      introCard: false,
+      outroCard: false,
+    },
+  },
+  {
+    id: 'sulfur',
+    label: 'Sulfur',
+    hint: 'Gelblicht in den Lichtern, Crop-Marks, mittige Zeilen – die auffälligste Edition.',
+    look: { grade: 'sulfur', grain: 12, vignette: 0.34, marks: 'crop' },
+    text: {
+      style: 'serif',
+      align: 'center',
+      place: 'middle',
+      lyricMotion: 'fade',
+      showRule: true,
+      introCard: false,
+      outroCard: false,
+    },
+  },
+  {
+    id: 'press',
+    label: 'Press',
+    hint: 'Schwarzweiß, Korn und Titel-/Endkarte. Wie ein Ausschnitt aus einem Zine.',
+    look: { grade: 'mono', grain: 24, vignette: 0.62, marks: 'frame' },
+    text: {
+      style: 'serif',
+      align: 'left',
+      place: 'low',
+      lyricMotion: 'rise',
+      showRule: true,
+      introCard: false,
+      outroCard: false,
+    },
+  },
+  {
+    id: 'ember',
+    label: 'Ember',
+    hint: 'Warm, staubig, ohne Rahmen. Nah am Film, ohne Effekt zu klingen.',
+    look: { grade: 'warm', grain: 18, vignette: 0.55, marks: 'none' },
+    text: {
+      style: 'serif',
+      align: 'left',
+      place: 'low',
+      lyricMotion: 'fade',
+      showRule: false,
+      introCard: false,
+      outroCard: false,
+    },
+  },
+  {
+    id: 'rust',
+    label: 'Rust',
+    hint: 'Rost in den Schatten, Crop-Marks, Rise. Dunkel und trotzdem weich.',
+    look: { grade: 'rust', grain: 22, vignette: 0.58, marks: 'crop' },
+    text: {
+      style: 'serif',
+      align: 'left',
+      place: 'low',
+      lyricMotion: 'rise',
+      showRule: true,
+      introCard: false,
+      outroCard: false,
+    },
+  },
+];
 
 export const FRAME_LABEL: Record<ReelFrame, string> = {
   full: 'Vollbild',

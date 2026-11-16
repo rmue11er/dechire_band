@@ -1,8 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { ReelCard } from '@/components/reels/ReelCard';
+import { ReelMarks } from '@/components/reels/ReelMarks';
 import { ReelOverlay } from '@/components/reels/ReelOverlay';
-import { REEL_SAFE, lyricIndexAt, type ReelLook, type ReelMotion, type ReelText } from '@/lib/reels';
+import {
+  CARD_INTRO_SECONDS,
+  CARD_OUTRO_SECONDS,
+  REEL_SAFE,
+  lyricIndexAt,
+  type ReelLook,
+  type ReelMotion,
+  type ReelText,
+} from '@/lib/reels';
 import type { MediaItem } from '@/lib/types';
 
 export interface StageClip {
@@ -15,6 +25,9 @@ export interface StageClip {
 }
 
 function cssFilter(grade: ReelLook['grade']) {
+  if (grade === 'ash') return 'saturate(0.58) contrast(1.05) brightness(0.99)';
+  if (grade === 'sulfur') return 'saturate(0.82) contrast(1.06) sepia(0.12) hue-rotate(-6deg) brightness(1.01)';
+  if (grade === 'rust') return 'saturate(0.72) contrast(1.09) sepia(0.18) hue-rotate(-12deg) brightness(0.97)';
   if (grade === 'warm') return 'sepia(0.08) saturate(0.68) contrast(1.03) brightness(0.97)';
   if (grade === 'mono') return 'grayscale(1) contrast(1.08) brightness(0.95)';
   if (grade === 'bleach') return 'grayscale(0.35) contrast(1.18) brightness(0.94) saturate(0.55)';
@@ -29,6 +42,7 @@ export function ReelStage({
   look,
   text,
   handle,
+  cardTitle,
   beats,
   guides,
 }: {
@@ -38,6 +52,7 @@ export function ReelStage({
   look: ReelLook;
   text: ReelText;
   handle?: string;
+  cardTitle?: string;
   beats: number[];
   guides: boolean;
 }) {
@@ -85,6 +100,17 @@ export function ReelStage({
   const frameRatio =
     look.frame === '4:3' ? 4 / 3 : look.frame === '16:9' ? 16 / 9 : null;
   const frameBar = frameRatio ? Math.round((1920 - 1080 / frameRatio) / 2) : 0;
+  const totalDuration = clips.reduce((sum, clip) => sum + clip.duration, 0);
+  const introWindow = Math.min(CARD_INTRO_SECONDS, Math.max(0.6, totalDuration * 0.3));
+  const outroWindow = Math.min(CARD_OUTRO_SECONDS, Math.max(1, totalDuration * 0.3));
+  const outroFrom = totalDuration - outroWindow;
+  const showIntro = text.introCard && totalDuration > 0.5 && time < introWindow;
+  const showOutro = text.outroCard && totalDuration > 0.5 && time >= outroFrom;
+  const resolvedTitle =
+    cardTitle?.trim() ||
+    text.hook.split('\n')[0]?.trim() ||
+    text.lyrics[0]?.text ||
+    'déchire';
   const lyrics = text.lyrics ?? [];
   const lyricIndex = lyricIndexAt(lyrics, time);
   const activeLyric = lyricIndex >= 0 ? lyrics[lyricIndex] : null;
@@ -109,7 +135,11 @@ export function ReelStage({
       >
         {clips.map((clip) => {
           const isActive = clip === active;
-          const animation = isActive && clip.motion !== 'none' ? `reel-push-${clip.motion}` : 'none';
+          const animationName =
+            clip.motion === 'left' || clip.motion === 'right'
+              ? `reel-pan-${clip.motion}`
+              : `reel-push-${clip.motion}`;
+          const animation = isActive && clip.motion !== 'none' ? animationName : 'none';
           const style = {
             filter: cssFilter(look.grade),
             animation: clip.motion !== 'none' ? `${animation} ${clip.duration}s linear both` : undefined,
@@ -141,11 +171,8 @@ export function ReelStage({
         })}
 
         <span className="reel-grain" style={{ opacity: grainOpacity }} aria-hidden="true" />
-        <span
-          className="reel-vignette"
-          style={{ opacity: look.vignette }}
-          aria-hidden="true"
-        />
+        <span className="reel-vignette" style={{ opacity: look.vignette }} aria-hidden="true" />
+        {text.place === 'low' ? <span className="reel-scrim" aria-hidden="true" /> : null}
 
         {frameBar > 0 ? (
           <>
@@ -153,6 +180,8 @@ export function ReelStage({
             <span className="reel-mask bottom" style={{ height: frameBar }} aria-hidden="true" />
           </>
         ) : null}
+
+        <ReelMarks marks={look.marks} />
 
         {lyrics.length ? (
           <>
@@ -162,13 +191,34 @@ export function ReelStage({
                 key={`lyric-${lyricIndex}`}
                 text={lyricText}
                 handle={handle}
-                lyric={Boolean(activeLyric) && text.lyricFade !== false}
+                lyric={Boolean(activeLyric) && text.lyricMotion !== 'cut'}
               />
             ) : null}
           </>
         ) : (
           <ReelOverlay text={text} handle={handle} />
         )}
+
+        {showIntro ? (
+          <ReelCard
+            kind="intro"
+            title={resolvedTitle}
+            kicker={text.kicker}
+            sub={text.sub}
+            handle={handle}
+            marks={look.marks}
+          />
+        ) : null}
+        {showOutro ? (
+          <ReelCard
+            kind="outro"
+            title={resolvedTitle}
+            kicker={text.kicker}
+            sub={text.sub}
+            handle={handle}
+            marks={look.marks}
+          />
+        ) : null}
 
         {guides ? (
           <div className="reel-guides" aria-hidden="true">

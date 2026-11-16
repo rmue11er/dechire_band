@@ -6,6 +6,8 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import MediaPicker from '@/components/MediaPicker';
 import { MediaThumb } from '@/components/MediaThumb';
+import { ReelCard } from '@/components/reels/ReelCard';
+import { ReelMarks } from '@/components/reels/ReelMarks';
 import { ReelOverlay } from '@/components/reels/ReelOverlay';
 import { ReelStage, type StageClip } from '@/components/reels/ReelStage';
 import { ReelWaveform } from '@/components/reels/ReelWaveform';
@@ -30,19 +32,27 @@ import {
 } from '@/components/icons';
 import { analyseAudioBuffer, audioPeaks, type BeatAnalysis } from '@/lib/beats';
 import {
+  CARD_INTRO_SECONDS,
+  CARD_OUTRO_SECONDS,
   FRAME_LABEL,
   GRADE_HINT,
   GRADE_LABEL,
+  LYRIC_MOTION_LABEL,
+  MARK_HINT,
+  MARK_LABEL,
   lyricIndexAt,
   lyricWindow,
   lyricsFromText,
   normaliseLyrics,
   planClipLengths,
   REEL_DURATIONS,
+  REEL_EDITIONS,
+  REEL_GRADES,
   REEL_PRESETS,
   type ReelFrame,
-  type ReelGrade,
   type ReelLook,
+  type ReelLyricMotion,
+  type ReelMarks as ReelMarksKind,
   type ReelMotion,
   type ReelPlan,
   type ReelPreset,
@@ -100,12 +110,13 @@ const sourceDuration = (url: string) =>
   });
 
 const DEFAULT_LOOK: ReelLook = {
-  grade: 'warm',
+  grade: 'ash',
   frame: 'full',
   grain: 18,
-  vignette: 0.55,
+  vignette: 0.52,
   fadeOut: true,
   beatCut: true,
+  marks: 'frame',
 };
 
 const DEFAULT_TEXT: ReelText = {
@@ -118,7 +129,10 @@ const DEFAULT_TEXT: ReelText = {
   showHandle: true,
   showMark: true,
   lyrics: [],
-  lyricFade: true,
+  lyricMotion: 'rise',
+  showRule: true,
+  introCard: false,
+  outroCard: false,
 };
 
 const cleanLyricLine = (value: string) =>
@@ -192,6 +206,7 @@ export default function ReelsPage() {
   const exportRef = useRef<HTMLDivElement>(null);
   const frameExportRef = useRef<HTMLDivElement>(null);
   const lyricExportRef = useRef<HTMLDivElement>(null);
+  const cardExportRef = useRef<HTMLDivElement>(null);
   const tapIndexRef = useRef(0);
   const pollRef = useRef(false);
 
@@ -250,6 +265,15 @@ export default function ReelsPage() {
   const totalDuration = useMemo(
     () => Number(timeline.reduce((sum, entry) => sum + entry.duration, 0).toFixed(3)),
     [timeline]
+  );
+
+  const cardTitle = useMemo(
+    () =>
+      text.hook.split('\n')[0]?.trim() ||
+      normaliseLyrics(text.lyrics, totalDuration)[0]?.text ||
+      audioMedia?.title ||
+      'déchire',
+    [text.hook, text.lyrics, totalDuration, audioMedia]
   );
 
   const stageClips: StageClip[] = useMemo(() => {
@@ -582,7 +606,9 @@ export default function ReelsPage() {
       !text.kicker.trim() &&
       !text.sub.trim() &&
       !text.showMark &&
-      !text.showHandle
+      !text.showHandle &&
+      look.marks === 'none' &&
+      text.place !== 'low'
     ) {
       return null;
     }
@@ -598,7 +624,7 @@ export default function ReelsPage() {
   };
 
   const renderFrameOverlay = async () => {
-    if (!text.showMark && !text.showHandle) return null;
+    if (!text.showMark && !text.showHandle && look.marks === 'none' && text.place !== 'low') return null;
     if (!frameExportRef.current) return null;
     const { toPng } = await import('html-to-image');
     return toPng(frameExportRef.current, {
@@ -632,6 +658,39 @@ export default function ReelsPage() {
     return overlays;
   };
 
+  const renderCardOverlays = async () => {
+    if (!cardExportRef.current || (!text.introCard && !text.outroCard)) return [];
+    const { toPng } = await import('html-to-image');
+    const nodes = [...cardExportRef.current.querySelectorAll<HTMLElement>('[data-card-frame]')];
+    const introDuration = Math.min(CARD_INTRO_SECONDS, Math.max(0.6, totalDuration * 0.3));
+    const outroDuration = Math.min(CARD_OUTRO_SECONDS, Math.max(1, totalDuration * 0.3));
+    const windows = [
+      ...(text.introCard ? [{ start: 0, end: Number(introDuration.toFixed(3)) }] : []),
+      ...(text.outroCard
+        ? [
+            {
+              start: Number(Math.max(0, totalDuration - outroDuration).toFixed(3)),
+              end: Number(totalDuration.toFixed(3)),
+            },
+          ]
+        : []),
+    ];
+    const cards: { start: number; end: number; png: string }[] = [];
+    for (let index = 0; index < nodes.length; index++) {
+      const window = windows[index];
+      if (!window) continue;
+      const png = await toPng(nodes[index], {
+        width: 1080,
+        height: 1920,
+        pixelRatio: 1,
+        cacheBust: true,
+        backgroundColor: 'transparent',
+      });
+      cards.push({ ...window, png });
+    }
+    return cards;
+  };
+
   const startExport = async () => {
     if (!ffmpeg?.ok) {
       toast('ffmpeg is not installed on this server', 'error');
@@ -650,11 +709,12 @@ export default function ReelsPage() {
     setJob(null);
     try {
       const overlays = await renderLyricOverlays();
+      const cards = await renderCardOverlays();
       const overlay = text.lyrics.length ? await renderFrameOverlay() : await renderOverlay();
       const response = await fetch('/api/reels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: buildPlan(), overlay, overlays }),
+        body: JSON.stringify({ plan: buildPlan(), overlay, overlays, cards }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? 'The render could not be started');
@@ -816,6 +876,7 @@ export default function ReelsPage() {
               look={look}
               text={text}
               handle={profile?.handle}
+              cardTitle={cardTitle}
               beats={beats}
               guides={guides}
             />
@@ -955,6 +1016,8 @@ export default function ReelsPage() {
                                   ['none', 'Still'],
                                   ['in', 'Push'],
                                   ['out', 'Pull'],
+                                  ['left', '←'],
+                                  ['right', '→'],
                                 ] as [ReelMotion, string][]
                               ).map(([value, label]) => (
                                 <button
@@ -1152,11 +1215,25 @@ export default function ReelsPage() {
                 <label className="reel-toggle">
                   <input
                     type="checkbox"
-                    checked={text.lyricFade}
-                    onChange={(event) => setText((current) => ({ ...current, lyricFade: event.target.checked }))}
+                    checked={text.showRule !== false}
+                    onChange={(event) =>
+                      setText((current) => ({ ...current, showRule: event.target.checked }))
+                    }
                   />
-                  <span>Weich einblenden</span>
+                  <span>Akzentlinie</span>
                 </label>
+                <div className="reel-motion" role="group" aria-label="Textwechsel">
+                  {(['cut', 'fade', 'rise'] as ReelLyricMotion[]).map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={text.lyricMotion === value ? 'on' : ''}
+                      onClick={() => setText((current) => ({ ...current, lyricMotion: value }))}
+                    >
+                      {LYRIC_MOTION_LABEL[value]}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <textarea
@@ -1378,6 +1455,36 @@ export default function ReelsPage() {
 
           {step === 'look' ? (
             <div className="reel-panel">
+              <div className="reel-editions">
+                <div className="reel-editions-head">
+                  <span className="label">Edition</span>
+                  <span className="reel-look-hint">Komplette Looks als Startpunkt – danach frei nachjustierbar.</span>
+                </div>
+                <div className="reel-chips">
+                  {REEL_EDITIONS.map((edition) => (
+                    <button
+                      key={edition.id}
+                      type="button"
+                      title={edition.hint}
+                      onClick={() => {
+                        setLook((current) => ({ ...current, ...edition.look }));
+                        setText((current) => ({ ...current, ...edition.text }));
+                        if (edition.text.introCard && coverAt < CARD_INTRO_SECONDS + 0.2) {
+                          setCoverAt(
+                            Math.min(
+                              Math.max(0.1, totalDuration - 0.1),
+                              Math.min(CARD_INTRO_SECONDS + 0.4, Math.max(0.1, totalDuration / 2))
+                            )
+                          );
+                        }
+                      }}
+                    >
+                      {edition.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="reel-text-grid">
                 <Field label="Kicker">
                   <input
@@ -1473,7 +1580,7 @@ export default function ReelsPage() {
               <div className="reel-look-row">
                 <Field label="Look">
                   <div className="reel-chips">
-                    {(['none', 'warm', 'mono', 'bleach'] as ReelGrade[]).map((value) => (
+                    {REEL_GRADES.map((value) => (
                       <button
                         key={value}
                         type="button"
@@ -1505,7 +1612,7 @@ export default function ReelsPage() {
               </div>
 
               <div className="reel-look-row">
-                <Field label="Rahmen">
+                <Field label="Filmfenster">
                   <div className="reel-chips">
                     {(['full', '4:3', '16:9'] as ReelFrame[]).map((value) => (
                       <button
@@ -1531,6 +1638,53 @@ export default function ReelsPage() {
                     onChange={(event) => setText((current) => ({ ...current, showMark: event.target.checked }))}
                   />
                   <span>Wortmarke</span>
+                </label>
+              </div>
+
+              <div className="reel-look-row">
+                <Field label="Print-Rahmen">
+                  <div className="reel-chips">
+                    {(['none', 'frame', 'crop'] as ReelMarksKind[]).map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={look.marks === value ? 'on' : ''}
+                        onClick={() => setLook((current) => ({ ...current, marks: value }))}
+                      >
+                        {MARK_LABEL[value]}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="reel-look-hint">{MARK_HINT[look.marks]}</p>
+                </Field>
+                <label className="reel-toggle" title="Legt sich als dunkle Karte über das Bild – Text in diesem Fenster wird verdeckt.">
+                  <input
+                    type="checkbox"
+                    checked={text.introCard}
+                    onChange={(event) => {
+                      const on = event.target.checked;
+                      setText((current) => ({ ...current, introCard: on }));
+                      if (on && coverAt < CARD_INTRO_SECONDS + 0.2) {
+                        setCoverAt(
+                          Math.min(
+                            Math.max(0.1, totalDuration - 0.1),
+                            Math.min(CARD_INTRO_SECONDS + 0.4, Math.max(0.1, totalDuration / 2))
+                          )
+                        );
+                      }
+                    }}
+                  />
+                  <span>Intro-Karte</span>
+                </label>
+                <label className="reel-toggle" title="Dunkle Endkarte – deckt das letzte Textfenster ab.">
+                  <input
+                    type="checkbox"
+                    checked={text.outroCard}
+                    onChange={(event) =>
+                      setText((current) => ({ ...current, outroCard: event.target.checked }))
+                    }
+                  />
+                  <span>Endkarte</span>
                 </label>
               </div>
 
@@ -1649,6 +1803,7 @@ export default function ReelsPage() {
                   look={look}
                   text={text}
                   handle={profile?.handle}
+                  cardTitle={cardTitle}
                   beats={beats}
                   guides={theaterGuides}
                 />
@@ -1724,6 +1879,8 @@ export default function ReelsPage() {
               ref={frameExportRef}
               style={{ position: 'absolute', top: 0, left: 0 }}
             >
+              {text.place === 'low' ? <span className="reel-scrim" /> : null}
+              <ReelMarks marks={look.marks} />
               <ReelOverlay
                 text={{ ...text, kicker: '', sub: '', hook: '' }}
                 handle={profile?.handle}
@@ -1735,7 +1892,7 @@ export default function ReelsPage() {
                   key={`${line.start}-${index}`}
                   data-lyric-frame
                   className="reel-frame reel-overlay-frame"
-                  style={{ position: 'absolute', top: index * 1920, left: 0 }}
+                  style={{ position: 'absolute', top: 0, left: 0 }}
                 >
                   <ReelOverlay
                     text={{
@@ -1754,9 +1911,46 @@ export default function ReelsPage() {
           </>
         ) : (
           <div className="reel-frame reel-overlay-frame" ref={exportRef}>
+            {text.place === 'low' ? <span className="reel-scrim" /> : null}
+            <ReelMarks marks={look.marks} />
             <ReelOverlay text={text} handle={profile?.handle} />
           </div>
         )}
+
+        <div ref={cardExportRef}>
+          {text.introCard ? (
+            <div
+              data-card-frame
+              className="reel-card-frame"
+              style={{ position: 'absolute', top: 0, left: 0 }}
+            >
+              <ReelCard
+                kind="intro"
+                title={cardTitle}
+                kicker={text.kicker}
+                sub={text.sub}
+                handle={profile?.handle}
+                marks={look.marks}
+              />
+            </div>
+          ) : null}
+          {text.outroCard ? (
+            <div
+              data-card-frame
+              className="reel-card-frame"
+              style={{ position: 'absolute', top: 0, left: 0 }}
+            >
+              <ReelCard
+                kind="outro"
+                title={cardTitle}
+                kicker={text.kicker}
+                sub={text.sub}
+                handle={profile?.handle}
+                marks={look.marks}
+              />
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <Modal
