@@ -21,6 +21,15 @@ async function authorized() {
   return verifySession(token);
 }
 
+/** A failed restore says which step broke – the message alone is rarely enough. */
+function restoreFailed(error: any) {
+  console.error('[restore]', error);
+  return ok(
+    { error: error?.message ?? 'Restore failed', step: typeof error?.step === 'string' ? error.step : null },
+    400
+  );
+}
+
 /** Streamed upload: large backups never have to fit into a multipart FormData buffer. */
 async function restoreRaw(request: Request) {
   if (!request.body) return fail('No backup file received');
@@ -52,12 +61,12 @@ async function restoreRaw(request: Request) {
       restored: true,
       counts: result.counts,
       uploads: result.uploads,
+      fonts: result.fonts,
       manifest: result.manifest,
     });
   } catch (error: any) {
     if (error?.message === 'BACKUP_TOO_LARGE') return fail('The backup is larger than 512 MB', 413);
-    console.error('[restore]', error);
-    return fail(error?.message ?? 'Restore failed', 400);
+    return restoreFailed(error);
   } finally {
     fs.rmSync(tempZip, { force: true });
   }
@@ -95,10 +104,10 @@ export async function POST(request: Request) {
       restored: true,
       counts: result.counts,
       uploads: result.uploads,
+      fonts: result.fonts,
       manifest: result.manifest,
     });
   } catch (error: any) {
-    console.error('[restore]', error);
-    return fail(error?.message ?? 'Restore failed', 400);
+    return restoreFailed(error);
   }
 }

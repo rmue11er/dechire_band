@@ -330,6 +330,10 @@ tar czf /var/backups/dechire-$(date +%F).tgz -C /var/www/vhosts/example.com/band
 > `client_max_body_size 512m;` and `proxy_read_timeout 300s;` (or raise the Apache `LimitRequestBody` when
 > Apache proxies the app). Without that, nginx rejects the upload before it reaches the app and the browser
 > only reports “could not read the upload”.
+>
+> **If a restore fails** the message now names the step (`while restoring "media"`, `while unpacking
+> uploads/…`, …). Nothing is replaced unless the whole import went through: rows go in through one transaction
+> and the files are staged first, so a failed restore leaves the installation untouched.
 
 ---
 

@@ -24,6 +24,19 @@ import { DEFAULT_ACCENT, DEFAULT_PALETTE, PALETTE_ROLES, applyAccent, isHex, isL
 import { toast } from '@/lib/toast';
 import type { MediaItem, PaletteColor, Profile, TrashEntry } from '@/lib/types';
 
+/** nginx/Apache answer with an HTML error page – show a readable bit instead of nothing. */
+function plainSnippet(body: string) {
+  const text = (body ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  return text ? ` – ${text.slice(0, 160)}` : '';
+}
+
+/** One line that tells the difference between “still uploading”, “importing” and “stuck”. */
+function restoreStatusLabel(progress: { sent: number; total: number } | null) {
+  if (!progress || !progress.total) return 'Waiting for the server';
+  if (progress.sent < progress.total) return `Uploading ${Math.round((progress.sent / progress.total) * 100)} %`;
+  return 'Importing – keep this tab open';
+}
+
 export default function SettingsPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
@@ -86,6 +99,7 @@ export default function SettingsPage() {
   const [schedulerBusy, setSchedulerBusy] = useState<string | null>(null);
   const [trash, setTrash] = useState<TrashEntry[]>([]);
   const [backupBusy, setBackupBusy] = useState<string | null>(null);
+  const [restoreProgress, setRestoreProgress] = useState<{ sent: number; total: number } | null>(null);
   const restoreInput = useRef<HTMLInputElement>(null);
 
   const load = async () => {
@@ -452,44 +466,64 @@ export default function SettingsPage() {
     toast('Backup is being prepared');
   };
 
-  const restoreBackup = async (file: File | null | undefined) => {
+  const restoreBackup = (file: File | null | undefined) => {
     if (!file) return;
     if (file.size > 512 * 1024 * 1024) {
       toast('The backup is larger than 512 MB', 'error');
       if (restoreInput.current) restoreInput.current.value = '';
       return;
     }
-    if (!window.confirm('Replace ALL current data with this backup?')) return;
+    if (!window.confirm('Replace ALL current data with this backup?')) {
+      if (restoreInput.current) restoreInput.current.value = '';
+      return;
+    }
     setBackupBusy('restore');
-    try {
-      const response = await fetch('/api/restore', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/zip' },
-        body: file,
-      });
-      const text = await response.text();
+    setRestoreProgress({ sent: 0, total: file.size });
+
+    const finish = () => {
+      setBackupBusy(null);
+      setRestoreProgress(null);
+      if (restoreInput.current) restoreInput.current.value = '';
+    };
+
+    /* XMLHttpRequest instead of fetch: it reports the upload progress, so a transfer
+       that dies half-way is visible and not just a spinner that never stops. */
+    const request = new XMLHttpRequest();
+    request.open('POST', '/api/restore');
+    request.setRequestHeader('Content-Type', 'application/zip');
+    request.upload.onprogress = (event) => {
+      if (event.lengthComputable) setRestoreProgress({ sent: event.loaded, total: event.total });
+    };
+    request.onload = () => {
       let data: any = {};
       try {
-        data = JSON.parse(text);
+        data = JSON.parse(request.responseText || '{}');
       } catch {
         data = {};
       }
-      if (!response.ok) {
-        throw new Error(
-          data.error ??
-            (response.status === 413
-              ? 'The server rejected the upload as too large – raise client_max_body_size for the domain'
-              : `Restore failed (${response.status})`)
-        );
+      if (request.status < 200 || request.status >= 300) {
+        const fallback =
+          request.status === 413
+            ? 'The server rejected the upload as too large – raise client_max_body_size for the domain'
+            : `Restore failed (${request.status})${plainSnippet(request.responseText)}`;
+        const parts = [data.error ?? fallback];
+        if (data.step) parts.push(`while ${data.step}`);
+        toast(parts.join(' – '), 'error');
+      } else {
+        toast(`Backup restored (${data.uploads ?? 0} files) – reloading`);
+        setTimeout(() => window.location.reload(), 900);
       }
-      toast('Backup restored – reloading');
-      setTimeout(() => window.location.reload(), 900);
-    } catch (error: any) {
-      toast(error.message ?? 'Restore failed', 'error');
-    } finally {
-      setBackupBusy(null);
-      if (restoreInput.current) restoreInput.current.value = '';
-    }
+      finish();
+    };
+    request.onerror = () => {
+      toast('Restore failed – the connection was interrupted', 'error');
+      finish();
+    };
+    request.ontimeout = () => {
+      toast('Restore timed out before the server answered', 'error');
+      finish();
+    };
+    request.send(file);
   };
 
   const restoreTrashEntry = async (id: number) => {
@@ -1382,8 +1416,9 @@ export default function SettingsPage() {
         </div>
         <div className="panel-body form-grid">
           <p className="palette-intro">
-            The backup contains the whole database (posts, media, notes, designs, milestones, documents, palette,
-            profile) plus every uploaded file. Restoring replaces all current data — export first if you are unsure.
+            The backup contains the whole database (posts, media, notes, designs, milestones, documents, folders,
+            palette, profile) plus every uploaded file and the self-hosted fonts. Restoring replaces all current data —
+            export first if you are unsure.
           </p>
           <div className="row wrap" style={{ gap: 8 }}>
             <button type="button" className="btn btn-primary" onClick={downloadBackup} disabled={!!backupBusy}>
@@ -1404,6 +1439,9 @@ export default function SettingsPage() {
               hidden
               onChange={(event) => restoreBackup(event.target.files?.[0])}
             />
+            {backupBusy === 'restore' ? (
+              <span className="mono small muted">{restoreStatusLabel(restoreProgress)}</span>
+            ) : null}
           </div>
         </div>
       </section>
