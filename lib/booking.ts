@@ -5,6 +5,8 @@ import type { BookingKind, BookingStatus } from './types';
 export const BOOKING_KINDS: { value: BookingKind; label: string; hint: string }[] = [
   { value: 'festival', label: 'Festival', hint: 'Bewerbungsfenster, Band-Voting, Line-Up-Calls.' },
   { value: 'venue', label: 'Venue / Club', hint: 'Support-Slots für Tourneen und eigene Abende.' },
+  { value: 'youth', label: 'Jugend- / Kulturzentrum', hint: 'Nachwuchsbühnen mit kleinen Gagen oder ohne – der schnellste Weg zu ersten Gigs.' },
+  { value: 'contest', label: 'Wettbewerb / Newcomer-Bühne', hint: 'Bandcontests und Talentbühnen – Jury, Publikum, Sichtbarkeit.' },
   { value: 'promoter', label: 'Promoter', hint: 'Bucht Shows, oft mehrere Clubs gleichzeitig.' },
   { value: 'agency', label: 'Booking-Agentur', hint: 'Übernimmt Vertretung und Tourplanung.' },
   { value: 'label', label: 'Label', hint: 'Demo, Story und konkreter Plan – keine Massenmail.' },
@@ -566,6 +568,158 @@ export const CONTACT_SEEDS: ContactSeed[] = [
   { name: 'metal.de', kind: 'press', city: 'Lingen', region: 'Niedersachsen', website: 'https://www.metal.de', tags: ['metal', 'reviews'], fit: 'Großes Portal mit Hardcore-Rand. Review-Anfrage mit fertigem Pressepaket.', priority: 2 },
   { name: 'Diffus', kind: 'press', city: 'Berlin', region: 'Berlin', website: 'https://www.diffusmagazin.de', tags: ['magazin', 'indie'], fit: 'Berliner Musikmagazin, offen für neue Namen.', priority: 2 },
   { name: 'laut.de', kind: 'press', city: 'München', region: 'Bayern', website: 'https://www.laut.de', tags: ['portal', 'reviews'], fit: 'Reichweitenstark; Fokus auf Release-Reviews mit Pressepaket.', priority: 3 },
+
+  /* ------------------------------------------------------------------ *
+   * Nachwuchs & kleine Orte (2026-11)                                   *
+   * Der Einstieg: Kulturzentren, Jugendzentren, Szene-Clubs und kleine  *
+   * Festivals, die Newcomer wirklich buchen – nah zuerst, dann weiter.  *
+   * ------------------------------------------------------------------ */
+
+  /* Schwaben & Oberbayern – hier fängt es an --------------------------- */
+  { name: 'Kulturhaus Abraxas', kind: 'youth', city: 'Augsburg', region: 'Bayern', website: 'https://www.kulturhaus-abraxas.de', tags: ['kulturzentrum', 'nachwuchs'], fit: 'Städtisches Kulturhaus mit Konzertprogramm und Jugendarbeit – die naheliegendste Tür in der eigenen Stadt.', km: 0, priority: 1 },
+  { name: 'Ballonfabrik', kind: 'youth', city: 'Augsburg', region: 'Bayern', website: 'https://www.ballonfabrik.de', tags: ['kulturzentrum', 'atelier'], fit: 'Offenes Kultur- und Atelierhaus, nicht nur Konzerte – gute Kooperation für einen eigenen Abend.', km: 0, priority: 2 },
+  { name: 'Grandhotel Cosmopolis', kind: 'youth', city: 'Augsburg', region: 'Bayern', website: 'https://www.grandhotel-cosmopolis.org', tags: ['kulturzentrum', 'hof'], fit: 'Augsburger Kulturort mit Innenhof und Bühne – kleine Formate, offenes Publikum.', km: 0, priority: 2 },
+  { name: 'Kafe Marat', kind: 'youth', city: 'München', region: 'Bayern', website: find('Kafe Marat München Konzerte Booking'), tags: ['diY', 'punk', 'linke szene'], fit: 'Münchner DIY-Adresse für Punk und Hardcore – hier zählt Musik, nicht Reichweite.', km: 70, priority: 1 },
+  { name: 'Kafe Kult', kind: 'youth', city: 'München', region: 'Bayern', website: find('Kafe Kult München Booking Konzert'), tags: ['diY', 'punk', 'alternative'], fit: 'Kleiner selbstverwalteter Laden, Abende mit drei Bands sind normal.', km: 70, priority: 1 },
+  { name: 'Import Export', kind: 'venue', city: 'München', region: 'Bayern', website: find('Import Export München Konzerte Booking'), tags: ['club', 'indie', 'alternative'], fit: 'Münchner Club mit offenem Programm – Support für kleinere Tourneen.', km: 70, priority: 2 },
+  { name: 'Sunny Red', kind: 'venue', city: 'München', region: 'Bayern', website: find('Sunny Red München Booking'), tags: ['club', 'punk', 'alternative'], fit: 'Kellerclub in München, genau passend für die erste München-Show.', km: 70, priority: 2 },
+  { name: 'Neue Welt', kind: 'youth', city: 'Ingolstadt', region: 'Bayern', website: find('Neue Welt Ingolstadt Kulturzentrum Booking'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Kulturzentrum in Ingolstadt, 100 km – offen für junge Bands aus der Region.', km: 100, priority: 2 },
+  { name: 'Kulturfabrik Kempten', kind: 'youth', city: 'Kempten', region: 'Bayern', website: find('Kulturfabrik Kempten Booking'), tags: ['kulturzentrum', 'jugend'], fit: 'Allgäuer Kulturfabrik mit Nachwuchsabenden; 130 km.', km: 130, priority: 2 },
+  { name: 'Kaminwerk', kind: 'venue', city: 'Memmingen', region: 'Bayern', website: 'https://www.kaminwerk.de', tags: ['club', 'rock', 'metal'], fit: 'Memminger Club mit Rock-/Metal-Programm und Support-Slots – 100 km.', km: 100, priority: 2 },
+  { name: 'Club Vaudeville', kind: 'venue', city: 'Lindau', region: 'Bayern', website: 'https://www.club-vaudeville.de', tags: ['club', 'alternative'], fit: 'Bodensee-Club, 160 km – lohnt als Wochenendziel mit einem zweiten Gig.', km: 160, priority: 3 },
+  { name: 'KUKO Rosenheim', kind: 'youth', city: 'Rosenheim', region: 'Bayern', website: find('KUKO Rosenheim Kulturzentrum Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Rosenheimer Kulturzentrum mit Jugendarbeit und kleinen Konzerten.', km: 170, priority: 2 },
+  { name: 'Leerer Beutel', kind: 'youth', city: 'Regensburg', region: 'Bayern', website: find('Leerer Beutel Regensburg Konzerte'), tags: ['kulturzentrum', 'alternative'], fit: 'Regensburger Kulturzentrum, 170 km, breites Programm mit Nachwuchsschiene.', km: 170, priority: 2 },
+  { name: 'Immerhin', kind: 'youth', city: 'Würzburg', region: 'Bayern', website: find('Immerhin Würzburg Kulturzentrum Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Würzburger Kulturzentrum mit offenem Programm – 230 km, gut mit B-Hof kombinierbar.', km: 230, priority: 2 },
+  { name: 'Cairo', kind: 'venue', city: 'Würzburg', region: 'Bayern', website: find('Cairo Würzburg Club Booking'), tags: ['club', 'indie', 'alternative'], fit: 'Kleiner Würzburger Club, oft Vorband-Slots für regionale Acts.', km: 230, priority: 2 },
+  { name: 'E-Werk Erlangen', kind: 'youth', city: 'Erlangen', region: 'Bayern', website: 'https://www.e-werk.de', tags: ['kulturzentrum', 'nachwuchs'], fit: 'Erlanger Kulturzentrum mit Konzertprogramm und Nachwuchsförderung.', km: 170, priority: 2 },
+  { name: 'Kofferfabrik', kind: 'youth', city: 'Fürth', region: 'Bayern', website: find('Kofferfabrik Fürth Konzerte'), tags: ['kulturzentrum', 'alternative'], fit: 'Fürther Kulturfabrik, 150 km, kleine Bühne mit Szene-Publikum.', km: 150, priority: 2 },
+  { name: 'Live-Club Bamberg', kind: 'venue', city: 'Bamberg', region: 'Bayern', website: find('Live Club Bamberg Booking'), tags: ['club', 'rock', 'punk'], fit: 'Bamberger Live-Club, 200 km – Support-Slots für Punk und Alternative.', km: 200, priority: 2 },
+  { name: 'Alter Stattbahnhof', kind: 'venue', city: 'Schweinfurt', region: 'Bayern', website: find('Alter Stattbahnhof Schweinfurt Booking'), tags: ['club', 'rock', 'alternative'], fit: 'Schweinfurter Kultur- und Konzertbahnhof, 220 km.', km: 220, priority: 3 },
+  { name: 'Colos-Saal', kind: 'venue', city: 'Aschaffenburg', region: 'Bayern', website: 'https://www.colos-saal.de', tags: ['club', 'rock', 'blues'], fit: 'Etablierter Club in Aschaffenburg – Support-Slots sind begehrt, aber vorhanden.', km: 300, priority: 3 },
+  { name: 'Bardentreffen Nürnberg', kind: 'festival', city: 'Nürnberg', region: 'Bayern', website: 'https://www.bardentreffen.de', tags: ['straße', 'free', 'open air'], fit: 'Kostenloses Straßenmusikfestival mit offener Bewerbung – ein Wochenende, echte Leute, keine Gage.', deadline: 'Bewerbung Frühjahr', km: 150, priority: 2 },
+  { name: 'Ulmer Zelt', kind: 'festival', city: 'Ulm', region: 'Baden-Württemberg', website: find('Ulmer Zelt Festival Bewerbung Bands'), tags: ['kulturfestival', 'sommer'], fit: 'Sommer-Kulturzelt in Ulm, 90 km; das Programm nimmt regionale Bands auf.', deadline: 'Bewerbung Winter/Frühjahr', km: 90, priority: 2 },
+  { name: 'Augsburger Sommernächte', kind: 'festival', city: 'Augsburg', region: 'Bayern', website: find('Augsburger Sommernächte Bands Bewerbung'), tags: ['stadtfestival', 'free'], fit: 'Stadtfestival in der eigenen Stadt – Bewerbung über die Kulturverwaltung, gute erste Bühne.', deadline: 'Bewerbung Frühjahr', km: 0, priority: 1 },
+
+  /* Baden-Württemberg --------------------------------------------------- */
+  { name: 'Kulturzentrum Merlin', kind: 'youth', city: 'Stuttgart', region: 'Baden-Württemberg', website: find('Kulturzentrum Merlin Stuttgart Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Stuttgarter Kulturzentrum mit Nachwuchsabenden und kleinem Saal.', km: 160, priority: 2 },
+  { name: 'Wagenhallen', kind: 'youth', city: 'Stuttgart', region: 'Baden-Württemberg', website: 'https://www.wagenhallen.de', tags: ['kulturzentrum', 'atelier', 'alternative'], fit: 'Großes Kulturareal, offen für eigene Formate und Kooperationen.', km: 160, priority: 3 },
+  { name: 'Schocken', kind: 'venue', city: 'Stuttgart', region: 'Baden-Württemberg', website: find('Schocken Stuttgart Konzerte Booking'), tags: ['club', 'alternative'], fit: 'Stuttgarter Club mit gemischtem Programm, 160 km.', km: 160, priority: 2 },
+  { name: 'Sudhaus', kind: 'youth', city: 'Tübingen', region: 'Baden-Württemberg', website: find('Sudhaus Tübingen Konzerte Booking'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Tübinger Kulturzentrum, 200 km, bekannt für Nachwuchskonzerte.', km: 200, priority: 2 },
+  { name: 'Epplehaus', kind: 'youth', city: 'Tübingen', region: 'Baden-Württemberg', website: 'https://www.epplehaus.de', tags: ['diY', 'punk', 'linke szene'], fit: 'Selbstverwaltetes Haus mit Konzerten – Punk, Hardcore, Emo willkommen.', km: 200, priority: 1 },
+  { name: 'Kulturzentrum Dieselstraße', kind: 'youth', city: 'Esslingen', region: 'Baden-Württemberg', website: find('Kulturzentrum Dieselstraße Esslingen Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Esslinger Kulturzentrum, 150 km, kleine Bühne mit Stammpublikum.', km: 150, priority: 2 },
+  { name: 'KOHI Kulturraum', kind: 'youth', city: 'Karlsruhe', region: 'Baden-Württemberg', website: find('KOHI Karlsruhe Kulturraum Konzerte'), tags: ['kulturraum', 'nachwuchs'], fit: 'Karlsruher Kulturraum für kleine Konzerte und Lesungen – offen für neue Namen.', km: 250, priority: 3 },
+  { name: 'Jubez', kind: 'youth', city: 'Karlsruhe', region: 'Baden-Württemberg', website: 'https://www.jubez.de', tags: ['jugendzentrum', 'nachwuchs'], fit: 'Jugend- und Kulturzentrum Karlsruhe mit Bandförderung.', km: 250, priority: 3 },
+  { name: 'Kulturzentrum KFZ', kind: 'youth', city: 'Marburg', region: 'Hessen', website: 'https://www.kfz-marburg.de', tags: ['kulturzentrum', 'punk'], fit: 'Marburger KFZ – linkes Kulturzentrum mit regelmäßigen Konzerten.', km: 480, priority: 3 },
+  { name: 'KTS Freiburg', kind: 'youth', city: 'Freiburg', region: 'Baden-Württemberg', website: find('KTS Freiburg Konzerte Booking'), tags: ['diY', 'punk', 'kulturzentrum'], fit: 'Freiburger KTS, Szene-Adresse für laute Musik.', km: 350, priority: 3 },
+  { name: 'Slow Club', kind: 'venue', city: 'Freiburg', region: 'Baden-Württemberg', website: find('Slow Club Freiburg Booking'), tags: ['club', 'alternative'], fit: 'Kleiner Freiburger Club, 350 km.', km: 350, priority: 3 },
+
+  /* Nürnberg / Franken --------------------------------------------------- */
+  { name: 'Desi Nürnberg', kind: 'youth', city: 'Nürnberg', region: 'Bayern', website: find('Desi Nürnberg Kulturzentrum Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Nürnberger Kulturzentrum mit Nachwuchsprogramm, 150 km.', km: 150, priority: 2 },
+  { name: 'K4 Nürnberg', kind: 'youth', city: 'Nürnberg', region: 'Bayern', website: find('K4 Nürnberg Jugendzentrum Konzerte'), tags: ['jugendzentrum', 'nachwuchs'], fit: 'Jugendzentrum mit Proberaum-Szene – hier entstehen die ersten Nürnberg-Shows.', km: 150, priority: 2 },
+
+  /* Berlin & Brandenburg ------------------------------------------------- */
+  { name: 'Schokoladen', kind: 'youth', city: 'Berlin', region: 'Berlin', website: find('Schokoladen Berlin Konzerte Booking'), tags: ['diY', 'indie', 'punk'], fit: 'Berliner Institution für kleine Konzerte – ein Abend, drei Bands, ehrliches Publikum.', km: 600, priority: 2 },
+  { name: 'Zukunft am Ostkreuz', kind: 'youth', city: 'Berlin', region: 'Berlin', website: 'https://www.zukunft-am-ostkreuz.de', tags: ['kulturzentrum', 'alternative'], fit: 'Kulturort mit Biergarten und Bühne; offen für Newcomer-Abende.', km: 600, priority: 3 },
+  { name: 'Urban Spree', kind: 'venue', city: 'Berlin', region: 'Berlin', website: 'https://www.urbanspree.com', tags: ['alternative', 'artspace'], fit: 'Galerie/Club-Mix in Friedrichshain, kleinere Shows möglich.', km: 600, priority: 3 },
+  { name: 'Badehaus', kind: 'venue', city: 'Berlin', region: 'Berlin', website: find('Badehaus Berlin Booking Konzerte'), tags: ['club', 'indie'], fit: 'Kreuzberger Bühne mit Indie-/Alternative-Programm.', km: 600, priority: 3 },
+  { name: 'Wild at Heart', kind: 'venue', city: 'Berlin', region: 'Berlin', website: find('Wild at Heart Berlin Booking'), tags: ['club', 'punk', 'rock'], fit: 'Kreuzberger Rock-/Punk-Bühne – Support-Slots sind realistisch.', km: 600, priority: 3 },
+  { name: 'K17', kind: 'venue', city: 'Berlin', region: 'Berlin', website: find('K17 Berlin Booking Konzerte'), tags: ['club', 'metal', 'hardcore'], fit: 'Friedrichshainer Club für harte Musik – passt, wenn ihr Berlin plant.', km: 600, priority: 3 },
+  { name: 'Waschhaus Potsdam', kind: 'youth', city: 'Potsdam', region: 'Brandenburg', website: 'https://www.waschhaus.de', tags: ['kulturzentrum', 'nachwuchs'], fit: 'Potsdamer Kulturzentrum mit Konzerten und Festivals.', km: 620, priority: 3 },
+  { name: 'Weltspiegel Cottbus', kind: 'youth', city: 'Cottbus', region: 'Brandenburg', website: find('Weltspiegel Cottbus Konzerte'), tags: ['kulturzentrum', 'kino'], fit: 'Cottbuser Kulturort mit kleiner Bühne.', km: 700, priority: 3 },
+
+  /* Leipzig, Dresden, Osten --------------------------------------------- */
+  { name: 'Werk 2', kind: 'youth', city: 'Leipzig', region: 'Sachsen', website: 'https://www.werk-2.net', tags: ['kulturzentrum', 'nachwuchs'], fit: 'Leipziger Kulturfabrik mit Nachwuchsförderung und mehreren Bühnen.', km: 450, priority: 2 },
+  { name: 'Westwerk', kind: 'youth', city: 'Leipzig', region: 'Sachsen', website: find('Westwerk Leipzig Konzerte Booking'), tags: ['kulturzentrum', 'alternative'], fit: 'Leipziger Kulturort in Plagwitz, offen für junge Formate.', km: 450, priority: 3 },
+  { name: 'Moritzbastei', kind: 'venue', city: 'Leipzig', region: 'Sachsen', website: 'https://www.moritzbastei.de', tags: ['club', 'studentisch'], fit: 'Leipziger Kellerclub mit vielen kleinen Konzerten.', km: 450, priority: 3 },
+  { name: 'Scheune', kind: 'youth', city: 'Dresden', region: 'Sachsen', website: find('Scheune Dresden Konzerte Booking'), tags: ['kulturzentrum', 'alternative'], fit: 'Dresdner Kulturzentrum in der Neustadt, Szene-Publikum.', km: 470, priority: 3 },
+  { name: 'Rosis', kind: 'venue', city: 'Dresden', region: 'Sachsen', website: find('Rosis Dresden Booking Konzerte'), tags: ['club', 'punk', 'alternative'], fit: 'Kleine Dresdner Bühne mit Punk- und Indie-Abenden.', km: 470, priority: 3 },
+  { name: 'Bunte Republik Neustadt', kind: 'festival', city: 'Dresden', region: 'Sachsen', website: find('Bunte Republik Neustadt Bands Bewerbung'), tags: ['stadtteilfest', 'free'], fit: 'Dresdner Stadtteilfestival mit offenen Bühnen – Bewerbung über die Organisatoren.', deadline: 'Bewerbung Frühjahr', km: 470, priority: 3 },
+  { name: 'Objekt 5', kind: 'youth', city: 'Halle (Saale)', region: 'Sachsen-Anhalt', website: find('Objekt 5 Halle Konzerte Booking'), tags: ['kulturzentrum', 'alternative'], fit: 'Hallescher Kulturort mit kleinen Konzerten.', km: 430, priority: 3 },
+  { name: 'Moritzhof', kind: 'youth', city: 'Magdeburg', region: 'Sachsen-Anhalt', website: 'https://www.moritzhof-magdeburg.de', tags: ['kulturzentrum', 'jugend'], fit: 'Magdeburger Kulturzentrum mit Nachwuchsprogramm.', km: 520, priority: 3 },
+  { name: 'Rosenkeller', kind: 'venue', city: 'Jena', region: 'Thüringen', website: find('Rosenkeller Jena Konzerte Booking'), tags: ['club', 'studentisch'], fit: 'Jenaer Studentenclub mit kleinen Konzerten.', km: 430, priority: 3 },
+  { name: 'Kassablanca', kind: 'youth', city: 'Jena', region: 'Thüringen', website: find('Kassablanca Jena Konzerte'), tags: ['kulturzentrum', 'alternative'], fit: 'Jenaer Kulturzentrum, offen für laute Gitarren.', km: 430, priority: 3 },
+  { name: 'Franz Mehlhose', kind: 'youth', city: 'Erfurt', region: 'Thüringen', website: find('Franz Mehlhose Erfurt Konzerte'), tags: ['kulturzentrum', 'diY'], fit: 'Erfurter Kulturhaus mit DIY-Konzerten.', km: 400, priority: 3 },
+  { name: 'Engelsburg Erfurt', kind: 'youth', city: 'Erfurt', region: 'Thüringen', website: find('Engelsburg Erfurt Konzerte Booking'), tags: ['jugendzentrum', 'nachwuchs'], fit: 'Jugend- und Kulturzentrum in Erfurt, 400 km.', km: 400, priority: 3 },
+
+  /* Norddeutschland ----------------------------------------------------- */
+  { name: 'Rote Flora', kind: 'youth', city: 'Hamburg', region: 'Hamburg', website: find('Rote Flora Hamburg Konzerte'), tags: ['diY', 'punk', 'linke szene'], fit: 'Hamburger Szene-Adresse für Punk und Hardcore – nur mit Haltung.', km: 780, priority: 3 },
+  { name: 'Fundbureau', kind: 'venue', city: 'Hamburg', region: 'Hamburg', website: find('Fundbureau Hamburg Booking'), tags: ['club', 'alternative'], fit: 'Hamburger Club mit Indie- und Alternative-Abenden.', km: 780, priority: 3 },
+  { name: 'Prinzenbar', kind: 'venue', city: 'Hamburg', region: 'Hamburg', website: find('Prinzenbar Hamburg Booking Konzerte'), tags: ['club', 'indie', 'pop'], fit: 'Kleine Bühne im St. Pauli-Kontext, Support-Slots vorhanden.', km: 780, priority: 3 },
+  { name: 'Kukoon', kind: 'youth', city: 'Bremen', region: 'Bremen', website: find('Kukoon Bremen Kulturzentrum Konzerte'), tags: ['kulturzentrum', 'alternative'], fit: 'Bremer Kulturzentrum mit Konzerten und Nachwuchsabenden.', km: 750, priority: 3 },
+  { name: 'Treibsand', kind: 'youth', city: 'Lübeck', region: 'Schleswig-Holstein', website: find('Treibsand Lübeck Konzerte Booking'), tags: ['jugendzentrum', 'punk'], fit: 'Lübecker Jugend- und Kulturzentrum mit lauten Abenden.', km: 850, priority: 3 },
+  { name: 'Räucherei', kind: 'youth', city: 'Kiel', region: 'Schleswig-Holstein', website: find('Räucherei Kiel Konzerte'), tags: ['kulturzentrum'], fit: 'Kieler Kulturzentrum mit kleinen Konzerten.', km: 900, priority: 3 },
+  { name: 'M.A.U. Club', kind: 'venue', city: 'Rostock', region: 'Mecklenburg-Vorpommern', website: find('M.A.U. Club Rostock Booking'), tags: ['club', 'alternative'], fit: 'Rostocker Club mit alternativem Programm.', km: 850, priority: 3 },
+  { name: 'Peter-Weiss-Haus', kind: 'youth', city: 'Rostock', region: 'Mecklenburg-Vorpommern', website: 'https://www.peter-weiss-haus.de', tags: ['kulturzentrum', 'links'], fit: 'Rostocker Kulturzentrum mit politischem und musikalischem Programm.', km: 850, priority: 3 },
+  { name: 'Kulturetage', kind: 'youth', city: 'Oldenburg', region: 'Niedersachsen', website: 'https://www.kulturetage.de', tags: ['kulturzentrum', 'nachwuchs'], fit: 'Oldenburger Kulturetage mit Bandförderung.', km: 800, priority: 3 },
+  { name: 'Pavillon Hannover', kind: 'youth', city: 'Hannover', region: 'Niedersachsen', website: find('Pavillon Hannover Kulturzentrum Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Hannoversches Kulturzentrum mit Jugendprogramm.', km: 640, priority: 3 },
+  { name: 'Lux Hannover', kind: 'venue', city: 'Hannover', region: 'Niedersachsen', website: find('Lux Hannover Booking Konzerte'), tags: ['club', 'indie', 'alternative'], fit: 'Hannoveraner Club, 640 km.', km: 640, priority: 3 },
+  { name: 'Musa Göttingen', kind: 'youth', city: 'Göttingen', region: 'Niedersachsen', website: find('Musa Göttingen Kulturzentrum Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Göttinger Kulturzentrum mit Konzertprogramm.', km: 480, priority: 3 },
+  { name: 'Exil Göttingen', kind: 'venue', city: 'Göttingen', region: 'Niedersachsen', website: find('Exil Göttingen Booking Konzerte'), tags: ['club', 'alternative'], fit: 'Göttinger Club mit Szene-Programm.', km: 480, priority: 3 },
+
+  /* NRW ------------------------------------------------------------------ */
+  { name: 'Grend', kind: 'youth', city: 'Essen', region: 'Nordrhein-Westfalen', website: 'https://www.grend.de', tags: ['kulturzentrum', 'nachwuchs'], fit: 'Essener Kulturzentrum mit Nachwuchsförderung und Bandwettbewerben.', km: 610, priority: 2 },
+  { name: 'Kulturzentrum Lothringen', kind: 'youth', city: 'Bochum', region: 'Nordrhein-Westfalen', website: find('Kulturzentrum Lothringen Bochum Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Bochumer Kulturzentrum, kleine Bühne, offenes Programm.', km: 590, priority: 3 },
+  { name: 'Dietrich-Keuning-Haus', kind: 'youth', city: 'Dortmund', region: 'Nordrhein-Westfalen', website: find('Dietrich-Keuning-Haus Dortmund Konzerte'), tags: ['kulturzentrum', 'jugend'], fit: 'Dortmunder Kulturzentrum mit Bandproberäumen und Konzerten.', km: 600, priority: 3 },
+  { name: 'Alte Feuerwache Köln', kind: 'youth', city: 'Köln', region: 'Nordrhein-Westfalen', website: 'https://www.altefeuerwache.com', tags: ['kulturzentrum', 'nachwuchs'], fit: 'Kölner Kulturzentrum, 600 km, mit Nachwuchsreihen.', km: 600, priority: 3 },
+  { name: 'Odonien', kind: 'venue', city: 'Köln', region: 'Nordrhein-Westfalen', website: 'https://www.odonien.de', tags: ['alternative', 'kulturort'], fit: 'Kölner Kulturort mit Bühne im Hof – ungewöhnliche Formate möglich.', km: 600, priority: 3 },
+  { name: 'Limes', kind: 'venue', city: 'Köln', region: 'Nordrhein-Westfalen', website: find('Limes Köln Booking Konzerte'), tags: ['club', 'indie'], fit: 'Kleiner Kölner Club für Indie und Alternative.', km: 600, priority: 3 },
+  { name: 'Börse Wuppertal', kind: 'youth', city: 'Wuppertal', region: 'Nordrhein-Westfalen', website: find('Börse Wuppertal Konzerte Booking'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Wuppertaler Kulturzentrum mit Konzerten und Bandabenden.', km: 630, priority: 3 },
+  { name: 'LOCH Wuppertal', kind: 'youth', city: 'Wuppertal', region: 'Nordrhein-Westfalen', website: find('LOCH Wuppertal Konzerte'), tags: ['diY', 'punk', 'linke szene'], fit: 'Wuppertaler DIY-Ort, kleine laute Abende.', km: 630, priority: 3 },
+  { name: 'Utopiastadt', kind: 'youth', city: 'Wuppertal', region: 'Nordrhein-Westfalen', website: 'https://www.utopiastadt.eu', tags: ['kulturort', 'nachwuchs'], fit: 'Wuppertaler Kulturareal mit offenen Formaten.', km: 630, priority: 3 },
+  { name: 'Kulturfabrik Krefeld', kind: 'youth', city: 'Krefeld', region: 'Nordrhein-Westfalen', website: 'https://www.kulturfabrik-krefeld.de', tags: ['kulturzentrum', 'nachwuchs'], fit: 'Krefelder Kulturfabrik, 650 km.', km: 650, priority: 3 },
+  { name: 'Südbahnhof Krefeld', kind: 'youth', city: 'Krefeld', region: 'Nordrhein-Westfalen', website: find('Südbahnhof Krefeld Konzerte'), tags: ['kulturzentrum', 'alternative'], fit: 'Krefelder Kulturort mit kleiner Bühne.', km: 650, priority: 3 },
+  { name: 'Kulturwerkstatt Paderborn', kind: 'youth', city: 'Paderborn', region: 'Nordrhein-Westfalen', website: find('Kulturwerkstatt Paderborn Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Paderborner Kulturwerkstatt mit Nachwuchsabenden.', km: 540, priority: 3 },
+  { name: 'BÜZ Minden', kind: 'youth', city: 'Minden', region: 'Nordrhein-Westfalen', website: find('BÜZ Minden Kulturzentrum Konzerte'), tags: ['kulturzentrum', 'jugend'], fit: 'Mindener Bürgerzentrum mit Konzertreihe.', km: 620, priority: 3 },
+  { name: 'AZ Aachen', kind: 'youth', city: 'Aachen', region: 'Nordrhein-Westfalen', website: find('AZ Aachen Konzerte Booking'), tags: ['diY', 'punk', 'linke szene'], fit: 'Aachener Autonomes Zentrum mit Konzerten.', km: 590, priority: 3 },
+  { name: 'Brotfabrik Bonn', kind: 'youth', city: 'Bonn', region: 'Nordrhein-Westfalen', website: find('Brotfabrik Bonn Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Bonner Kulturzentrum mit kleiner Bühne.', km: 580, priority: 3 },
+  { name: 'Vortex Siegen', kind: 'youth', city: 'Siegen', region: 'Nordrhein-Westfalen', website: find('Vortex Siegen Konzerte'), tags: ['kulturzentrum', 'alternative'], fit: 'Siegener Kulturzentrum, 500 km.', km: 500, priority: 3 },
+
+  /* Hessen & Rheinland-Pfalz --------------------------------------------- */
+  { name: 'Exzess Frankfurt', kind: 'youth', city: 'Frankfurt', region: 'Hessen', website: find('Exzess Frankfurt Konzerte'), tags: ['diY', 'punk', 'alternative'], fit: 'Frankfurter DIY-Adresse für laute Abende.', km: 400, priority: 3 },
+  { name: 'Hafen 2', kind: 'youth', city: 'Offenbach', region: 'Hessen', website: 'https://www.hafen2.de', tags: ['kulturzentrum', 'alternative'], fit: 'Offenbacher Kulturzentrum am Hafen, offenes Programm.', km: 410, priority: 3 },
+  { name: 'Centralstation Darmstadt', kind: 'venue', city: 'Darmstadt', region: 'Hessen', website: 'https://www.centralstation-darmstadt.de', tags: ['club', 'rock', 'alternative'], fit: 'Darmstädter Club mit Nachwuchskonzerten im kleinen Saal.', km: 420, priority: 3 },
+  { name: 'Oettinger Villa', kind: 'youth', city: 'Darmstadt', region: 'Hessen', website: find('Oettinger Villa Darmstadt Konzerte'), tags: ['jugendzentrum', 'nachwuchs'], fit: 'Darmstädter Jugendkulturhaus mit Bandabenden.', km: 420, priority: 3 },
+  { name: 'Schlachthof Wiesbaden', kind: 'youth', city: 'Wiesbaden', region: 'Hessen', website: find('Schlachthof Wiesbaden Konzerte Booking'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Wiesbadener Kulturzentrum, 430 km.', km: 430, priority: 3 },
+  { name: 'KFZ Marburg', kind: 'youth', city: 'Marburg', region: 'Hessen', website: 'https://www.kfz-marburg.de', tags: ['kulturzentrum', 'punk'], fit: 'Marburger KFZ, linkes Kulturzentrum mit Konzerten.', km: 480, priority: 3 },
+  { name: 'MuK Gießen', kind: 'youth', city: 'Gießen', region: 'Hessen', website: find('MuK Gießen Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Gießener Kulturzentrum mit kleinen Konzerten.', km: 450, priority: 3 },
+  { name: 'KUZ Mainz', kind: 'youth', city: 'Mainz', region: 'Rheinland-Pfalz', website: find('KUZ Mainz Kulturzentrum Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Mainzer Kulturzentrum, 430 km.', km: 430, priority: 3 },
+  { name: 'Kulturzentrum Kreuz Fulda', kind: 'youth', city: 'Fulda', region: 'Hessen', website: find('Kreuz Fulda Kulturzentrum Konzerte'), tags: ['kulturzentrum', 'jugend'], fit: 'Fuldarer Kulturzentrum mit Konzerten.', km: 420, priority: 3 },
+
+  /* Wettbewerbe & Newcomer-Bühnen ---------------------------------------- */
+  { name: 'Local Heroes', kind: 'contest', city: 'München', region: 'Bayern', website: find('Local Heroes Bandcontest München Bewerbung'), tags: ['wettbewerb', 'nachwuchs'], fit: 'Bandwettbewerb mit Regional-Vorentscheiden – Jury-Feedback und Bühne in einem.', deadline: 'Anmeldung meist Herbst/Winter', km: 70, priority: 2 },
+  { name: 'Emergenza Festival', kind: 'contest', city: 'wechselnd', region: '', website: 'https://www.emergenza.net', tags: ['wettbewerb', 'international'], fit: 'Internationaler Bandcontest mit Club-Vorrunden in vielen Städten. Kritisch prüfen, ob Kosten und Nutzen passen.', priority: 3 },
+  { name: 'Wacken Metal Battle', kind: 'contest', city: 'wechselnd', region: '', website: find('Wacken Metal Battle Bewerbung'), tags: ['wettbewerb', 'metal'], fit: 'Metal-Battle mit Club-Vorrunden; nur sinnvoll, wenn euer Sound in die Ecke geht.', deadline: 'Anmeldung meist Winter', priority: 3 },
+
+  /* Kleine Festivals ohne großes Bewerbungsverfahren --------------------- */
+  { name: 'Immergut Festival', kind: 'festival', city: 'Neustrelitz', region: 'Mecklenburg-Vorpommern', website: 'https://www.immergutrocken.de', tags: ['indie', 'klein'], fit: 'Kleines, gut kuratiertes Indie-Festival – weit weg, aber ein Publikum, das zuhört.', deadline: 'Bewerbung Winter', km: 750, priority: 3 },
+  { name: 'Maifeld Derby', kind: 'festival', city: 'Mannheim', region: 'Baden-Württemberg', website: 'https://www.maifeldderby.de', tags: ['indie', 'alternative'], fit: 'Sorgfältig gebuchtes Festival mit Nachwuchs-Slots.', deadline: 'Bewerbung Winter', km: 300, priority: 3 },
+  { name: 'Orange Blossom Special', kind: 'festival', city: 'Beverungen', region: 'Nordrhein-Westfalen', website: find('Orange Blossom Special Festival Beverungen'), tags: ['indie', 'alternative'], fit: 'Kleines Festival mit anspruchsvollem Programm, 520 km.', deadline: 'Bewerbung Winter', km: 520, priority: 3 },
+  { name: 'Haldern Pop', kind: 'festival', city: 'Rees-Haldern', region: 'Nordrhein-Westfalen', website: 'https://www.haldernpop.com', tags: ['indie', 'alternative'], fit: 'Bekanntes kleines Festival; Bewerbung aussichtslos ohne Release – aber Kontakte lohnen.', deadline: 'Bewerbung Winter', km: 640, priority: 3 },
+  { name: 'Appletree Garden', kind: 'festival', city: 'Diepholz', region: 'Niedersachsen', website: find('Appletree Garden Festival Diepholz'), tags: ['indie', 'alternative'], fit: 'Kleines Gartenfestival, 700 km.', deadline: 'Bewerbung Winter', km: 700, priority: 3 },
+  { name: 'Umsonst & Draußen Karlsruhe', kind: 'festival', city: 'Karlsruhe', region: 'Baden-Württemberg', website: find('Umsonst und Draußen Karlsruhe Festival Bewerbung'), tags: ['free', 'punk', 'alternative'], fit: 'Selbstorganisiertes Wochenende mit offener Bewerbung.', deadline: 'Bewerbung Frühjahr', km: 250, priority: 3 },
+  { name: 'Umsonst & Draußen Hof', kind: 'festival', city: 'Hof', region: 'Bayern', website: find('Umsonst und Draußen Hof Festival Bewerbung'), tags: ['free', 'alternative'], fit: 'Kostenloses Festival in Oberfranken, 320 km.', deadline: 'Bewerbung Frühjahr', km: 320, priority: 3 },
+  { name: 'Punk im Pott', kind: 'festival', city: 'Essen', region: 'Nordrhein-Westfalen', website: find('Punk im Pott Festival Bewerbung'), tags: ['punk', 'klein'], fit: 'Regionale Punk-Festival-Reihe im Ruhrgebiet.', deadline: 'Bewerbung Frühjahr', km: 610, priority: 3 },
+
+  /* Weitere Nachwuchs-Adressen, die man kennen sollte -------------------- */
+  { name: 'Glockenbachwerkstatt', kind: 'youth', city: 'München', region: 'Bayern', website: find('Glockenbachwerkstatt München Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Münchner Kulturhaus im Glockenbachviertel, kleine Bühne, offene Reihen.', km: 70, priority: 2 },
+  { name: 'Alte Utting', kind: 'venue', city: 'München', region: 'Bayern', website: find('Alte Utting München Konzerte'), tags: ['alternative', 'kulturort'], fit: 'Schiff auf der Bahnbrücke – ungewöhnlicher Ort, offen für eigene Formate.', km: 70, priority: 3 },
+  { name: 'Bahnwärter Thiel', kind: 'youth', city: 'München', region: 'Bayern', website: find('Bahnwärter Thiel München Konzerte'), tags: ['kulturort', 'alternative'], fit: 'Münchner Kulturort in Containern, Konzerte und Kooperationen möglich.', km: 70, priority: 3 },
+  { name: 'Kulturhaus Milbertshofen', kind: 'youth', city: 'München', region: 'Bayern', website: find('Kulturhaus Milbertshofen Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Stadtteil-Kulturhaus mit Konzertreihe und Bandförderung.', km: 70, priority: 2 },
+  { name: 'KunstKulturQuartier Nürnberg', kind: 'youth', city: 'Nürnberg', region: 'Bayern', website: find('KunstKulturQuartier Nürnberg Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Nürnberger Kulturquartier mit Nachwuchsbühnen – 150 km.', km: 150, priority: 2 },
+  { name: 'Kulturwerkstatt Auf AEG', kind: 'youth', city: 'Nürnberg', region: 'Bayern', website: find('Kulturwerkstatt Auf AEG Nürnberg Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Großes Nürnberger Kulturzentrum mit Bandproberäumen und Konzerten.', km: 150, priority: 2 },
+  { name: 'Kulturforum Fürth', kind: 'youth', city: 'Fürth', region: 'Bayern', website: find('Kulturforum Fürth Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Fürther Kulturforum mit kleinen Konzerten, 155 km.', km: 155, priority: 3 },
+  { name: 'Kulturzentrum Laboratorium', kind: 'youth', city: 'Stuttgart', region: 'Baden-Württemberg', website: find('Laboratorium Stuttgart Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Stuttgarter Nachwuchsadresse mit Konzerten und Proberäumen.', km: 160, priority: 2 },
+  { name: 'Kulturladen Konstanz', kind: 'youth', city: 'Konstanz', region: 'Baden-Württemberg', website: find('Kulturladen Konstanz Konzerte'), tags: ['kulturzentrum', 'alternative'], fit: 'Konstanzer Kulturladen, 220 km – nur mit Wochenendroute.', km: 220, priority: 3 },
+  { name: 'Karlstorbahnhof', kind: 'youth', city: 'Heidelberg', region: 'Baden-Württemberg', website: find('Karlstorbahnhof Heidelberg Konzerte'), tags: ['kulturzentrum', 'alternative'], fit: 'Heidelberger Kulturzentrum mit kleiner Bühne.', km: 320, priority: 3 },
+  { name: 'Halle02', kind: 'venue', city: 'Heidelberg', region: 'Baden-Württemberg', website: find('Halle02 Heidelberg Booking'), tags: ['club', 'alternative'], fit: 'Heidelberger Club mit Support-Slots für kleinere Acts.', km: 320, priority: 3 },
+  { name: 'Dock 4', kind: 'youth', city: 'Kassel', region: 'Hessen', website: find('Dock 4 Kassel Kulturzentrum Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Kasseler Kulturzentrum, 450 km.', km: 450, priority: 3 },
+  { name: 'naTo', kind: 'youth', city: 'Leipzig', region: 'Sachsen', website: find('naTo Leipzig Konzerte'), tags: ['kulturzentrum', 'alternative'], fit: 'Leipziger Kulturzentrum mit Konzerten und offenen Abenden.', km: 450, priority: 3 },
+  { name: 'Kraftwerk Chemnitz', kind: 'youth', city: 'Chemnitz', region: 'Sachsen', website: find('Kraftwerk Chemnitz Konzerte'), tags: ['kulturzentrum', 'alternative'], fit: 'Chemnitzer Kulturzentrum mit Nachwuchsprogramm.', km: 450, priority: 3 },
+  { name: 'Köpi', kind: 'youth', city: 'Berlin', region: 'Berlin', website: find('Köpi Berlin Konzerte Booking'), tags: ['diY', 'punk', 'linke szene'], fit: 'Berliner Szene-Ort mit Konzerten – Haltung wichtiger als Reichweite.', km: 600, priority: 3 },
+  { name: 'Schlachthof Bremen', kind: 'youth', city: 'Bremen', region: 'Bremen', website: find('Schlachthof Bremen Konzerte Booking'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Bremer Kulturzentrum mit Konzerten und Bandförderung.', km: 750, priority: 3 },
+  { name: 'Lagerhaus Bremen', kind: 'venue', city: 'Bremen', region: 'Bremen', website: find('Lagerhaus Bremen Booking Konzerte'), tags: ['club', 'alternative'], fit: 'Bremer Club mit kleinen Konzerten.', km: 750, priority: 3 },
+  { name: 'Cadillac Oldenburg', kind: 'venue', city: 'Oldenburg', region: 'Niedersachsen', website: find('Cadillac Oldenburg Booking'), tags: ['club', 'alternative'], fit: 'Oldenburger Club, 800 km.', km: 800, priority: 3 },
+  { name: 'Kulturzentrum Balou', kind: 'youth', city: 'Dortmund', region: 'Nordrhein-Westfalen', website: find('Balou Dortmund Kulturzentrum Konzerte'), tags: ['kulturzentrum', 'nachwuchs'], fit: 'Dortmunder Kulturzentrum mit Bandabenden.', km: 600, priority: 3 },
 ];
 
 /** Priority 1 first, then by distance – the order you actually want to work in. */
@@ -574,3 +728,83 @@ export function sortSeeds(seeds: ContactSeed[]) {
     (a, b) => (a.priority ?? 2) - (b.priority ?? 2) || (a.km ?? 9999) - (b.km ?? 9999) || a.name.localeCompare(b.name)
   );
 }
+
+/* ------------------------------------------------------------ town research */
+
+/**
+ * Towns close enough to play without a hotel. No invented venues: the links open a
+ * search for the local Jugendzentrum / Kulturzentrum, and what you find becomes a
+ * contact of your own. That is how a starter list grows past the curated one.
+ */
+export const RESEARCH_TOWNS: { name: string; region: string; km: number }[] = [
+  { name: 'Friedberg', region: 'Bayern', km: 15 },
+  { name: 'Aichach', region: 'Bayern', km: 25 },
+  { name: 'Fürstenfeldbruck', region: 'Bayern', km: 50 },
+  { name: 'Landsberg am Lech', region: 'Bayern', km: 55 },
+  { name: 'Donauwörth', region: 'Bayern', km: 60 },
+  { name: 'Krumbach', region: 'Bayern', km: 60 },
+  { name: 'Mindelheim', region: 'Bayern', km: 60 },
+  { name: 'Dillingen an der Donau', region: 'Bayern', km: 70 },
+  { name: 'Kaufbeuren', region: 'Bayern', km: 80 },
+  { name: 'Günzburg', region: 'Bayern', km: 80 },
+  { name: 'Schongau', region: 'Bayern', km: 80 },
+  { name: 'Dachau', region: 'Bayern', km: 80 },
+  { name: 'Weilheim in Oberbayern', region: 'Bayern', km: 90 },
+  { name: 'Starnberg', region: 'Bayern', km: 90 },
+  { name: 'Neuburg an der Donau', region: 'Bayern', km: 90 },
+  { name: 'Nördlingen', region: 'Bayern', km: 90 },
+  { name: 'Marktoberdorf', region: 'Bayern', km: 100 },
+  { name: 'Pfaffenhofen an der Ilm', region: 'Bayern', km: 100 },
+  { name: 'Erding', region: 'Bayern', km: 110 },
+  { name: 'Freising', region: 'Bayern', km: 110 },
+  { name: 'Weißenburg in Bayern', region: 'Bayern', km: 110 },
+  { name: 'Gunzenhausen', region: 'Bayern', km: 120 },
+  { name: 'Kempten', region: 'Bayern', km: 130 },
+  { name: 'Landshut', region: 'Bayern', km: 130 },
+  { name: 'Roth', region: 'Bayern', km: 130 },
+  { name: 'Bad Tölz', region: 'Bayern', km: 130 },
+  { name: 'Schwabach', region: 'Bayern', km: 140 },
+  { name: 'Immenstadt', region: 'Bayern', km: 140 },
+  { name: 'Dingolfing', region: 'Bayern', km: 160 },
+  { name: 'Lindau', region: 'Bayern', km: 160 },
+  { name: 'Rosenheim', region: 'Bayern', km: 170 },
+  { name: 'Wasserburg am Inn', region: 'Bayern', km: 170 },
+  { name: 'Ansbach', region: 'Bayern', km: 170 },
+  { name: 'Sonthofen', region: 'Bayern', km: 150 },
+  { name: 'Mühldorf am Inn', region: 'Bayern', km: 190 },
+  { name: 'Forchheim', region: 'Bayern', km: 190 },
+  { name: 'Straubing', region: 'Bayern', km: 200 },
+  { name: 'Bamberg', region: 'Bayern', km: 200 },
+  { name: 'Amberg', region: 'Bayern', km: 200 },
+  { name: 'Schwandorf', region: 'Bayern', km: 200 },
+  { name: 'Altötting', region: 'Bayern', km: 210 },
+  { name: 'Traunstein', region: 'Bayern', km: 220 },
+  { name: 'Deggendorf', region: 'Bayern', km: 230 },
+  { name: 'Cham', region: 'Bayern', km: 230 },
+  { name: 'Weiden in der Oberpfalz', region: 'Bayern', km: 250 },
+  { name: 'Bayreuth', region: 'Bayern', km: 250 },
+  { name: 'Lichtenfels', region: 'Bayern', km: 250 },
+  { name: 'Passau', region: 'Bayern', km: 260 },
+  { name: 'Kulmbach', region: 'Bayern', km: 280 },
+  { name: 'Coburg', region: 'Bayern', km: 300 },
+  { name: 'Hof', region: 'Bayern', km: 320 },
+  { name: 'Göppingen', region: 'Baden-Württemberg', km: 140 },
+  { name: 'Biberach an der Riß', region: 'Baden-Württemberg', km: 140 },
+  { name: 'Heidenheim an der Brenz', region: 'Baden-Württemberg', km: 150 },
+  { name: 'Ludwigsburg', region: 'Baden-Württemberg', km: 165 },
+  { name: 'Ravensburg', region: 'Baden-Württemberg', km: 170 },
+  { name: 'Aalen', region: 'Baden-Württemberg', km: 170 },
+  { name: 'Schwäbisch Gmünd', region: 'Baden-Württemberg', km: 180 },
+  { name: 'Böblingen', region: 'Baden-Württemberg', km: 180 },
+  { name: 'Sigmaringen', region: 'Baden-Württemberg', km: 180 },
+  { name: 'Albstadt', region: 'Baden-Württemberg', km: 200 },
+  { name: 'Konstanz', region: 'Baden-Württemberg', km: 220 },
+  { name: 'Tuttlingen', region: 'Baden-Württemberg', km: 220 },
+  { name: 'Rottweil', region: 'Baden-Württemberg', km: 230 },
+  { name: 'Villingen-Schwenningen', region: 'Baden-Württemberg', km: 250 },
+];
+
+/** Opens a search for youth centres and clubs in that town. */
+export const researchTownUrl = (town: string) =>
+  find(`Jugendzentrum OR Kulturzentrum "${town}" Konzerte Booking`);
+

@@ -9,6 +9,7 @@ export default function PlaybookPanel({
   steps,
   contactCount,
   seedsAvailable,
+  seedMissing,
   onToggle,
   onTogglePhase,
   onRestoreSeed,
@@ -17,6 +18,7 @@ export default function PlaybookPanel({
   steps: BookingStep[];
   contactCount: number;
   seedsAvailable: number;
+  seedMissing: number;
   onToggle: (key: string, done: boolean) => void;
   onTogglePhase: (keys: string[], done: boolean) => void;
   onRestoreSeed: () => void;
@@ -53,6 +55,7 @@ export default function PlaybookPanel({
             <div className="booking-cell">
               <span className="mono small muted">Recherche-Vorschläge</span>
               <strong>{seedsAvailable}</strong>
+              {seedMissing ? <span className="mono small muted">{seedMissing} noch nicht in der Liste</span> : null}
             </div>
             <div className="booking-cell">
               <span className="mono small muted">Fortschritt</span>
@@ -61,7 +64,11 @@ export default function PlaybookPanel({
           </div>
           <div className="row" style={{ gap: 8, marginTop: 14 }}>
             <button type="button" className="btn btn-sm btn-ghost" onClick={onRestoreSeed} disabled={restoring}>
-              {restoring ? 'Wird eingespielt …' : 'Fehlende Recherche-Kontakte einspielen'}
+              {restoring
+                ? 'Wird eingespielt …'
+                : seedMissing
+                  ? `${seedMissing} neue Recherche-Kontakte einspielen`
+                  : 'Recherche aktualisieren'}
             </button>
             <Link className="btn btn-sm btn-ghost" href="/admin/booking?tab=kontakte">
               Zu den Kontakten

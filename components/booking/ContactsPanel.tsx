@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { IconExternal, IconMail, IconPencil, IconPlus, IconSearch, IconUsers } from '@/components/icons';
 import { EmptyState } from '@/components/ui';
-import { BOOKING_KINDS, BOOKING_REGIONS, BOOKING_STATUS, bookingKindLabel, bookingStatusLabel } from '@/lib/booking';
+import { BOOKING_KINDS, BOOKING_REGIONS, BOOKING_STATUS, RESEARCH_TOWNS, bookingKindLabel, bookingStatusLabel, researchTownUrl } from '@/lib/booking';
 import { timeAgo } from '@/lib/format';
 import { toast } from '@/lib/toast';
 import type { BookingContact, BookingProfile, BookingTemplate } from '@/lib/types';
@@ -19,6 +19,7 @@ export default function ContactsPanel({
   bandName,
   onRefresh,
   seedsAvailable,
+  seedMissing,
   onRestoreSeed,
   focusContactId,
 }: {
@@ -28,6 +29,7 @@ export default function ContactsPanel({
   bandName: string;
   onRefresh: () => void;
   seedsAvailable: number;
+  seedMissing: number;
   onRestoreSeed: () => void;
   focusContactId?: number | null;
 }) {
@@ -126,7 +128,7 @@ export default function ContactsPanel({
               {filtered.length} von {contacts.length}
             </span>
             <button type="button" className="btn btn-sm btn-ghost" onClick={onRestoreSeed} disabled={busy}>
-              Recherche ({seedsAvailable})
+              {seedMissing ? `Recherche +${seedMissing}` : 'Recherche'}
             </button>
             <button type="button" className="btn btn-sm btn-primary" onClick={() => setCreating(true)}>
               <IconPlus size={14} /> Kontakt
@@ -193,8 +195,32 @@ export default function ContactsPanel({
           ))}
         </div>
 
-        {selected.size ? (
-          <div className="booking-bulk">
+        <details className="booking-towns">
+          <summary>
+            <IconSearch size={13} /> Orte selbst recherchieren
+            <span className="mono small muted">{RESEARCH_TOWNS.length} Städte in Reichweite</span>
+          </summary>
+          <p className="booking-hint">
+            Jeder Klick öffnet eine Suche nach Jugend- und Kulturzentren in der Stadt. Was du findest, mit
+            „+ Kontakt“ eintragen – so wächst die Liste mit dir.
+          </p>
+          <div className="booking-town-list">
+            {RESEARCH_TOWNS.map((town) => (
+              <a
+                key={town.name}
+                className="booking-town"
+                href={researchTownUrl(town.name)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {town.name}
+                <em>{town.km} km</em>
+              </a>
+            ))}
+          </div>
+        </details>
+
+        {selected.size ? (          <div className="booking-bulk">
             <span className="mono small muted">{selected.size} ausgewählt · {selectedWithMail.length} mit E-Mail</span>
             <div className="row" style={{ gap: 8 }}>
               <select

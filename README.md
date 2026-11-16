@@ -531,11 +531,13 @@ The module that actually gets you the gig – a guide, a researched contact list
   Presse*). Every step has a reason, concrete actions, a time estimate and a link into the module that
   does the work (Brand Sheet, documents, contacts, templates). Ticking is stored in `booking_steps`, so
   progress survives reloads; phases can be ticked at once.
-- **Kontakte**: 80 researched starting points (festivals, venues, promoters, labels, radio, press) with
-  type, city, rough distance from Augsburg, why it fits and the application window. Filter by type,
-  region, priority, status and “has an address”, search across everything, select in bulk and set status,
-  priority or a follow-up date in one go. Addresses are deliberately *not* invented – every row links to
-  the site where the booking contact lives.
+- **Kontakte**: 204 researched starting points – festivals, venues, **Jugend- und Kulturzentren** (the fastest
+  route to first gigs), **Wettbewerbe / Newcomer-Bühnen**, promoters, labels, radio and press – with type, city,
+  rough distance from Augsburg, why it fits and the application window. Filter by type, region, priority, status
+  and “has an address”, search across everything, select in bulk and set status, priority or a follow-up date in
+  one go. Under the filters, **Orte selbst recherchieren** lists 65 towns within reach with a one-click search
+  for the local youth centre – what you find becomes your own contact. Addresses are deliberately *not*
+  invented – every row links to the site where the booking contact lives.
 - **Vorlagen**: five ready German/English templates (venue, festival, follow-up, label pitch, press) with
   `{{placeholders}}` for band, city, links and sender, a live preview per contact, and an *Absender &
   Links* panel that feeds them.

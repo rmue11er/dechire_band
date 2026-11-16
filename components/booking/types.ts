@@ -40,6 +40,8 @@ export type BookingData = {
   mail: MailboxState;
   queue: QueueState;
   seedsAvailable: number;
+  /** researched contacts that are not in the list yet */
+  seedMissing: number;
   bandName: string;
 };
 

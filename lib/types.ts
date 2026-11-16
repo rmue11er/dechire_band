@@ -596,7 +596,17 @@ export interface Release {
 
 /* --------------------------------------------------------------- booking */
 
-export type BookingKind = 'festival' | 'venue' | 'promoter' | 'label' | 'agency' | 'radio' | 'press' | 'other';
+export type BookingKind =
+  | 'festival'
+  | 'venue'
+  | 'youth'
+  | 'contest'
+  | 'promoter'
+  | 'label'
+  | 'agency'
+  | 'radio'
+  | 'press'
+  | 'other';
 
 export type BookingStatus =
   | 'new'

@@ -52,6 +52,7 @@ export default function BookingPage() {
         mail: payload.mail,
         queue: payload.queue,
         seedsAvailable: Number(payload.seedsAvailable ?? 0),
+        seedMissing: Number(payload.seedMissing ?? 0),
         bandName: payload.bandName ?? 'déchire',
       });
       if (payload.seeded) toast(`${payload.seeded} recherchierte Kontakte eingespielt`);
@@ -212,6 +213,7 @@ export default function BookingPage() {
           steps={data.steps}
           contactCount={stats.total}
           seedsAvailable={data.seedsAvailable}
+          seedMissing={data.seedMissing}
           onToggle={toggleStep}
           onTogglePhase={togglePhase}
           onRestoreSeed={restoreSeed}
@@ -227,6 +229,7 @@ export default function BookingPage() {
           bandName={data.bandName}
           onRefresh={() => load(true)}
           seedsAvailable={data.seedsAvailable}
+          seedMissing={data.seedMissing}
           onRestoreSeed={restoreSeed}
           focusContactId={focusContact}
         />

@@ -5,6 +5,7 @@ import {
   bookingSentToday,
   ensureBookingSeed,
   ensureBookingTemplates,
+  countMissingBookingSeeds,
   getBookingProfile,
   getMailConnection,
   getProfile,
@@ -69,6 +70,7 @@ export async function GET() {
     queue: queueState(),
     seeded,
     seedsAvailable: CONTACT_SEEDS.length,
+    seedMissing: countMissingBookingSeeds(CONTACT_SEEDS.map((seed) => seed.name)),
     bandName: getProfile().bandName,
   });
 }

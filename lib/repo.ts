@@ -2460,8 +2460,15 @@ export function ensureBookingSeed(seeds: { name: string; kind: string; city: str
   return added;
 }
 
-/* templates */
+/** How many of the researched seeds are still missing from the list. */
+export function countMissingBookingSeeds(names: string[]) {
+  const existing = new Set(
+    queryAll<any>('SELECT name FROM booking_contacts').map((row) => String(row.name).toLowerCase())
+  );
+  return names.filter((name) => !existing.has(name.toLowerCase())).length;
+}
 
+/* templates */
 export function listBookingTemplates(): BookingTemplate[] {
   return queryAll<any>('SELECT * FROM booking_templates ORDER BY id ASC').map((row) => ({
     id: Number(row.id),
