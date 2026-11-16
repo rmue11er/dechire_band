@@ -212,9 +212,7 @@ export default function PitchPage() {
                           {String(shot.index).padStart(2, '0')} · {shot.section}
                         </span>
                         <p>{shot.description}</p>
-                        <span className="pitch-shot-meta">
-                          {shot.time} → {shot.length}
-                        </span>
+                        <span className="pitch-shot-meta">ab {shot.time}</span>
                       </div>
                     </article>
                   ))}

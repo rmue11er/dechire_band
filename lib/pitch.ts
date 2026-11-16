@@ -1,4 +1,4 @@
-import { durationLabel, sectionLabel, timecode, videoStatusLabel } from './videos';
+import { sectionLabel } from './videos';
 import type { Profile, VideoProject, VideoShot } from './types';
 
 /* --------------------------------------------------------------- the deck */
@@ -8,7 +8,6 @@ export type PitchShot = {
   description: string;
   section: string;
   time: string;
-  length: string;
   image: string | null;
 };
 
@@ -31,6 +30,40 @@ const paragraphs = (text: string) =>
     .filter((line) => line.length > 1);
 
 const firstLine = (text: string) => paragraphs(text)[0] ?? '';
+
+/* No Intl locale juggling: the pitch is a hand-made thing, so are the labels. */
+const MONTHS = [
+  'januar',
+  'februar',
+  'märz',
+  'april',
+  'mai',
+  'juni',
+  'juli',
+  'august',
+  'september',
+  'oktober',
+  'november',
+  'dezember',
+];
+
+const shortDate = (iso: string) => {
+  const date = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return iso;
+  return `${date.getDate()}. ${MONTHS[date.getMonth()]}`;
+};
+
+const plainLength = (seconds: number) => {
+  if (!seconds) return 'offen';
+  if (seconds < 60) return `${Math.round(seconds)} sekunden`;
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')} minuten`;
+};
+
+const shortTime = (seconds: number) => {
+  const whole = Math.max(0, Math.round(seconds));
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+};
 
 /** Six frames per board slide – more than that and nobody reads it. */
 const BOARD_PAGE = 6;
@@ -56,17 +89,13 @@ export function buildPitchDeck(
   slides.push({
     id: 'cover',
     kind: 'cover',
-    eyebrow: 'Musikvideo',
+    eyebrow: 'ein musikvideo',
     title: project.title,
-    body: [
-      project.songTitle ? `Song: ${project.songTitle}` : '',
-      firstLine(concept),
-    ].filter(Boolean),
+    body: [project.songTitle ? `zu „${project.songTitle}“` : '', firstLine(concept)].filter(Boolean),
     facts: [
-      { label: 'Band', value: band },
-      { label: 'Status', value: videoStatusLabel(project.status) },
-      { label: 'Dreh', value: project.shootDate || 'offen' },
-      { label: 'Länge', value: total ? durationLabel(total) : 'offen' },
+      { label: 'von', value: band },
+      { label: 'dreh', value: project.shootDate ? shortDate(project.shootDate) : 'offen' },
+      { label: 'länge', value: plainLength(total) },
     ],
     images: cover ? [{ url: cover }] : [],
   });
@@ -74,14 +103,12 @@ export function buildPitchDeck(
   slides.push({
     id: 'idea',
     kind: 'idea',
-    eyebrow: 'Die Idee',
-    title: 'Worum es geht',
+    eyebrow: 'die idee',
+    title: 'worum es geht',
     body: concept
       ? paragraphs(concept)
-      : [
-          'Für dieses Video gibt es noch keinen Text – öffne das Projekt und schreib in drei Sätzen, worum es geht.',
-        ],
-    facts: project.director ? [{ label: 'Regie', value: project.director }] : [],
+      : ['Hier steht noch nichts – im Projekt drei Sätze zur Idee schreiben, dann trägt sich das von selbst.'],
+    facts: [],
   });
 
   const lookImages = ordered
@@ -93,13 +120,11 @@ export function buildPitchDeck(
     slides.push({
       id: 'look',
       kind: 'look',
-      eyebrow: 'Bildsprache',
-      title: words.length ? words.join(' · ') : 'Wie es aussieht',
-      body: [
-        'Kein Effektfeuerwerk: Licht, Nähe und Raum tragen das Video. Alles, was du hier siehst, ist aus den geplanten Shots.',
-      ],
+      eyebrow: 'wie es aussieht',
+      title: words.length ? words.join(', ') : 'bildsprache',
+      body: ['kein effektfeuerwerk. licht, nähe, raum – und viel dunkel.'],
       words,
-      images: lookImages.map((url, index) => ({ url, caption: `Frame ${index + 1}` })),
+      images: lookImages.map((url, index) => ({ url, caption: `frame ${index + 1}` })),
     });
   }
 
@@ -108,18 +133,17 @@ export function buildPitchDeck(
     slides.push({
       id: `board-${start / BOARD_PAGE + 1}`,
       kind: 'board',
-      eyebrow: `Ablauf ${String(Math.floor(start / BOARD_PAGE) + 1).padStart(2, '0')}`,
+      eyebrow: start === 0 ? 'der ablauf' : 'der ablauf, weiter',
       title:
         start === 0
-          ? `${ordered.length} Shots, ${total ? durationLabel(total) : 'Länge offen'}`
-          : `Shots ${start + 1}–${start + group.length}`,
+          ? `${ordered.length} ${ordered.length === 1 ? 'bild' : 'bilder'}${total ? ` · ${plainLength(total)}` : ''}`
+          : `bilder ${start + 1}–${start + group.length}`,
       body: [],
       shots: group.map((shot, offset) => ({
         index: start + offset + 1,
         description: shot.description,
-        section: sectionLabel(shot.section),
-        time: timecode(shot.start),
-        length: `${shot.duration.toFixed(1)} s`,
+        section: sectionLabel(shot.section).toLowerCase(),
+        time: shortTime(shot.start),
         image: shot.sketch || shot.media?.url || null,
       })),
     });
@@ -129,9 +153,9 @@ export function buildPitchDeck(
     slides.push({
       id: 'board-empty',
       kind: 'board',
-      eyebrow: 'Ablauf',
-      title: 'Noch keine Shots',
-      body: ['Sobald im Projekt Shots stehen, entsteht hier automatisch das Storyboard.'],
+      eyebrow: 'der ablauf',
+      title: 'noch keine bilder',
+      body: ['Sobald im Projekt Bilder stehen, steht hier automatisch der Ablauf.'],
     });
   }
 
@@ -139,30 +163,29 @@ export function buildPitchDeck(
   slides.push({
     id: 'shoot',
     kind: 'shoot',
-    eyebrow: 'Dreh',
-    title: locations.length ? locations.slice(0, 2).join(' · ') : project.location || 'Drehort offen',
+    eyebrow: 'der dreh',
+    title: locations.length ? locations.slice(0, 2).join(', ') : project.location || 'ort noch offen',
     body: paragraphs(project.needs).length
       ? paragraphs(project.needs)
-      : ['Ein Tag, ein Ort, kleines Team. Alles Weitere klären wir direkt.'],
+      : ['ein tag, ein ort, kleines team. den rest klären wir direkt.'],
     facts: [
-      { label: 'Datum', value: project.shootDate || 'wird abgestimmt' },
-      { label: 'Orte', value: locations.length ? locations.join(', ') : project.location || 'offen' },
-      { label: 'Regie', value: project.director || band },
-      { label: 'Shots', value: String(ordered.length) },
+      { label: 'wann', value: project.shootDate ? shortDate(project.shootDate) : 'stimmen wir ab' },
+      { label: 'wo', value: locations.length ? locations.join(', ') : project.location || 'offen' },
+      { label: 'regie', value: project.director || band },
     ],
   });
 
   slides.push({
     id: 'outro',
     kind: 'outro',
-    eyebrow: 'Kontakt',
+    eyebrow: 'und dann?',
     title: band,
     body: [
-      'Wenn das passt: kurze Antwort, dann schicken wir Song, Termine und alles Weitere.',
+      'wenn das passt: kurz melden, dann schicken wir song, termine und alles weitere.',
       profile.website ? profile.website : '',
       profile.handle ? `@${profile.handle.replace(/^@/, '')}` : '',
     ].filter(Boolean),
-    facts: project.songTitle ? [{ label: 'Song', value: project.songTitle }] : [],
+    facts: [],
   });
 
   return slides;
@@ -183,19 +206,19 @@ export const PITCH_CSS = `
 body{margin:0;background:var(--ink);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased}
 .deck{max-width:1180px;margin:0 auto;padding:32px 24px 80px}
 .slide{position:relative;border:1px solid var(--line);background:var(--panel);padding:clamp(28px,4vw,56px);min-height:min(78vh,680px);display:flex;flex-direction:column;justify-content:center;margin-bottom:20px;break-inside:avoid;page-break-after:always}
-.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
-h1{font-family:var(--serif);font-weight:400;font-size:clamp(38px,6vw,76px);line-height:.98;margin:0 0 18px;letter-spacing:-.01em}
-h2{font-family:var(--serif);font-weight:400;font-size:clamp(26px,3.4vw,44px);line-height:1.05;margin:0 0 14px}
-p{font-size:clamp(14px,1.2vw,17px);line-height:1.65;color:var(--muted);margin:0 0 12px;max-width:60ch}
-.facts{display:flex;flex-wrap:wrap;gap:26px;margin-top:26px;border-top:1px solid var(--line);padding-top:18px}
-.fact span{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted2);margin-bottom:4px}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--accent);margin-bottom:18px}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,6.4vw,82px);line-height:.98;margin:0 0 20px;letter-spacing:-.01em}
+h2{font-family:var(--serif);font-weight:400;font-size:clamp(27px,3.4vw,46px);line-height:1.08;margin:0 0 16px}
+p{font-size:clamp(14px,1.2vw,17px);line-height:1.7;color:var(--muted);margin:0 0 14px;max-width:58ch}
+.facts{display:flex;flex-wrap:wrap;gap:28px;margin-top:30px}
+.fact span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--muted2);margin-bottom:4px}
 .fact strong{font-weight:500;font-size:13px}
 .cover-image{position:absolute;inset:0;overflow:hidden;z-index:0}
 .cover-image img{width:100%;height:100%;object-fit:cover;opacity:.28;filter:grayscale(1) contrast(1.1)}
 .cover-image::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,8,.35),rgba(8,8,8,.95))}
 .slide>*{position:relative;z-index:1}
 .words{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 22px}
-.words span{border:1px solid var(--line);padding:4px 10px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.words span{border:1px solid var(--line);padding:4px 10px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--accent)}
 .frames{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:8px}
 .frame{border:1px solid var(--line);aspect-ratio:16/9;overflow:hidden;background:#0b0b0a}
 .frame img{width:100%;height:100%;object-fit:cover;filter:grayscale(.6)}
@@ -205,10 +228,10 @@ p{font-size:clamp(14px,1.2vw,17px);line-height:1.65;color:var(--muted);margin:0 
 .shot-image img{width:100%;height:100%;object-fit:cover;filter:grayscale(.7)}
 .shot-image.empty{display:grid;place-items:center;color:var(--muted2);font-family:var(--mono);font-size:10px;letter-spacing:.14em}
 .shot-body{padding:10px 12px 12px}
-.shot-no{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--accent);display:block;margin-bottom:5px}
+.shot-no{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--accent);display:block;margin-bottom:5px}
 .shot-body p{font-size:12px;line-height:1.45;margin:0;color:var(--text)}
 .shot-meta{display:block;margin-top:7px;font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--muted2)}
-.footer{margin-top:auto;padding-top:26px;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted2)}
+.footer{margin-top:auto;padding-top:26px;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--muted2)}
 @media print{
   :root{--ink:#ffffff;--panel:#ffffff;--text:#111;--muted:#333;--muted2:#666;--line:rgba(0,0,0,.18);--accent:#5c5c42}
   body{background:#fff;color:#111}
@@ -250,7 +273,7 @@ export function pitchHtml(deck: PitchSlide[], meta: { title: string; band: strin
                 <div class="shot-body">
                   <span class="shot-no">${String(shot.index).padStart(2, '0')} · ${escapeHtml(shot.section)}</span>
                   <p>${escapeHtml(shot.description)}</p>
-                  <span class="shot-meta">${escapeHtml(shot.time)} → ${escapeHtml(shot.length)}</span>
+                  <span class="shot-meta">ab ${escapeHtml(shot.time)}</span>
                 </div>
               </article>`
             )
