@@ -342,6 +342,34 @@ Two requirements, otherwise it is a no-op and logs why:
 
 Stories are never published by the API; they stay a ZIP export.
 
+### TikTok
+
+TikTok uses the **Content Posting API** (Direct Post) with one video per post:
+
+1. Create an app in the [TikTok for Developers](https://developers.tiktok.com/) portal and add the
+   products **Login Kit** and **Content Posting API**.
+2. Scopes: `user.info.basic` and `video.publish`.
+3. Redirect URI: `https://example.com/api/tiktok/callback` — it must match exactly, including the scheme.
+4. Put the client key/secret either into **Settings → TikTok** or into the environment:
+
+   ```bash
+   TIKTOK_CLIENT_KEY=...
+   TIKTOK_CLIENT_SECRET=...
+   ```
+
+5. Click **Connect TikTok** and finish the login. The refresh token is stored in the database and renewed
+   automatically shortly before it expires.
+
+Until the app has passed TikTok's **audit**, the API only accepts `SELF_ONLY` (visible to you alone). Keep
+the privacy setting on “Only me” until the audit is through; public posts otherwise fail with a TikTok
+error that shows up in the planner. Sandbox mode simulates uploads without credentials — only “Run
+TikTok now” fakes a successful publish, the heartbeat stays quiet.
+
+Scheduled TikTok posts use the same cron/ heartbeat as Instagram, but can be switched on separately.
+Each TikTok post needs **exactly one video** (no photos, carousel or story); pick it in the editor and the
+platform is locked to TikTok. Videos are uploaded from `data/uploads` in chunks (5–64 MB).
+
+
 ---
 
 ## 8. Updating

@@ -291,6 +291,27 @@ CREATE TABLE IF NOT EXISTS connections (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS tiktok_connection (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  client_key TEXT NOT NULL DEFAULT '',
+  client_secret TEXT NOT NULL DEFAULT '',
+  redirect_uri TEXT NOT NULL DEFAULT '',
+  access_token TEXT NOT NULL DEFAULT '',
+  refresh_token TEXT NOT NULL DEFAULT '',
+  open_id TEXT NOT NULL DEFAULT '',
+  username TEXT NOT NULL DEFAULT '',
+  display_name TEXT NOT NULL DEFAULT '',
+  avatar_url TEXT NOT NULL DEFAULT '',
+  scope TEXT NOT NULL DEFAULT '',
+  access_expires_at TEXT,
+  refresh_expires_at TEXT,
+  privacy_level TEXT NOT NULL DEFAULT 'SELF_ONLY',
+  sandbox INTEGER NOT NULL DEFAULT 1,
+  auto_publish INTEGER NOT NULL DEFAULT 0,
+  last_run_at TEXT,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS scheduler_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   ran_at TEXT NOT NULL,
@@ -493,6 +514,14 @@ function createConnection(): DatabaseSync {
   ensureColumn(db, 'posts', 'ig_published_at', 'TEXT');
   ensureColumn(db, 'posts', 'ig_error', 'TEXT');
   ensureColumn(db, 'posts', 'ig_last_attempt', 'TEXT');
+  ensureColumn(db, 'posts', "platform", "TEXT NOT NULL DEFAULT 'instagram'");
+  ensureColumn(db, 'posts', 'tt_publish_id', 'TEXT');
+  ensureColumn(db, 'posts', 'tt_status', 'TEXT');
+  ensureColumn(db, 'posts', 'tt_permalink', 'TEXT');
+  ensureColumn(db, 'posts', 'tt_published_at', 'TEXT');
+  ensureColumn(db, 'posts', 'tt_error', 'TEXT');
+  ensureColumn(db, 'posts', 'tt_last_attempt', 'TEXT');
+  ensureIndex(db, 'posts', 'idx_posts_platform', 'CREATE INDEX idx_posts_platform ON posts(platform)');
   ensureColumn(db, 'connections', 'auto_publish', 'INTEGER NOT NULL DEFAULT 0');
   ensureColumn(db, 'connections', 'last_run_at', 'TEXT');
   ensureColumn(db, 'media', 'folder_id', 'INTEGER');

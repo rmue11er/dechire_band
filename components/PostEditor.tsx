@@ -23,7 +23,7 @@ import SnippetMenu from '@/components/SnippetMenu';
 import { Field, Segmented } from '@/components/ui';
 import { fromDateInput, relativeDay, toDateInput } from '@/lib/format';
 import { toast } from '@/lib/toast';
-import type { MediaItem, Post, PostStatus, PostType } from '@/lib/types';
+import type { MediaItem, Post, PostPlatform, PostStatus, PostType } from '@/lib/types';
 
 type Tab = 'content' | 'publish' | 'insights';
 
@@ -50,6 +50,7 @@ export default function PostEditor({
   onUploaded: (items: MediaItem[]) => void;
   onCancelCreate: () => void;
 }) {
+  const [platform, setPlatform] = useState<PostPlatform>('instagram');
   const [type, setType] = useState<PostType>('photo');
   const [status, setStatus] = useState<PostStatus>('draft');
   const [caption, setCaption] = useState('');
@@ -68,6 +69,7 @@ export default function PostEditor({
   const commentRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    setPlatform(post?.platform === 'tiktok' ? 'tiktok' : 'instagram');
     setType(post?.type ?? 'photo');
     setStatus(post?.status ?? 'draft');
     setCaption(post?.caption ?? '');
@@ -95,6 +97,14 @@ export default function PostEditor({
         setTab('content');
         return;
       }
+      if (platform === 'tiktok') {
+        const videos = selectedMedia.filter((item) => item.mime.startsWith('video/'));
+        if (selectedMedia.length !== 1 || !videos.length) {
+          toast('TikTok posts need exactly one video', 'error');
+          setTab('content');
+          return;
+        }
+      }
       if (caption.length > 2200) {
         toast('Caption is longer than 2,200 characters', 'error');
         return;
@@ -102,7 +112,8 @@ export default function PostEditor({
 
       setSaving(true);
       const payload: Record<string, any> = {
-        type,
+        platform,
+        type: platform === 'tiktok' ? 'reel' : type,
         status: nextStatus,
         caption,
         firstComment,
@@ -149,8 +160,10 @@ export default function PostEditor({
       firstComment,
       location,
       mediaIds,
+      platform,
       post?.id,
       post?.publishedAt,
+      selectedMedia,
       songArtist,
       songTitle,
       status,
@@ -213,10 +226,13 @@ export default function PostEditor({
   const checks: { key: Tab; label: string; ok: boolean; required: boolean; hint: string }[] = [
     {
       key: 'content',
-      label: 'Media',
-      ok: mediaIds.length > 0,
+      label: platform === 'tiktok' ? 'One video' : 'Media',
+      ok:
+        platform === 'tiktok'
+          ? selectedMedia.length === 1 && selectedMedia[0].mime.startsWith('video/')
+          : mediaIds.length > 0,
       required: true,
-      hint: 'At least one image or video',
+      hint: platform === 'tiktok' ? 'Exactly one video file – no carousel, no photo' : 'At least one image or video',
     },
     {
       key: 'content',
@@ -232,13 +248,17 @@ export default function PostEditor({
       required: false,
       hint: 'The first 125 characters decide whether people tap “more”',
     },
-    {
-      key: 'content',
-      label: 'Alt text',
-      ok: altText.trim().length > 0,
-      required: false,
-      hint: 'Accessibility and search – worth 30 seconds',
-    },
+    ...(platform === 'instagram'
+      ? [
+          {
+            key: 'content' as Tab,
+            label: 'Alt text',
+            ok: altText.trim().length > 0,
+            required: false,
+            hint: 'Accessibility and search – worth 30 seconds',
+          },
+        ]
+      : []),
     {
       key: 'content',
       label: 'Hashtags',
@@ -330,7 +350,11 @@ export default function PostEditor({
                 <span className="label">Media</span>
                 <span className="mono small muted">
                   {mediaIds.length} {mediaIds.length === 1 ? 'file' : 'files'}
-                  {mediaIds.length > 1 ? ' · carousel order = 1, 2, 3' : ''}
+                  {platform === 'tiktok'
+                    ? ' · TikTok: one video only'
+                    : mediaIds.length > 1
+                      ? ' · carousel order = 1, 2, 3'
+                      : ''}
                 </span>
               </div>
               <div className="media-strip">
@@ -419,60 +443,69 @@ export default function PostEditor({
               </p>
             </div>
 
-            <div className="editor-block">
-              <div className="editor-block-head">
-                <span className="label">First comment</span>
-                <span className={`mono small muted ${hashtags > 30 ? 'over' : ''}`}>
-                  {hashtags} hashtags{hashtags > 30 ? ' · Instagram allows 30' : ''}
-                </span>
-              </div>
-              <textarea
-                ref={commentRef}
-                className="textarea"
-                rows={3}
-                placeholder="Ticket link, hashtags, credits …"
-                value={firstComment}
-                onChange={(event) => setFirstComment(event.target.value)}
-              />
-              <div className="row wrap" style={{ gap: 8 }}>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-ghost"
-                  onClick={() => setFirstComment(firstComment ? `${firstComment} ${HASHTAGS}` : HASHTAGS)}
-                >
-                  <IconHash size={13} /> Hashtags
-                </button>
-                <SnippetMenu
-                  kinds={['hashtags']}
-                  currentText={firstComment}
-                  onInsert={(text) => setFirstComment((current) => (current ? `${current} ${text}` : text))}
-                />
-                <CaptionTools targetRef={commentRef} value={firstComment} onChange={setFirstComment} compact />
-                <span className="mono small muted">hashtags belong here, not in the caption</span>
-              </div>
-            </div>
+            {platform === 'instagram' ? (
+              <>
+                <div className="editor-block">
+                  <div className="editor-block-head">
+                    <span className="label">First comment</span>
+                    <span className={`mono small muted ${hashtags > 30 ? 'over' : ''}`}>
+                      {hashtags} hashtags{hashtags > 30 ? ' · Instagram allows 30' : ''}
+                    </span>
+                  </div>
+                  <textarea
+                    ref={commentRef}
+                    className="textarea"
+                    rows={3}
+                    placeholder="Ticket link, hashtags, credits …"
+                    value={firstComment}
+                    onChange={(event) => setFirstComment(event.target.value)}
+                  />
+                  <div className="row wrap" style={{ gap: 8 }}>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-ghost"
+                      onClick={() => setFirstComment(firstComment ? `${firstComment} ${HASHTAGS}` : HASHTAGS)}
+                    >
+                      <IconHash size={13} /> Hashtags
+                    </button>
+                    <SnippetMenu
+                      kinds={['hashtags']}
+                      currentText={firstComment}
+                      onInsert={(text) => setFirstComment((current) => (current ? `${current} ${text}` : text))}
+                    />
+                    <CaptionTools targetRef={commentRef} value={firstComment} onChange={setFirstComment} compact />
+                    <span className="mono small muted">hashtags belong here, not in the caption</span>
+                  </div>
+                </div>
 
-            <div className="editor-block">
-              <div className="editor-block-head">
-                <span className="label">Alt text</span>
-                {selectedMedia[0]?.alt ? (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-ghost"
-                    onClick={() => setAltText(selectedMedia[0].alt)}
-                  >
-                    Use asset alt text
-                  </button>
-                ) : null}
-              </div>
-              <input
-                className="input"
-                placeholder="What can you see in the image?"
-                value={altText}
-                onChange={(event) => setAltText(event.target.value)}
-              />
-              <p className="editor-note">Screen readers and search read this – describe what is really visible.</p>
-            </div>
+                <div className="editor-block">
+                  <div className="editor-block-head">
+                    <span className="label">Alt text</span>
+                    {selectedMedia[0]?.alt ? (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-ghost"
+                        onClick={() => setAltText(selectedMedia[0].alt)}
+                      >
+                        Use asset alt text
+                      </button>
+                    ) : null}
+                  </div>
+                  <input
+                    className="input"
+                    placeholder="What can you see in the image?"
+                    value={altText}
+                    onChange={(event) => setAltText(event.target.value)}
+                  />
+                  <p className="editor-note">Screen readers and search read this – describe what is really visible.</p>
+                </div>
+              </>
+            ) : (
+              <p className="editor-note">
+                TikTok uses the video and the caption only – first comment, alt text, location and sound stay on
+                Instagram.
+              </p>
+            )}
           </div>
         ) : null}
 
@@ -480,27 +513,66 @@ export default function PostEditor({
           <div className="editor-stack">
             <div className="editor-block">
               <div className="editor-block-head">
-                <span className="label">Format</span>
+                <span className="label">Platform</span>
               </div>
-              <Segmented
-                value={type}
-                onChange={(value) => setType(value)}
+              <Segmented<PostPlatform>
+                value={platform}
+                onChange={(value) => {
+                  setPlatform(value);
+                  if (value === 'tiktok') {
+                    setType('reel');
+                    const firstVideo = selectedMedia.find((item) => item.mime.startsWith('video/'));
+                    if (selectedMedia.length && !firstVideo) {
+                      toast('TikTok only supports video – pick one in the media library', 'error');
+                    }
+                    setMediaIds(firstVideo ? [firstVideo.id] : []);
+                  }
+                }}
                 options={[
-                  { value: 'photo', label: 'Photo' },
-                  { value: 'carousel', label: 'Carousel' },
-                  { value: 'reel', label: 'Reel' },
-                  { value: 'story', label: 'Story' },
+                  { value: 'instagram', label: 'Instagram' },
+                  { value: 'tiktok', label: 'TikTok' },
                 ]}
               />
               <p className="editor-note">
-                {type === 'carousel'
-                  ? 'Every selected image becomes a slide, in the order above.'
-                  : type === 'story'
-                  ? 'Stories are 9:16 – keep text away from the top and bottom 8 %.'
-                  : type === 'reel'
-                  ? 'Reels need a video file and a cover image.'
-                  : 'One image, 4:5 is the safe choice for the feed.'}
+                {platform === 'tiktok'
+                  ? 'TikTok gets one vertical video with a caption. Carousels, stories and photos stay on Instagram.'
+                  : 'Feed, carousel, reel or story – everything here is built for Instagram.'}
               </p>
+            </div>
+
+            <div className="editor-block">
+              <div className="editor-block-head">
+                <span className="label">Format</span>
+                {platform === 'tiktok' ? <span className="mono small muted">locked to video</span> : null}
+              </div>
+              {platform === 'tiktok' ? (
+                <p className="editor-note" style={{ marginTop: 0 }}>
+                  TikTok only accepts a single video. Pick the file above – we post it as a native TikTok video,
+                  9:16 looks best.
+                </p>
+              ) : (
+                <>
+                  <Segmented
+                    value={type}
+                    onChange={(value) => setType(value)}
+                    options={[
+                      { value: 'photo', label: 'Photo' },
+                      { value: 'carousel', label: 'Carousel' },
+                      { value: 'reel', label: 'Reel' },
+                      { value: 'story', label: 'Story' },
+                    ]}
+                  />
+                  <p className="editor-note">
+                    {type === 'carousel'
+                      ? 'Every selected image becomes a slide, in the order above.'
+                      : type === 'story'
+                      ? 'Stories are 9:16 – keep text away from the top and bottom 8 %.'
+                      : type === 'reel'
+                      ? 'Reels need a video file and a cover image.'
+                      : 'One image, 4:5 is the safe choice for the feed.'}
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="editor-block">
@@ -582,56 +654,110 @@ export default function PostEditor({
               ) : null}
             </div>
 
-            <div className="editor-block">
-              <div className="editor-block-head">
-                <span className="label">Place & sound</span>
-              </div>
-              <div className="form-row">
-                <Field label="Location">
-                  <div className="input-icon">
-                    <IconMapPin size={14} />
+            {platform === 'instagram' ? (
+              <>
+                <div className="editor-block">
+                  <div className="editor-block-head">
+                    <span className="label">Place & sound</span>
+                  </div>
+                  <div className="form-row">
+                    <Field label="Location">
+                      <div className="input-icon">
+                        <IconMapPin size={14} />
+                        <input
+                          className="input"
+                          placeholder="Augsburg"
+                          value={location}
+                          onChange={(event) => setLocation(event.target.value)}
+                        />
+                      </div>
+                    </Field>
+                    <Field label="Song">
+                      <div className="input-icon">
+                        <IconMusic size={14} />
+                        <input
+                          className="input"
+                          placeholder="Fracture"
+                          value={songTitle}
+                          onChange={(event) => setSongTitle(event.target.value)}
+                        />
+                      </div>
+                    </Field>
+                  </div>
+                  <Field label="Artist">
                     <input
                       className="input"
-                      placeholder="Augsburg"
-                      value={location}
-                      onChange={(event) => setLocation(event.target.value)}
+                      placeholder="déchire"
+                      value={songArtist}
+                      onChange={(event) => setSongArtist(event.target.value)}
                     />
-                  </div>
-                </Field>
-                <Field label="Song">
-                  <div className="input-icon">
-                    <IconMusic size={14} />
-                    <input
-                      className="input"
-                      placeholder="Fracture"
-                      value={songTitle}
-                      onChange={(event) => setSongTitle(event.target.value)}
-                    />
-                  </div>
-                </Field>
-              </div>
-              <Field label="Artist">
-                <input
-                  className="input"
-                  placeholder="déchire"
-                  value={songArtist}
-                  onChange={(event) => setSongArtist(event.target.value)}
-                />
-              </Field>
-            </div>
+                  </Field>
+                </div>
 
-            <div className="editor-hint">
-              <IconLayers size={14} />
-              <span>
-                Control the feed order with the list on the right – the first entry is top left in your profile.
-              </span>
-            </div>
+                <div className="editor-hint">
+                  <IconLayers size={14} />
+                  <span>
+                    Control the feed order with the list on the right – the first entry is top left in your profile.
+                  </span>
+                </div>
+              </>
+            ) : null}
           </div>
         ) : null}
 
         {tab === 'insights' ? (
           <div className="editor-stack">
-            {!creating && post ? (
+            {platform === 'tiktok' ? (
+              <div className="editor-block">
+                <div className="editor-block-head">
+                  <span className="label">TikTok</span>
+                  <span className="mono small muted">{post?.ttStatus ?? 'not published'}</span>
+                </div>
+                {post?.ttPublishId ? (
+                  <p className="small muted" style={{ marginTop: 0 }}>
+                    Publish ID <code>{post.ttPublishId}</code>
+                    {post.ttPermalink ? (
+                      <>
+                        {' · '}
+                        <a href={post.ttPermalink} target="_blank" rel="noreferrer">
+                          Open on TikTok
+                        </a>
+                      </>
+                    ) : null}
+                  </p>
+                ) : (
+                  <p className="small muted" style={{ marginTop: 0 }}>
+                    Scheduled TikTok posts are uploaded by the scheduler. Until the app has passed TikTok’s audit,
+                    every post stays private ({'{'}“Only me”{'}'}).
+                  </p>
+                )}
+                {post?.ttError ? <p className="editor-error">{post.ttError}</p> : null}
+                {post ? (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/tiktok', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ action: 'sync', postId: post.id }),
+                        });
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.error ?? 'Sync failed');
+                        const refreshed = await fetch(`/api/posts/${post.id}`).then((res) => res.json());
+                        toast('TikTok status updated');
+                        if (refreshed?.post) onSaved(refreshed.post);
+                      } catch (error: any) {
+                        toast(error.message ?? 'Sync failed', 'error');
+                      }
+                    }}
+                  >
+                    Refresh TikTok status
+                  </button>
+                ) : null}
+              </div>
+            ) : !creating && post ? (
               <PostPerformance post={post} onUpdated={onSaved} />
             ) : (
               <div className="editor-block">
@@ -706,9 +832,11 @@ export default function PostEditor({
         onClose={() => setPickerOpen(false)}
         media={media}
         selectedIds={mediaIds}
+        multiple={platform !== 'tiktok'}
+        kind={platform === 'tiktok' ? 'video' : undefined}
         onUploaded={(items) => {
           onUploaded(items);
-          setMediaIds((current) => [...current, ...items.map((item) => item.id)]);
+          setMediaIds((current) => (platform === 'tiktok' ? items.slice(0, 1).map((item) => item.id) : [...current, ...items.map((item) => item.id)]));
         }}
         onConfirm={(ids) => setMediaIds(ids)}
       />

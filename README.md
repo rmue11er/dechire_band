@@ -265,7 +265,7 @@ The band's palette is not guessed any more – it is searched. Everything runs i
 - Export as **PNG (2×)**, as **SVG** (self-contained, fonts embedded) or print it as PDF.
 - Change a colour in the settings and the sheet follows – no separate design file to maintain.
 
-### 9. Instagram & performance (`/planner`, Settings)
+### 9. Instagram, TikTok & performance (`/planner`, Settings)
 - Publishing and insights through the **Meta Graph API** (single image and carousel), insights sync
   writes reach/likes/comments/saves/shares per post, the dashboard shows totals, average reach and
   the best weekday from your own numbers.
@@ -279,6 +279,11 @@ The band's palette is not guessed any more – it is searched. Everything runs i
   mode (sandbox only runs when you press “Run now”), logs every run in the settings and stores the last error
   per post. Stories are skipped with a hint towards the ZIP export.
 - Manual numbers can be entered per post as well (reach, likes, comments, saves, shares).
+- **TikTok**: the planner creates TikTok posts next to Instagram ones – one vertical video plus caption,
+  a dedicated 9:16 “For You” preview, platform filters and badges in the queue. Publishing uses the TikTok
+  **Content Posting API** (OAuth login, chunked upload, status polling); auto-publish can be switched on
+  separately. Until TikTok has audited the app, posts are limited to `SELF_ONLY`; without client credentials
+  everything runs in sandbox mode. Setup details in `docs/DEPLOY.md`.
 
 ### 10. Public website (`/site`) + configuration (`/website`)
 **Warm black, one accent colour, photos taped to the wall.** No template furniture and nothing that reads
@@ -589,6 +594,7 @@ lib/
   reelRender.ts            ffmpeg pipeline (crop, zoompan, grade, overlay, loudnorm, cover)
   reelJobs.ts              In-memory render jobs with progress for the polling UI
   instagram.ts             Meta Graph API client (publish, insights, token refresh, sandbox)
+  tiktok.ts                TikTok Content Posting API (OAuth, chunked upload, status, sandbox)
   backup.ts                Backup ZIP + restore by importing rows
   palette.ts               CI palette, accent tokens, colour helpers
   kinds.ts                 Document & milestone type labels
@@ -630,6 +636,8 @@ docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + ngin
 | GET/POST | `/api/reels`, `/api/reels/:id` | Reel Lab capability + render job (poll `:id`) |
 | GET/POST | `/api/metrics` | Manual numbers, best-weekday insight |
 | GET/POST | `/api/instagram` | Status, save, test, publish, sync |
+| GET/POST | `/api/tiktok` | TikTok status, save, OAuth URL, test, refresh, publish, sync |
+| GET | `/api/tiktok/callback` | OAuth redirect from TikTok |
 | GET/POST | `/api/scheduler` | Auto-publish status / run it (also for cron) |
 | GET/PUT | `/api/site` | Public site settings, blocks, crew, media corner |
 | GET/POST/DELETE | `/api/fonts`, `/api/fonts/:id` | Self-hosted Google Fonts (search: `/api/fonts/search?q=`) |

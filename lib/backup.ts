@@ -29,6 +29,7 @@ const TABLES = [
   'palette',
   'profile',
   'connections',
+  'tiktok_connection',
   'site',
   'trash',
 ] as const;
@@ -173,6 +174,7 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
       DELETE FROM songs;
       DELETE FROM snippets;
       DELETE FROM connections;
+      DELETE FROM tiktok_connection;
       DELETE FROM palette;
       DELETE FROM profile;
       DELETE FROM site;
@@ -201,6 +203,7 @@ export function restoreFromZip(buffer: Buffer): ImportResult {
     insertAll('palette', data.palette);
     insertAll('profile', data.profile);
     insertAll('connections', data.connections);
+    insertAll('tiktok_connection', data.tiktok_connection);
     insertAll('site', data.site);
     insertAll('trash', data.trash);
 

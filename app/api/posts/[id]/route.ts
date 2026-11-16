@@ -1,5 +1,5 @@
 import { fail, ok, readJson, toInt } from '@/lib/api';
-import { deletePost, getPost, updatePost } from '@/lib/repo';
+import { deletePost, getMedia, getPost, updatePost } from '@/lib/repo';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -19,14 +19,26 @@ export async function GET(_request: Request, { params }: Ctx) {
 export async function PATCH(request: Request, { params }: Ctx) {
   const { id } = await params;
   const postId = toInt(id);
-  if (!getPost(postId)) return fail('Post not found', 404);
+  const existing = getPost(postId);
+  if (!existing) return fail('Post not found', 404);
 
   const body = await readJson<Record<string, any>>(request);
   const patch: Record<string, any> = { ...body };
   if (patch.type !== undefined && !TYPES.includes(patch.type)) delete patch.type;
   if (patch.status !== undefined && !STATUS.includes(patch.status)) delete patch.status;
+  if (patch.platform !== undefined && !['instagram', 'tiktok'].includes(patch.platform)) delete patch.platform;
   if (patch.mediaIds !== undefined) {
     patch.mediaIds = Array.isArray(patch.mediaIds) ? patch.mediaIds.map(Number).filter(Boolean) : [];
+  }
+
+  const platform = patch.platform ?? existing.platform;
+  if (platform === 'tiktok') {
+    patch.type = 'reel';
+    const mediaIds = patch.mediaIds ?? existing.media.map((item) => item.id);
+    const media = mediaIds.map((mediaId) => getMedia(mediaId)).filter(Boolean);
+    if (media.length !== 1 || !media[0].mime.startsWith('video/')) {
+      return fail('TikTok posts need exactly one video', 400);
+    }
   }
 
   updatePost(postId, patch);

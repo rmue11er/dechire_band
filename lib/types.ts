@@ -1,5 +1,6 @@
 export type PostType = 'photo' | 'carousel' | 'reel' | 'story';
 export type PostStatus = 'draft' | 'scheduled' | 'published';
+export type PostPlatform = 'instagram' | 'tiktok';
 export type MediaKind = 'logo' | 'photo' | 'artwork' | 'merch' | 'video' | 'other';
 
 export type SongStatus = 'idea' | 'demo' | 'recording' | 'mix' | 'master' | 'released';
@@ -116,6 +117,7 @@ export interface MediaFolder {
 
 export interface Post {
   id: number;
+  platform: PostPlatform;
   type: PostType;
   status: PostStatus;
   caption: string;
@@ -134,6 +136,12 @@ export interface Post {
   igPublishedAt: string | null;
   igError: string | null;
   igLastAttempt: string | null;
+  ttPublishId: string | null;
+  ttStatus: string | null;
+  ttPermalink: string | null;
+  ttPublishedAt: string | null;
+  ttError: string | null;
+  ttLastAttempt: string | null;
   metrics: PostMetrics | null;
   media: MediaItem[];
 }
@@ -218,6 +226,27 @@ export interface InstagramConnection {
   token: string;
   tokenExpiresAt: string | null;
   publicBase: string;
+  sandbox: boolean;
+  autoPublish: boolean;
+  lastRunAt: string | null;
+  updatedAt: string;
+}
+
+/** TikTok Content Posting API connection (OAuth tokens + display profile). */
+export interface TikTokConnection {
+  clientKey: string;
+  clientSecret: string;
+  redirectUri: string;
+  accessToken: string;
+  refreshToken: string;
+  openId: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string;
+  scope: string;
+  accessExpiresAt: string | null;
+  refreshExpiresAt: string | null;
+  privacyLevel: 'SELF_ONLY' | 'PUBLIC_TO_EVERYONE';
   sandbox: boolean;
   autoPublish: boolean;
   lastRunAt: string | null;

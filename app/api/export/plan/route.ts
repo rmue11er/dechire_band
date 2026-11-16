@@ -35,10 +35,11 @@ export async function GET() {
 
   // 1) CSV overview
   const rows = [
-    ['Position', 'Datum', 'Status', 'Typ', 'Song', 'Standort', 'Caption', 'Erster Kommentar', 'Medien'].map(csvEscape).join(';'),
+    ['Position', 'Plattform', 'Datum', 'Status', 'Typ', 'Song', 'Standort', 'Caption', 'Erster Kommentar', 'Medien'].map(csvEscape).join(';'),
     ...posts.map((post, index) =>
       [
         index + 1,
+        post.platform === 'tiktok' ? 'TikTok' : 'Instagram',
         post.scheduledAt ?? post.publishedAt ?? '',
         post.status,
         post.type,

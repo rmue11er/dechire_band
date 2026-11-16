@@ -24,6 +24,7 @@ import type {
   Snippet,
   Song,
   Stats,
+  TikTokConnection,
   TrashEntry,
   VideoProject,
   VideoShot,
@@ -689,6 +690,7 @@ export function moveMedia(ids: number[], folderId: number | null) {
 /* ------------------------------------------------------------------ posts */
 
 const POST_FIELDS: Record<string, string> = {
+  platform: 'platform',
   type: 'type',
   status: 'status',
   caption: 'caption',
@@ -705,6 +707,12 @@ const POST_FIELDS: Record<string, string> = {
   igPublishedAt: 'ig_published_at',
   igError: 'ig_error',
   igLastAttempt: 'ig_last_attempt',
+  ttPublishId: 'tt_publish_id',
+  ttStatus: 'tt_status',
+  ttPermalink: 'tt_permalink',
+  ttPublishedAt: 'tt_published_at',
+  ttError: 'tt_error',
+  ttLastAttempt: 'tt_last_attempt',
 };
 
 function mapMetrics(row: any): PostMetrics {
@@ -734,6 +742,7 @@ function metricsByPost(): Map<number, PostMetrics> {
 function mapPost(row: any, media: MediaItem[], metrics: PostMetrics | null = null): Post {
   return {
     id: Number(row.id),
+    platform: row.platform === 'tiktok' ? 'tiktok' : 'instagram',
     type: row.type,
     status: row.status,
     caption: row.caption ?? '',
@@ -752,6 +761,12 @@ function mapPost(row: any, media: MediaItem[], metrics: PostMetrics | null = nul
     igPublishedAt: row.ig_published_at ?? null,
     igError: row.ig_error ?? null,
     igLastAttempt: row.ig_last_attempt ?? null,
+    ttPublishId: row.tt_publish_id ?? null,
+    ttStatus: row.tt_status ?? null,
+    ttPermalink: row.tt_permalink ?? null,
+    ttPublishedAt: row.tt_published_at ?? null,
+    ttError: row.tt_error ?? null,
+    ttLastAttempt: row.tt_last_attempt ?? null,
     metrics,
     media,
   };
@@ -796,9 +811,10 @@ export function createPost(input: Record<string, any>) {
   const now = new Date().toISOString();
   const position = input.position ?? nextPosition();
   const result = execute(
-    `INSERT INTO posts (type, status, caption, first_comment, alt_text, location, song_title, song_artist, scheduled_at, published_at, position, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO posts (platform, type, status, caption, first_comment, alt_text, location, song_title, song_artist, scheduled_at, published_at, position, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
+      input.platform === 'tiktok' ? 'tiktok' : 'instagram',
       input.type ?? 'photo',
       input.status ?? 'draft',
       input.caption ?? '',
@@ -850,6 +866,7 @@ export function deletePost(id: number) {
   const post = getPost(id);
   if (post) {
     pushTrash('post', post.caption.split('\n')[0].slice(0, 90) || `Post #${id}`, {
+      platform: post.platform,
       type: post.type,
       status: post.status,
       caption: post.caption,
@@ -1586,6 +1603,7 @@ export function duplicatePost(id: number) {
   const post = getPost(id);
   if (!post) return null;
   const newId = createPost({
+    platform: post.platform,
     type: post.type,
     status: 'draft',
     caption: post.caption,
@@ -1714,6 +1732,106 @@ export function saveConnection(patch: Partial<InstagramConnection>) {
   return getConnection();
 }
 
+/* --------------------------------------------------------------- tiktok */
+
+function mapTikTok(row: any): TikTokConnection {
+  return {
+    clientKey: row.client_key ?? '',
+    clientSecret: row.client_secret ?? '',
+    redirectUri: row.redirect_uri ?? '',
+    accessToken: row.access_token ?? '',
+    refreshToken: row.refresh_token ?? '',
+    openId: row.open_id ?? '',
+    username: row.username ?? '',
+    displayName: row.display_name ?? '',
+    avatarUrl: row.avatar_url ?? '',
+    scope: row.scope ?? '',
+    accessExpiresAt: row.access_expires_at ?? null,
+    refreshExpiresAt: row.refresh_expires_at ?? null,
+    privacyLevel: row.privacy_level === 'PUBLIC_TO_EVERYONE' ? 'PUBLIC_TO_EVERYONE' : 'SELF_ONLY',
+    sandbox: Boolean(row.sandbox),
+    autoPublish: Boolean(row.auto_publish),
+    lastRunAt: row.last_run_at ?? null,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function getTikTokConnection(): TikTokConnection {
+  const row = queryOne<any>('SELECT * FROM tiktok_connection WHERE id = 1');
+  if (!row) {
+    return {
+      clientKey: '',
+      clientSecret: '',
+      redirectUri: '',
+      accessToken: '',
+      refreshToken: '',
+      openId: '',
+      username: '',
+      displayName: '',
+      avatarUrl: '',
+      scope: '',
+      accessExpiresAt: null,
+      refreshExpiresAt: null,
+      privacyLevel: 'SELF_ONLY',
+      sandbox: true,
+      autoPublish: false,
+      lastRunAt: null,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+  return mapTikTok(row);
+}
+
+export function saveTikTokConnection(patch: Partial<TikTokConnection>) {
+  const next: TikTokConnection = {
+    ...getTikTokConnection(),
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  };
+  execute(
+    `INSERT INTO tiktok_connection (id, client_key, client_secret, redirect_uri, access_token, refresh_token, open_id, username, display_name, avatar_url, scope, access_expires_at, refresh_expires_at, privacy_level, sandbox, auto_publish, last_run_at, updated_at)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       client_key = excluded.client_key,
+       client_secret = excluded.client_secret,
+       redirect_uri = excluded.redirect_uri,
+       access_token = excluded.access_token,
+       refresh_token = excluded.refresh_token,
+       open_id = excluded.open_id,
+       username = excluded.username,
+       display_name = excluded.display_name,
+       avatar_url = excluded.avatar_url,
+       scope = excluded.scope,
+       access_expires_at = excluded.access_expires_at,
+       refresh_expires_at = excluded.refresh_expires_at,
+       privacy_level = excluded.privacy_level,
+       sandbox = excluded.sandbox,
+       auto_publish = excluded.auto_publish,
+       last_run_at = excluded.last_run_at,
+       updated_at = excluded.updated_at`,
+    [
+      next.clientKey ?? '',
+      next.clientSecret ?? '',
+      next.redirectUri ?? '',
+      next.accessToken ?? '',
+      next.refreshToken ?? '',
+      next.openId ?? '',
+      next.username ?? '',
+      next.displayName ?? '',
+      next.avatarUrl ?? '',
+      next.scope ?? '',
+      next.accessExpiresAt ?? null,
+      next.refreshExpiresAt ?? null,
+      next.privacyLevel,
+      next.sandbox ? 1 : 0,
+      next.autoPublish ? 1 : 0,
+      next.lastRunAt ?? null,
+      next.updatedAt,
+    ]
+  );
+  return getTikTokConnection();
+}
+
 /* ------------------------------------------------------------------- trash */
 
 function mapTrash(row: any): TrashEntry {
@@ -1766,7 +1884,7 @@ export function dueScheduledPosts(now = new Date()) {
   return listPosts()
     .filter((post) => post.status === 'scheduled' && post.scheduledAt)
     .filter((post) => new Date(post.scheduledAt!).getTime() <= now.getTime())
-    .filter((post) => !post.igPublishedAt)
+    .filter((post) => (post.platform === 'tiktok' ? !post.ttPublishedAt : !post.igPublishedAt))
     .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime());
 }
 

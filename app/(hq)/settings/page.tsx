@@ -16,6 +16,7 @@ import {
   IconSparkles,
   IconTrash,
   IconUpload,
+  IconVideo,
 } from '@/components/icons';
 import MediaPicker from '@/components/MediaPicker';
 import { Field, PageHead, Spinner } from '@/components/ui';
@@ -63,6 +64,24 @@ export default function SettingsPage() {
   });
   const [igToken, setIgToken] = useState('');
   const [igBusy, setIgBusy] = useState<string | null>(null);
+  const [tt, setTt] = useState({
+    clientKey: '',
+    hasClientSecret: false,
+    redirectUri: '',
+    privacyLevel: 'SELF_ONLY' as 'SELF_ONLY' | 'PUBLIC_TO_EVERYONE',
+    sandbox: true,
+    autoPublish: false,
+    username: '',
+    displayName: '',
+    avatarUrl: '',
+    connected: false,
+    configured: false,
+    live: false,
+    accessExpiresAt: null as string | null,
+    refreshExpiresAt: null as string | null,
+  });
+  const [ttSecret, setTtSecret] = useState('');
+  const [ttBusy, setTtBusy] = useState<string | null>(null);
   const [scheduler, setScheduler] = useState<any>(null);
   const [schedulerBusy, setSchedulerBusy] = useState<string | null>(null);
   const [trash, setTrash] = useState<TrashEntry[]>([]);
@@ -105,6 +124,15 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get('tiktok');
+    if (result === 'connected') {
+      toast('TikTok connected – the scheduler can post now');
+    } else if (result === 'error') {
+      toast(params.get('reason') || 'TikTok connection failed', 'error');
+    }
+    if (result) window.history.replaceState({}, '', '/settings');
+
     fetch('/api/instagram')
       .then((response) => response.json())
       .then((data) => {
@@ -117,6 +145,14 @@ export default function SettingsPage() {
           live: Boolean(connection.live),
           hasToken: Boolean(connection.hasToken),
         });
+      })
+      .catch(() => undefined);
+
+    fetch('/api/tiktok')
+      .then((response) => response.json())
+      .then((data) => {
+        const connection = data.connection ?? {};
+        setTt((current) => ({ ...current, ...connection }));
       })
       .catch(() => undefined);
 
@@ -345,6 +381,66 @@ export default function SettingsPage() {
     }
   };
 
+  /* tiktok --------------------------------------------------------------- */
+
+  const applyTikTok = (connection: any) => {
+    if (!connection) return;
+    setTt((current) => ({ ...current, ...connection }));
+  };
+
+  const ttSave = async (action: 'save' | 'disconnect' | 'test' | 'refresh') => {
+    setTtBusy(action);
+    try {
+      const response = await fetch('/api/tiktok', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          action === 'save'
+            ? {
+                action,
+                clientKey: tt.clientKey,
+                clientSecret: ttSecret || undefined,
+                redirectUri: tt.redirectUri,
+                privacyLevel: tt.privacyLevel,
+                sandbox: tt.sandbox,
+                autoPublish: tt.autoPublish,
+              }
+            : { action }
+        ),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Could not save');
+      applyTikTok(data.connection);
+      setTtSecret('');
+      if (action === 'test') toast(data.sandbox ? 'TikTok sandbox is ready' : 'TikTok connection works');
+      else if (action === 'refresh') toast('TikTok token refreshed');
+      else if (action === 'disconnect') toast('TikTok disconnected');
+      else toast('TikTok settings saved');
+      refreshScheduler();
+    } catch (error: any) {
+      toast(error.message ?? 'Could not save', 'error');
+    } finally {
+      setTtBusy(null);
+    }
+  };
+
+  const ttConnect = async () => {
+    setTtBusy('connect');
+    try {
+      const response = await fetch('/api/tiktok', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'authorize-url' }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Could not start TikTok login');
+      window.location.href = data.url;
+    } catch (error: any) {
+      toast(error.message ?? 'Could not start TikTok login', 'error');
+      setTtBusy(null);
+    }
+  };
+
   /* backup & trash -------------------------------------------------------- */
 
   const downloadBackup = () => {
@@ -410,18 +506,21 @@ export default function SettingsPage() {
       .then((data) => setScheduler(data.scheduler ?? null))
       .catch(() => undefined);
 
-  const toggleScheduler = async (enabled: boolean) => {
-    setSchedulerBusy('toggle');
+  const toggleScheduler = async (enabled: boolean, platform: 'instagram' | 'tiktok' = 'instagram') => {
+    setSchedulerBusy(platform === 'tiktok' ? 'toggle-tiktok' : 'toggle');
     try {
       const response = await fetch('/api/scheduler', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'toggle', enabled }),
+        body: JSON.stringify({ action: 'toggle', enabled, platform }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? 'Could not change the setting');
       setScheduler(data.scheduler ?? null);
-      toast(enabled ? 'Auto-publish switched on' : 'Auto-publish switched off');
+      if (platform === 'tiktok') setTt((current) => ({ ...current, autoPublish: enabled }));
+      toast(
+        `${platform === 'tiktok' ? 'TikTok' : 'Instagram'} auto-publish switched ${enabled ? 'on' : 'off'}`
+      );
     } catch (error: any) {
       toast(error.message ?? 'Could not change the setting', 'error');
     } finally {
@@ -429,20 +528,20 @@ export default function SettingsPage() {
     }
   };
 
-  const runSchedulerNow = async () => {
-    setSchedulerBusy('run');
+  const runSchedulerNow = async (platform: 'instagram' | 'tiktok' = 'instagram') => {
+    setSchedulerBusy(platform === 'tiktok' ? 'run-tiktok' : 'run');
     try {
       const response = await fetch('/api/scheduler', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force: true }),
+        body: JSON.stringify({ force: true, platform }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? 'Could not run the scheduler');
       const summary = data.summary ?? {};
       setScheduler(data.scheduler ?? null);
       if (summary.skipped) toast(summary.skipped, 'error');
-      else toast(`${summary.published ?? 0} published · ${summary.failed ?? 0} failed`);
+      else toast(`${platform === 'tiktok' ? 'TikTok: ' : ''}${summary.published ?? 0} published · ${summary.failed ?? 0} failed`);
     } catch (error: any) {
       toast(error.message ?? 'Could not run the scheduler', 'error');
     } finally {
@@ -985,29 +1084,37 @@ export default function SettingsPage() {
               <label className="check-row">
                 <input
                   type="checkbox"
-                  checked={Boolean(scheduler?.enabled)}
+                  checked={Boolean(scheduler?.instagram?.enabled)}
                   disabled={schedulerBusy === 'toggle'}
-                  onChange={(event) => toggleScheduler(event.target.checked)}
+                  onChange={(event) => toggleScheduler(event.target.checked, 'instagram')}
                 />
-                <span>{scheduler?.enabled ? 'on' : 'off'}</span>
+                <span>{scheduler?.instagram?.enabled ? 'on' : 'off'}</span>
               </label>
             </div>
 
             <div className="sched-stats">
               <div>
                 <span className="mono small muted">Status</span>
-                <strong className={scheduler?.live ? 'ok' : undefined}>
-                  {scheduler?.live ? 'live' : scheduler?.sandbox ? 'sandbox' : 'not connected'}
+                <strong className={scheduler?.instagram?.live ? 'ok' : undefined}>
+                  {scheduler?.instagram?.live
+                    ? 'live'
+                    : scheduler?.instagram?.sandbox
+                      ? 'sandbox'
+                      : 'not connected'}
                 </strong>
               </div>
               <div>
                 <span className="mono small muted">Due now</span>
-                <strong>{scheduler?.dueNow ?? 0}</strong>
+                <strong>{scheduler?.instagram?.dueNow ?? 0}</strong>
               </div>
               <div>
                 <span className="mono small muted">Next</span>
                 <strong className="truncate">
-                  {scheduler?.next ? new Date(scheduler.next.at).toLocaleString('en-GB') : '—'}
+                  {scheduler?.next
+                    ? `${new Date(scheduler.next.at).toLocaleString('en-GB')} · ${
+                        scheduler.next.platform === 'tiktok' ? 'TT' : 'IG'
+                      }`
+                    : '—'}
                 </strong>
               </div>
               <div>
@@ -1018,9 +1125,10 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {scheduler?.enabled && !scheduler?.live ? (
+            {scheduler?.instagram?.enabled && !scheduler?.instagram?.live ? (
               <p className="small sched-warn">
-                Auto-publish is on, but Instagram is not connected in live mode – nothing will be posted.
+                Instagram auto-publish is on, but the account is not connected in live mode – nothing will be
+                posted.
               </p>
             ) : null}
 
@@ -1028,7 +1136,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 className="btn btn-sm btn-ghost"
-                onClick={runSchedulerNow}
+                onClick={() => runSchedulerNow('instagram')}
                 disabled={!!schedulerBusy}
               >
                 <IconClock size={14} /> {schedulerBusy === 'run' ? 'Running …' : 'Run now'}
@@ -1048,6 +1156,193 @@ export default function SettingsPage() {
                 ))}
               </div>
             ) : null}
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <div className="panel-title">
+            <IconVideo size={16} />
+            TikTok
+          </div>
+          <span className={`ig-state ${tt.live ? 'live' : 'sandbox'}`}>
+            {tt.live
+              ? `live · @${tt.username || 'account'}`
+              : tt.connected
+                ? 'connected · sandbox'
+                : tt.configured
+                  ? 'configured · not connected'
+                  : 'sandbox mode'}
+          </span>
+        </div>
+        <div className="panel-body form-grid">
+          <p className="palette-intro">
+            TikTok uses the <strong>Content Posting API</strong> (Direct Post). Create an app in the TikTok developer
+            portal, add the scopes <code>user.info.basic</code> and <code>video.publish</code>, and register this
+            redirect URI exactly: <code>{'<your HQ>/api/tiktok/callback'}</code>. Until the app has passed TikTok’s
+            audit, API posts are limited to <strong>“Only me”</strong> – switch the privacy below once the audit is
+            through. Without client credentials everything runs in sandbox mode.
+          </p>
+
+          <div className="form-row">
+            <Field label="Client key" hint={<span className="count">from the TikTok app</span>}>
+              <input
+                className="input mono"
+                placeholder="aw1abc…"
+                value={tt.clientKey}
+                onChange={(event) => setTt({ ...tt, clientKey: event.target.value })}
+              />
+            </Field>
+            <Field label="Redirect URI" hint={<span className="count">empty = this origin</span>}>
+              <input
+                className="input mono"
+                placeholder="https://hq.dechire.band/api/tiktok/callback"
+                value={tt.redirectUri}
+                onChange={(event) => setTt({ ...tt, redirectUri: event.target.value })}
+              />
+            </Field>
+          </div>
+
+          <Field
+            label="Client secret"
+            hint={<span className="count">{tt.hasClientSecret ? 'stored – leave empty to keep' : 'not set'}</span>}
+          >
+            <input
+              className="input mono"
+              type="password"
+              placeholder={tt.hasClientSecret ? '••••••••••••' : 'client secret'}
+              value={ttSecret}
+              onChange={(event) => setTtSecret(event.target.value)}
+            />
+          </Field>
+
+          <div className="form-row">
+            <Field label="Privacy" hint={<span className="count">public needs the TikTok audit</span>}>
+              <select
+                className="input"
+                value={tt.privacyLevel}
+                onChange={(event) =>
+                  setTt({ ...tt, privacyLevel: event.target.value as 'SELF_ONLY' | 'PUBLIC_TO_EVERYONE' })
+                }
+              >
+                <option value="SELF_ONLY">Only me (SELF_ONLY)</option>
+                <option value="PUBLIC_TO_EVERYONE">Public (after audit)</option>
+              </select>
+            </Field>
+            <div className="field">
+              <span className="label">Mode</span>
+              <label className="check-row">
+                <input
+                  type="checkbox"
+                  checked={tt.sandbox}
+                  onChange={(event) => setTt({ ...tt, sandbox: event.target.checked })}
+                />
+                <span>Sandbox (simulate, do not post for real)</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="row wrap" style={{ gap: 8 }}>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={() => ttSave('save')}
+              disabled={!!ttBusy}
+            >
+              <IconCheck size={14} /> {ttBusy === 'save' ? 'Saving …' : 'Save'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={ttConnect}
+              disabled={!!ttBusy || !tt.configured}
+              title={tt.configured ? 'Open TikTok login' : 'Set client key and secret first'}
+            >
+              <IconVideo size={14} /> {ttBusy === 'connect' ? 'Opening …' : 'Connect TikTok'}
+            </button>
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => ttSave('test')} disabled={!!ttBusy}>
+              <IconSparkles size={14} /> {ttBusy === 'test' ? 'Testing …' : 'Test connection'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={() => ttSave('refresh')}
+              disabled={!!ttBusy || !tt.connected}
+            >
+              <IconClock size={14} /> Refresh token
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-danger"
+              onClick={() => ttSave('disconnect')}
+              disabled={!!ttBusy}
+            >
+              <IconTrash size={14} /> Disconnect
+            </button>
+          </div>
+
+          <div className="sched-stats">
+            <div>
+              <span className="mono small muted">Account</span>
+              <strong className="truncate">{tt.username ? `@${tt.username}` : tt.displayName || '—'}</strong>
+            </div>
+            <div>
+              <span className="mono small muted">Token valid until</span>
+              <strong>
+                {tt.accessExpiresAt ? new Date(tt.accessExpiresAt).toLocaleString('en-GB') : '—'}
+              </strong>
+            </div>
+            <div>
+              <span className="mono small muted">Due now</span>
+              <strong>{scheduler?.tiktok?.dueNow ?? 0}</strong>
+            </div>
+            <div>
+              <span className="mono small muted">Scope</span>
+              <strong className="truncate mono small">{tt.connected ? 'user.info.basic · video.publish' : '—'}</strong>
+            </div>
+          </div>
+
+          <div className="sched-block">
+            <div className="sched-head">
+              <div>
+                <span className="label">Auto-publish TikTok posts</span>
+                <p className="small muted" style={{ margin: '4px 0 0' }}>
+                  Scheduled TikTok posts are uploaded when their time has come – while Band HQ is open, or when a
+                  cron calls <code>/api/scheduler</code>. Each post needs exactly one video. Needs a connected
+                  account in live mode; sandbox only simulates on “Run now”.
+                </p>
+              </div>
+              <label className="check-row">
+                <input
+                  type="checkbox"
+                  checked={Boolean(scheduler?.tiktok?.enabled)}
+                  disabled={schedulerBusy === 'toggle-tiktok'}
+                  onChange={(event) => toggleScheduler(event.target.checked, 'tiktok')}
+                />
+                <span>{scheduler?.tiktok?.enabled ? 'on' : 'off'}</span>
+              </label>
+            </div>
+
+            {scheduler?.tiktok?.enabled && !scheduler?.tiktok?.live ? (
+              <p className="small sched-warn">
+                TikTok auto-publish is on, but the account is not connected in live mode – nothing will be posted.
+              </p>
+            ) : null}
+
+            <div className="row wrap" style={{ gap: 8 }}>
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost"
+                onClick={() => runSchedulerNow('tiktok')}
+                disabled={!!schedulerBusy}
+              >
+                <IconClock size={14} /> {schedulerBusy === 'run-tiktok' ? 'Running …' : 'Run TikTok now'}
+              </button>
+              <button type="button" className="btn btn-sm btn-ghost" onClick={refreshScheduler}>
+                Refresh status
+              </button>
+            </div>
           </div>
         </div>
       </section>
