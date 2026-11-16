@@ -812,31 +812,145 @@
   vertical-align: inherit;
 }
 
-.doc-img-tools {
+/* image size – frame with grips plus a small bar right at the picture ------- */
+
+body.doc-img-resizing {
+  cursor: nwse-resize;
+  user-select: none;
+}
+
+.doc-img-frame {
+  position: fixed;
+  z-index: 40;
+  border: 1px solid rgb(var(--accent-rgb) / 0.7);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.doc-img-grip {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background: var(--accent);
+  box-shadow: 0 2px 7px -2px rgba(0, 0, 0, 0.8);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.doc-img-grip-se {
+  right: -7px;
+  bottom: -7px;
+  cursor: nwse-resize;
+}
+
+.doc-img-grip-sw {
+  left: -7px;
+  bottom: -7px;
+  cursor: nesw-resize;
+}
+
+.doc-img-grip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.doc-img-bar {
+  position: fixed;
+  z-index: 41;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 7px 12px;
-  border-bottom: 1px solid var(--line);
-  background: rgb(var(--accent-rgb) / 0.05);
+  gap: 4px;
+  max-width: calc(100vw - 16px);
+  padding: 5px 7px;
+  border-radius: 9px;
+  border: 1px solid var(--line-strong);
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.95);
 }
 
-.doc-img-width {
+.doc-img-bar-label {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 3px 0 2px;
+}
+
+.doc-img-step,
+.doc-img-preset,
+.doc-img-align {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  height: 22px;
+  min-width: 22px;
+  padding: 0 5px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
 }
 
-.doc-img-width input[type='range'] {
-  width: 110px;
+.doc-img-step {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.doc-img-step:hover,
+.doc-img-preset:hover,
+.doc-img-align:hover {
+  background: rgb(var(--accent-rgb) / 0.14);
+  color: var(--text);
+}
+
+.doc-img-percent {
+  min-width: 34px;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--accent);
+}
+
+.doc-img-range {
+  width: 74px;
+  margin: 0 2px;
   accent-color: var(--accent);
 }
 
-.doc-img-tools .tool-text.on {
+.doc-img-presets {
+  display: inline-flex;
+  gap: 1px;
+  padding: 0 2px;
+}
+
+.doc-img-preset {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.doc-img-preset.on {
   color: var(--accent);
-  border-color: var(--accent);
-  background: rgb(var(--accent-rgb) / 0.14);
+  border-color: rgb(var(--accent-rgb) / 0.5);
+}
+
+.doc-img-align.on {
+  color: var(--accent);
+  border-color: rgb(var(--accent-rgb) / 0.5);
+  background: rgb(var(--accent-rgb) / 0.12);
+}
+
+.doc-img-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 3px;
+  background: var(--line-strong);
 }
 
 /* demos – attached audio ----------------------------------------------- */
@@ -1574,6 +1688,8 @@
   .doc-lyric-bar,
   .doc-part-tools,
   .doc-map,
+  .doc-img-bar,
+  .doc-img-frame,
   .toast-host,
   .modal-backdrop {
     display: none !important;

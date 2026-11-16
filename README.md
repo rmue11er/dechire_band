@@ -234,8 +234,11 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 - **Emoji picker** in the toolbar: band, mood, orga, road and faces – plus your last ten picks (stored
   locally). Inserts at the cursor position.
 - **Images**: the picture button opens the media library (or uploads straight into it) and drops the chosen
-  picture into the text. Click an image and a small Image bar appears: size 20–100 % and placement
-  `left / center / right / full`. Left and right float, so text wraps around the picture – exactly the way a
+  picture into the text. **Pasting works too**: a screenshot or picture on the clipboard goes into the media
+  library first (so it survives a reload, unlike a `blob:` URL) and is inserted at the cursor. Click a picture
+  and a **size bar** appears right under it: − / + in 5 % steps, a slider, presets `25 / 50 / 75 / 100` and
+  placement `left / center / right / full`. Dragging one of the two corner **grips** resizes it directly; the
+  arrow keys nudge a focused grip. Left and right float, so text wraps around the picture – exactly the way a
   rider or a stage plot reads best. Size and placement live in `data-width` / `data-align`, which means they
   survive autosave, the HTML export and the PDF print.
 - **Icons**: 124 hand-picked **Font Awesome Free (Solid)** icons – band, mood, on the road, orga, promo,

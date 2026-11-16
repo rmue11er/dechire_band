@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, useEditor, type Editor } from '@tiptap/react';
+import { NodeSelection } from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
@@ -42,10 +43,11 @@ import {
   IconUndo,
 } from '@/components/icons';
 import DocAudio from '@/components/DocAudio';
+import DocImageTools from '@/components/DocImageTools';
 import EmojiPicker from '@/components/EmojiPicker';
 import IconPicker from '@/components/IconPicker';
 import MediaPicker from '@/components/MediaPicker';
-import { DocIcon, DocImage, DocSection, type ImageAlign } from '@/components/docNodes';
+import { DocIcon, DocImage, DocSection } from '@/components/docNodes';
 import { DocCollapsibleHeadings } from '@/components/docCollapsibleHeadings';
 import { Modal } from '@/components/ui';
 import { usePalette } from '@/components/PaletteProvider';
@@ -80,6 +82,22 @@ const slug = (value: string) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 60) || 'document';
 
+/** A base64 image from a rich-text paste becomes a normal file for the library. */
+const dataUrlToFile = (source: string, index: number) => {
+  const match = /^data:(image\/[a-z0-9.+-]+);base64,(.*)$/i.exec(source);
+  if (!match) return null;
+  try {
+    const binary = atob(match[2]);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    const type = match[1].toLowerCase();
+    const ext = type.split('/')[1].replace('jpeg', 'jpg').replace('svg+xml', 'svg');
+    return new File([bytes], `pasted-${Date.now()}-${index}.${ext}`, { type });
+  } catch {
+    return null;
+  }
+};
+
 export default function DocEditor({
   document: doc,
   folders,
@@ -105,6 +123,8 @@ export default function DocEditor({
   const dirtyRef = useRef(false);
   const versionRef = useRef(0);
   const contentRef = useRef({ html: doc.content, text: doc.plainText });
+  const editorRef = useRef<Editor | null>(null);
+  const pasteImagesRef = useRef<(files: File[]) => void>(() => {});
   const palette = usePalette();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
@@ -166,6 +186,40 @@ export default function DocEditor({
     immediatelyRender: false,
     editorProps: {
       attributes: { class: 'prose doc-content', spellcheck: 'true' },
+
+      /**
+       * A click on a picture selects the whole picture. Without this the cursor
+       * lands next to it half of the time, and the size tools never appear.
+       */
+      handleClickOn: (view, _pos, node, nodePos, _event, direct) => {
+        if (!direct || node.type.name !== 'image') return false;
+        view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, nodePos)));
+        return true;
+      },
+
+      /**
+       * A picture from the clipboard is a file, not markup – ProseMirror would
+       * drop it. So it goes to the media library first and is inserted from
+       * there, which also keeps the document self-contained after a restart.
+       */
+      handlePaste: (_view, event) => {
+        const data = event.clipboardData;
+        if (!data) return false;
+
+        const files = Array.from(data.files ?? []).filter((file) =>
+          file.type.startsWith('image/'),
+        );
+        const pasted = files.length
+          ? files
+          : Array.from(data.getData('text/html').matchAll(/src="(data:image\/[^"]+)"/g))
+              .map((match, index) => dataUrlToFile(match[1], index))
+              .filter((file): file is File => Boolean(file));
+
+        if (!pasted.length) return false;
+        event.preventDefault();
+        pasteImagesRef.current(pasted);
+        return true;
+      },
     },
     onUpdate: ({ editor: instance }) => {
       contentRef.current = { html: instance.getHTML(), text: instance.getText() };
@@ -286,6 +340,56 @@ export default function DocEditor({
       editor.chain().setNodeSelection(position).run();
     }
   };
+
+  useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
+
+  /**
+   * Pasted images are uploaded first, then inserted at the cursor. The last one
+   * is selected afterwards, so the size tools are already open.
+   */
+  const pasteImages = useCallback(async (files: File[]) => {
+    const instance = editorRef.current;
+    if (!instance || !files.length) return;
+
+    const form = new FormData();
+    files.forEach((file) => form.append('files', file));
+
+    try {
+      const response = await fetch('/api/media', { method: 'POST', body: form });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Upload failed');
+      const uploaded: MediaItem[] = data.media ?? [];
+      if (!uploaded.length) throw new Error('The image could not be read');
+
+      setMedia((current) => [...uploaded, ...current]);
+
+      const from = instance.state.selection.from;
+      uploaded.forEach((item) => {
+        instance
+          .chain()
+          .focus()
+          .setImage({ src: item.url, alt: item.alt || item.title, title: item.title })
+          .run();
+      });
+
+      for (let offset = 0; offset < 6; offset += 1) {
+        if (instance.state.doc.nodeAt(from + offset)?.type.name === 'image') {
+          instance.commands.setNodeSelection(from + offset);
+          break;
+        }
+      }
+
+      toast(uploaded.length === 1 ? 'Image pasted' : `${uploaded.length} images pasted`);
+    } catch (error: any) {
+      toast(error.message ?? 'Could not paste the image', 'error');
+    }
+  }, []);
+
+  useEffect(() => {
+    pasteImagesRef.current = pasteImages;
+  }, [pasteImages]);
 
   const refreshAudio = async () => {
     try {
@@ -1129,36 +1233,6 @@ export default function DocEditor({
         </div>
       ) : null}
 
-      {editor.isActive('image') ? (
-        <div className="doc-img-tools">
-          <span className="mono small muted">Image</span>
-          <label className="doc-img-width">
-            <input
-              type="range"
-              min={20}
-              max={100}
-              step={5}
-              value={Number(editor.getAttributes('image').width) || 70}
-              onChange={(event) =>
-                editor.chain().updateAttributes('image', { width: Number(event.target.value) }).run()
-              }
-            />
-            <span className="mono small muted">{Number(editor.getAttributes('image').width) || 70}%</span>
-          </label>
-          <span className="tool-sep" />
-          {(['left', 'center', 'right', 'full'] as ImageAlign[]).map((align) => (
-            <button
-              key={align}
-              type="button"
-              className={`tool-text ${editor.getAttributes('image').align === align ? 'on' : ''}`}
-              onClick={() => editor.chain().updateAttributes('image', { align }).run()}
-            >
-              {align}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       <div
         className={`doc-page ${kind === 'lyrics' ? 'lyrics' : ''}`.trim()}
         style={{ '--doc-mark': (profile?.docMarkStrength ?? 30) / 100 } as CSSProperties}
@@ -1216,6 +1290,8 @@ export default function DocEditor({
           </div>
 
           <EditorContent editor={editor} />
+
+          <DocImageTools editor={editor} />
 
           <footer className="doc-sheet-foot">
             <span>{band} /// Post-hardcore</span>
