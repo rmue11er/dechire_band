@@ -613,7 +613,8 @@ export default function SettingsPage() {
         }
       />
 
-      <div className="settings-grid">
+      <div className="settings-stack">
+        <div className="settings-grid">
         <section className="panel">
           <div className="panel-head">
             <div className="panel-title">
@@ -1112,7 +1113,11 @@ export default function SettingsPage() {
                 <strong className="truncate">
                   {scheduler?.next
                     ? `${new Date(scheduler.next.at).toLocaleString('en-GB')} · ${
-                        scheduler.next.platform === 'tiktok' ? 'TT' : 'IG'
+                        scheduler.next.platform === 'both'
+                          ? 'IG+TT'
+                          : scheduler.next.platform === 'tiktok'
+                            ? 'TT'
+                            : 'IG'
                       }`
                     : '—'}
                 </strong>
@@ -1547,6 +1552,8 @@ Recommendation “Bruised Bloom”
           </div>
         </div>
       </section>
+
+      </div>
 
       <MediaPicker
         open={docPickerOpen}

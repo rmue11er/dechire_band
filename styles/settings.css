@@ -2,6 +2,29 @@
    Einstellungen
    ============================================================ */
 
+.settings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settings-stack .form-grid {
+  gap: 18px;
+}
+
+.settings-stack .form-row {
+  gap: 16px;
+}
+
+.settings-stack .sched-block {
+  margin-top: 2px;
+  gap: 14px;
+}
+
+.settings-stack .palette-panel {
+  margin-top: 0;
+}
+
 .settings-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);

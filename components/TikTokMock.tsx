@@ -110,6 +110,8 @@ export default function TikTokMock({
 
         {post ? (
           <div className="tt-badge">
+            {post.platform === 'both' ? 'IG + TT' : 'TikTok'}
+            <i>·</i>
             {post.status === 'published' ? 'Published' : post.status === 'scheduled' ? 'Scheduled' : 'Draft'}
             <i>·</i>
             {privacyLevel === 'SELF_ONLY' ? 'Only me' : 'Public'}

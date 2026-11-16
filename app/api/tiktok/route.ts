@@ -160,15 +160,17 @@ export async function POST(request: Request) {
     if (!result.ok || !result.data) return fail(result.error ?? 'TikTok publishing failed', 400);
 
     const stamp = new Date().toISOString();
+    const igDone = post.platform !== 'both' || Boolean(post.igPublishedAt);
     updatePost(post.id, {
-      status: 'published',
-      publishedAt: stamp,
       ttPublishId: result.data.publishId,
       ttStatus: result.data.status,
       ttPermalink: result.data.permalink,
       ttPublishedAt: stamp,
       ttError: null,
       ttLastAttempt: stamp,
+      ...(post.platform === 'tiktok' || (post.platform === 'both' && igDone)
+        ? { status: 'published', publishedAt: stamp }
+        : {}),
     });
     return ok({ published: result.data, sandbox: result.sandbox, post: getPost(post.id) });
   }
@@ -188,6 +190,8 @@ export async function POST(request: Request) {
       }
       const finished = status.data.status === 'PUBLISH_COMPLETE';
       const failed = status.data.status === 'FAILED';
+      const igDone = post.platform !== 'both' || Boolean(post.igPublishedAt);
+      const complete = !failed && finished && igDone;
       const permalink =
         finished && status.data.postIds.length && connection.username
           ? `https://www.tiktok.com/@${connection.username}/video/${status.data.postIds[0]}`
@@ -196,7 +200,8 @@ export async function POST(request: Request) {
         ttStatus: status.data.status,
         ttPermalink: permalink,
         ttError: failed ? status.data.failReason ?? 'TikTok rejected the video' : null,
-        status: failed ? 'scheduled' : post.status,
+        status: failed ? 'scheduled' : complete ? 'published' : post.status,
+        publishedAt: failed ? null : complete ? post.publishedAt ?? new Date().toISOString() : post.publishedAt,
         ttPublishedAt: failed ? null : post.ttPublishedAt,
       });
       results.push({ postId: post.id, status: status.data.status, permalink, sandbox: status.sandbox });

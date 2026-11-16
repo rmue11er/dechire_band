@@ -63,26 +63,36 @@ export async function POST(request: Request) {
     if (!post) return fail('Post not found', 404);
     if (!post.media.length) return fail('This post has no media');
 
-    const images = post.media
-      .filter((item) => item.mime.startsWith('image/'))
-      .map((item) => item.url);
-    if (!images.length) return fail('Only image posts can be published through the API');
+    const video = post.media.find((item) => item.mime.startsWith('video/'));
+    const useVideo = Boolean(video) && (post.type === 'reel' || post.platform === 'both');
+    const images = useVideo
+      ? []
+      : post.media.filter((item) => item.mime.startsWith('image/')).map((item) => item.url);
+    if (!useVideo && !images.length) {
+      return fail('Only image posts and Reel videos can be published through the API');
+    }
 
     const caption = [post.caption, post.firstComment ? `\n\n${post.firstComment}` : ''].join('').trim();
     const result = await publish(connection, {
       images,
+      video: useVideo ? video!.url : undefined,
       caption,
       kind: post.type === 'carousel' ? 'carousel' : post.type,
     });
     if (!result.ok) return fail(result.error, 400);
 
+    const stamp = new Date().toISOString();
     const { updatePost } = await import('@/lib/repo');
+    const ttDone = post.platform === 'instagram' || Boolean(post.ttPublishedAt);
     updatePost(post.id, {
-      status: 'published',
-      publishedAt: new Date().toISOString(),
       igMediaId: result.data.mediaId,
       igPermalink: result.data.permalink,
-      igPublishedAt: new Date().toISOString(),
+      igPublishedAt: stamp,
+      igError: null,
+      igLastAttempt: stamp,
+      ...(post.platform === 'instagram' || (post.platform === 'both' && ttDone)
+        ? { status: 'published', publishedAt: stamp }
+        : {}),
     });
     return ok({ published: result.data, sandbox: result.sandbox, post: getPost(post.id) });
   }

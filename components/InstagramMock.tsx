@@ -25,6 +25,8 @@ import type { Post, Profile } from '@/lib/types';
 
 const likesFor = (post: Post) => 148 + ((post.id * 347) % 2400);
 const commentsFor = (post: Post) => 4 + ((post.id * 13) % 48);
+const platformBadge = (post: Post) =>
+  post.platform === 'both' ? 'IG + TT' : post.platform === 'tiktok' ? 'TT' : 'IG';
 
 function StatusBar() {
   return (
@@ -240,6 +242,9 @@ function ProfileView({
                     <IconPlay size={11} />
                   </span>
                 ) : null}
+                {post.platform === 'both' ? (
+                  <span className="ig-tile-platform">IG+TT</span>
+                ) : null}
                 {showStatus && post.status !== 'published' ? (
                   <span className={`ig-tile-status ${post.status}`}>{post.status === 'draft' ? 'Draft' : 'Scheduled'}</span>
                 ) : null}
@@ -326,6 +331,7 @@ function PostView({
           <strong>dechire.band</strong>
           {post.location ? <span>{post.location}</span> : null}
         </span>
+        <span className={`ig-post-platform ${post.platform}`}>{platformBadge(post)}</span>
         <IconDots size={17} />
       </div>
 

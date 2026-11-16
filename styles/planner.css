@@ -947,6 +947,23 @@
   z-index: 2;
 }
 
+.ig-tile-platform {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 2;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(6, 5, 9, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 6.5px;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  backdrop-filter: blur(4px);
+}
+
 .ig-tile-status {
   position: absolute;
   bottom: 4px;
@@ -1038,6 +1055,28 @@
 .ig-post-user span {
   font-size: 10px;
   color: #c3bdd2;
+}
+
+.ig-post-platform {
+  flex: none;
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  color: #d8d4e2;
+}
+
+.ig-post-platform.both {
+  color: #fff;
+  background: linear-gradient(90deg, rgba(225, 48, 108, 0.35), rgba(37, 244, 238, 0.25));
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.ig-post-platform.tiktok {
+  color: #6ff6f2;
+  border-color: rgba(37, 244, 238, 0.35);
 }
 
 .ig-post-media {
@@ -1318,6 +1357,32 @@
 .queue-platform.tt {
   background: rgb(37 244 238 / 0.14);
   color: #6ff6f2;
+}
+
+.queue-platform.both {
+  background: linear-gradient(90deg, rgb(225 48 108 / 0.2), rgb(37 244 238 / 0.16));
+  color: #fff;
+  border: 1px solid rgb(255 255 255 / 0.12);
+}
+
+.queue-delivery {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 4px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.06em;
+  color: var(--muted-2);
+  opacity: 0.65;
+}
+
+.queue-delivery.ok {
+  color: var(--ok, #9fbfa5);
+  border-color: rgb(159 191 165 / 0.4);
+  background: rgb(159 191 165 / 0.08);
+  opacity: 1;
 }
 
 .queue-count {

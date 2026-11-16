@@ -1,6 +1,6 @@
 export type PostType = 'photo' | 'carousel' | 'reel' | 'story';
 export type PostStatus = 'draft' | 'scheduled' | 'published';
-export type PostPlatform = 'instagram' | 'tiktok';
+export type PostPlatform = 'instagram' | 'tiktok' | 'both';
 export type MediaKind = 'logo' | 'photo' | 'artwork' | 'merch' | 'video' | 'other';
 
 export type SongStatus = 'idea' | 'demo' | 'recording' | 'mix' | 'master' | 'released';

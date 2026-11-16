@@ -80,7 +80,9 @@ export async function testConnection(
 
 export type PublishInput = {
   /** Public URLs, first one is the cover. */
-  images: string[];
+  images?: string[];
+  /** Public URL of a video – published as a Reel. */
+  video?: string;
   caption: string;
   /** 'photo' | 'carousel' | 'reel' | 'story' */
   kind: string;
@@ -88,8 +90,13 @@ export type PublishInput = {
 
 export type PublishResult = { mediaId: string; permalink: string | null; sandbox: boolean };
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function publish(conn: InstagramConnection, input: PublishInput): Promise<IgResult<PublishResult>> {
-  if (!input.images.length) return { ok: false, sandbox: !isLive(conn), error: 'The post has no media' };
+  const images = input.images ?? [];
+  if (!images.length && !input.video) {
+    return { ok: false, sandbox: !isLive(conn), error: 'The post has no media' };
+  }
 
   if (!isLive(conn)) {
     const fake = `sandbox_${Date.now().toString(36)}`;
@@ -109,13 +116,6 @@ export async function publish(conn: InstagramConnection, input: PublishInput): P
     };
   }
 
-  const urls = input.images
-    .map((item) => publicUrl(conn, item))
-    .filter((item): item is string => Boolean(item));
-  if (urls.length !== input.images.length) {
-    return { ok: false, sandbox: false, error: 'Some media URLs could not be made public' };
-  }
-
   if (input.kind === 'story') {
     // Stories are not part of content publishing via this endpoint.
     return { ok: false, sandbox: false, error: 'Stories cannot be published through the API – use the ZIP export.' };
@@ -124,18 +124,50 @@ export async function publish(conn: InstagramConnection, input: PublishInput): P
   try {
     let creationId: string;
 
-    if (urls.length === 1) {
+    if (input.video) {
+      const videoUrl = publicUrl(conn, input.video);
+      if (!videoUrl) return { ok: false, sandbox: false, error: 'The video URL could not be made public' };
+
       const created = await graph<{ id: string }>(`/${conn.accountId}/media`, {
-        image_url: urls[0],
+        media_type: 'REELS',
+        video_url: videoUrl,
+        caption: input.caption,
+        share_to_feed: 'true',
+        access_token: conn.token,
+      });
+      creationId = created.id;
+
+      // Instagram downloads and transcodes the video – wait for FINISHED.
+      for (let attempt = 0; attempt < 40; attempt++) {
+        await sleep(3000);
+        const status = await graphGet<any>(`/${creationId}`, {
+          fields: 'status_code,status',
+          access_token: conn.token,
+        });
+        if (status.status_code === 'FINISHED') break;
+        if (status.status_code === 'ERROR') {
+          throw new Error(status.status || 'Instagram rejected the video');
+        }
+        if (attempt === 39) {
+          throw new Error('Instagram is still processing the video – try publishing again in a moment');
+        }
+      }
+    } else if (images.length === 1) {
+      const created = await graph<{ id: string }>(`/${conn.accountId}/media`, {
+        image_url: publicUrl(conn, images[0])!,
         caption: input.caption,
         access_token: conn.token,
       });
       creationId = created.id;
     } else {
+      const urls = images.map((item) => publicUrl(conn, item));
+      if (urls.some((item) => !item)) {
+        return { ok: false, sandbox: false, error: 'Some media URLs could not be made public' };
+      }
       const children: string[] = [];
       for (const url of urls) {
         const item = await graph<{ id: string }>(`/${conn.accountId}/media`, {
-          image_url: url,
+          image_url: url!,
           is_carousel_item: 'true',
           access_token: conn.token,
         });

@@ -69,7 +69,9 @@ export default function PostEditor({
   const commentRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    setPlatform(post?.platform === 'tiktok' ? 'tiktok' : 'instagram');
+    setPlatform(
+      post?.platform === 'tiktok' ? 'tiktok' : post?.platform === 'both' ? 'both' : 'instagram'
+    );
     setType(post?.type ?? 'photo');
     setStatus(post?.status ?? 'draft');
     setCaption(post?.caption ?? '');
@@ -97,10 +99,15 @@ export default function PostEditor({
         setTab('content');
         return;
       }
-      if (platform === 'tiktok') {
+      if (platform !== 'instagram') {
         const videos = selectedMedia.filter((item) => item.mime.startsWith('video/'));
         if (selectedMedia.length !== 1 || !videos.length) {
-          toast('TikTok posts need exactly one video', 'error');
+          toast(
+            platform === 'both'
+              ? 'Instagram + TikTok needs exactly one video'
+              : 'TikTok posts need exactly one video',
+            'error'
+          );
           setTab('content');
           return;
         }
@@ -113,7 +120,7 @@ export default function PostEditor({
       setSaving(true);
       const payload: Record<string, any> = {
         platform,
-        type: platform === 'tiktok' ? 'reel' : type,
+        type: platform === 'instagram' ? type : 'reel',
         status: nextStatus,
         caption,
         firstComment,
@@ -226,13 +233,23 @@ export default function PostEditor({
   const checks: { key: Tab; label: string; ok: boolean; required: boolean; hint: string }[] = [
     {
       key: 'content',
-      label: platform === 'tiktok' ? 'One video' : 'Media',
+      label:
+        platform === 'instagram'
+          ? 'Media'
+          : platform === 'both'
+            ? 'One video · Reel + TikTok'
+            : 'One video',
       ok:
-        platform === 'tiktok'
-          ? selectedMedia.length === 1 && selectedMedia[0].mime.startsWith('video/')
-          : mediaIds.length > 0,
+        platform === 'instagram'
+          ? mediaIds.length > 0
+          : selectedMedia.length === 1 && selectedMedia[0].mime.startsWith('video/'),
       required: true,
-      hint: platform === 'tiktok' ? 'Exactly one video file – no carousel, no photo' : 'At least one image or video',
+      hint:
+        platform === 'instagram'
+          ? 'At least one image or video'
+          : platform === 'both'
+            ? 'One vertical video – it goes out as Instagram Reel and TikTok'
+            : 'Exactly one video file – no carousel, no photo',
     },
     {
       key: 'content',
@@ -248,7 +265,7 @@ export default function PostEditor({
       required: false,
       hint: 'The first 125 characters decide whether people tap “more”',
     },
-    ...(platform === 'instagram'
+    ...(platform !== 'tiktok'
       ? [
           {
             key: 'content' as Tab,
@@ -350,8 +367,8 @@ export default function PostEditor({
                 <span className="label">Media</span>
                 <span className="mono small muted">
                   {mediaIds.length} {mediaIds.length === 1 ? 'file' : 'files'}
-                  {platform === 'tiktok'
-                    ? ' · TikTok: one video only'
+                  {platform !== 'instagram'
+                    ? ` · ${platform === 'both' ? 'IG Reel + TikTok' : 'TikTok'}: one video only`
                     : mediaIds.length > 1
                       ? ' · carousel order = 1, 2, 3'
                       : ''}
@@ -443,7 +460,7 @@ export default function PostEditor({
               </p>
             </div>
 
-            {platform === 'instagram' ? (
+            {platform !== 'tiktok' ? (
               <>
                 <div className="editor-block">
                   <div className="editor-block-head">
@@ -503,7 +520,7 @@ export default function PostEditor({
             ) : (
               <p className="editor-note">
                 TikTok uses the video and the caption only – first comment, alt text, location and sound stay on
-                Instagram.
+                Instagram. For “Both”, they are used for the Instagram Reel.
               </p>
             )}
           </div>
@@ -519,11 +536,16 @@ export default function PostEditor({
                 value={platform}
                 onChange={(value) => {
                   setPlatform(value);
-                  if (value === 'tiktok') {
+                  if (value !== 'instagram') {
                     setType('reel');
                     const firstVideo = selectedMedia.find((item) => item.mime.startsWith('video/'));
                     if (selectedMedia.length && !firstVideo) {
-                      toast('TikTok only supports video – pick one in the media library', 'error');
+                      toast(
+                        value === 'both'
+                          ? 'Both needs a video – pick one in the media library'
+                          : 'TikTok only supports video – pick one in the media library',
+                        'error'
+                      );
                     }
                     setMediaIds(firstVideo ? [firstVideo.id] : []);
                   }
@@ -531,24 +553,28 @@ export default function PostEditor({
                 options={[
                   { value: 'instagram', label: 'Instagram' },
                   { value: 'tiktok', label: 'TikTok' },
+                  { value: 'both', label: 'Both' },
                 ]}
               />
               <p className="editor-note">
-                {platform === 'tiktok'
-                  ? 'TikTok gets one vertical video with a caption. Carousels, stories and photos stay on Instagram.'
-                  : 'Feed, carousel, reel or story – everything here is built for Instagram.'}
+                {platform === 'both'
+                  ? 'One video goes out twice: as an Instagram Reel and as a TikTok. The caption is shared. For automatic delivery, both scheduler switches must be on.'
+                  : platform === 'tiktok'
+                    ? 'TikTok gets one vertical video with a caption. Carousels, stories and photos stay on Instagram.'
+                    : 'Feed, carousel, reel or story – everything here is built for Instagram.'}
               </p>
             </div>
 
             <div className="editor-block">
               <div className="editor-block-head">
                 <span className="label">Format</span>
-                {platform === 'tiktok' ? <span className="mono small muted">locked to video</span> : null}
+                {platform !== 'instagram' ? <span className="mono small muted">locked to video</span> : null}
               </div>
-              {platform === 'tiktok' ? (
+              {platform !== 'instagram' ? (
                 <p className="editor-note" style={{ marginTop: 0 }}>
-                  TikTok only accepts a single video. Pick the file above – we post it as a native TikTok video,
-                  9:16 looks best.
+                  {platform === 'both'
+                    ? 'Both platforms get the same video: Instagram publishes it as a Reel, TikTok as a native video. 9:16 looks best.'
+                    : 'TikTok only accepts a single video. Pick the file above – we post it as a native TikTok video, 9:16 looks best.'}
                 </p>
               ) : (
                 <>
@@ -654,7 +680,7 @@ export default function PostEditor({
               ) : null}
             </div>
 
-            {platform === 'instagram' ? (
+            {platform !== 'tiktok' ? (
               <>
                 <div className="editor-block">
                   <div className="editor-block-head">
@@ -707,7 +733,7 @@ export default function PostEditor({
 
         {tab === 'insights' ? (
           <div className="editor-stack">
-            {platform === 'tiktok' ? (
+            {platform !== 'instagram' ? (
               <div className="editor-block">
                 <div className="editor-block-head">
                   <span className="label">TikTok</span>
@@ -757,15 +783,19 @@ export default function PostEditor({
                   </button>
                 ) : null}
               </div>
-            ) : !creating && post ? (
-              <PostPerformance post={post} onUpdated={onSaved} />
-            ) : (
-              <div className="editor-block">
-                <p className="small muted" style={{ margin: 0 }}>
-                  Save the post first – then you can publish it to Instagram and pull the numbers in here.
-                </p>
-              </div>
-            )}
+            ) : null}
+
+            {platform !== 'tiktok' ? (
+              !creating && post ? (
+                <PostPerformance post={post} onUpdated={onSaved} />
+              ) : (
+                <div className="editor-block">
+                  <p className="small muted" style={{ margin: 0 }}>
+                    Save the post first – then you can publish it to Instagram and pull the numbers in here.
+                  </p>
+                </div>
+              )
+            ) : null}
 
             <div className="editor-block">
               <div className="editor-block-head">
@@ -832,11 +862,15 @@ export default function PostEditor({
         onClose={() => setPickerOpen(false)}
         media={media}
         selectedIds={mediaIds}
-        multiple={platform !== 'tiktok'}
-        kind={platform === 'tiktok' ? 'video' : undefined}
+        multiple={platform === 'instagram'}
+        kind={platform === 'instagram' ? undefined : 'video'}
         onUploaded={(items) => {
           onUploaded(items);
-          setMediaIds((current) => (platform === 'tiktok' ? items.slice(0, 1).map((item) => item.id) : [...current, ...items.map((item) => item.id)]));
+          setMediaIds((current) =>
+            platform === 'instagram'
+              ? [...current, ...items.map((item) => item.id)]
+              : items.slice(0, 1).map((item) => item.id)
+          );
         }}
         onConfirm={(ids) => setMediaIds(ids)}
       />

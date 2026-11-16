@@ -88,6 +88,9 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   hashtag counter for the first comment and “use asset alt text”.
 - **Create posts**: media (single or carousel with order), caption with a 2,200-character counter,
   first comment, song + artist, location, alt text, date (**quick presets**), format, status.
+- **Three publish targets**: Instagram, TikTok or **Both**. Both uses one vertical video twice – as an
+  Instagram Reel and a TikTok – and the planner preview switches between the two views. The queue marks
+  `IG`, `TT` or `IG+TT`, and per-post delivery chips show which side is already published.
 - **Drafts first**: a draft needs neither media nor a date and is never published — “Save as draft” writes it as a
   draft even if the post was scheduled before, and a date on a draft is just a note until you switch the status
   to *Scheduled* yourself.
@@ -269,12 +272,12 @@ The band's palette is not guessed any more – it is searched. Everything runs i
 - Change a colour in the settings and the sheet follows – no separate design file to maintain.
 
 ### 9. Instagram, TikTok & performance (`/planner`, Settings)
-- Publishing and insights through the **Meta Graph API** (single image and carousel), insights sync
+- Publishing and insights through the **Meta Graph API** (single image, carousel and Reel video), insights sync
   writes reach/likes/comments/saves/shares per post, the dashboard shows totals, average reach and
   the best weekday from your own numbers.
 - Needs an Instagram business account, a Meta app with `instagram_content_publish` and
   `instagram_manage_insights` (app review) and **publicly reachable media URLs** – Instagram downloads the
-  image itself, so localhost cannot work; set a tunnel/domain as “public base URL”.
+  image or video itself, so localhost cannot work; set a tunnel/domain as “public base URL”.
 - Without credentials everything runs in **sandbox mode**: same buttons, simulated ids and numbers,
   clearly labelled. Stories cannot be published through the API – use the ZIP export there.
 - **Auto-publish**: scheduled posts go out on their own when their time has come. A heartbeat checks every
@@ -287,6 +290,9 @@ The band's palette is not guessed any more – it is searched. Everything runs i
   **Content Posting API** (OAuth login, chunked upload, status polling); auto-publish can be switched on
   separately. Until TikTok has audited the app, posts are limited to `SELF_ONLY`; without client credentials
   everything runs in sandbox mode. Setup details in `docs/DEPLOY.md`.
+- **Both**: a dual post tracks Instagram and TikTok separately (`ig_published_at` / `tt_published_at`), so a
+  failed TikTok upload never posts the Reel a second time. The post only switches to `published` when both
+  sides are through.
 
 ### 10. Public website (`/site`) + configuration (`/website`)
 **Warm black, one accent colour, photos taped to the wall.** No template furniture and nothing that reads

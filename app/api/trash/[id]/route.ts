@@ -31,8 +31,14 @@ export async function POST(_request: Request, { params }: Ctx) {
     switch (entry.kind) {
       case 'post': {
         const newId = createPost({
-          platform: payload.platform === 'tiktok' ? 'tiktok' : 'instagram',
-          type: payload.platform === 'tiktok' ? 'reel' : payload.type,
+          platform:
+            payload.platform === 'tiktok'
+              ? 'tiktok'
+              : payload.platform === 'both'
+                ? 'both'
+                : 'instagram',
+          type:
+            payload.platform === 'tiktok' || payload.platform === 'both' ? 'reel' : payload.type,
           status: payload.status === 'published' ? 'draft' : payload.status ?? 'draft',
           caption: payload.caption,
           firstComment: payload.firstComment,

@@ -369,6 +369,11 @@ Scheduled TikTok posts use the same cron/ heartbeat as Instagram, but can be swi
 Each TikTok post needs **exactly one video** (no photos, carousel or story); pick it in the editor and the
 platform is locked to TikTok. Videos are uploaded from `data/uploads` in chunks (5–64 MB).
 
+Posts set to **Both** publish the same video as an Instagram Reel and a TikTok. Instagram downloads it from
+`publicBase`, so `/api/files/*` must be publicly reachable for videos as well; the two uploads are tracked
+separately and the post only becomes “published” when both are through.
+
+
 
 ---
 

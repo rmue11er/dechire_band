@@ -19,10 +19,19 @@ import TikTokMock from '@/components/TikTokMock';
 import { EmptyState, PageHead, Segmented, Spinner } from '@/components/ui';
 import { formatShortDate, formatTime, relativeDay } from '@/lib/format';
 import { toast } from '@/lib/toast';
-import type { MediaItem, Post, PostStatus, Profile } from '@/lib/types';
+import type { MediaItem, Post, PostPlatform, PostStatus, Profile } from '@/lib/types';
 
 type Filter = 'all' | PostStatus;
 type PlatformFilter = 'all' | 'instagram' | 'tiktok';
+type PreviewSide = 'instagram' | 'tiktok';
+
+const platformLabel = (platform: PostPlatform) =>
+  platform === 'both' ? 'IG+TT' : platform === 'tiktok' ? 'TT' : 'IG';
+
+const platformClass = (platform: PostPlatform) =>
+  platform === 'both' ? 'both' : platform === 'tiktok' ? 'tt' : 'ig';
+
+const postError = (post: Post) => [post.igError, post.ttError].filter(Boolean).join(' · ');
 
 export default function PlannerPage() {
   const searchParams = useSearchParams();
@@ -35,6 +44,7 @@ export default function PlannerPage() {
   const [mode, setMode] = useState<'profile' | 'post'>('profile');
   const [filter, setFilter] = useState<Filter>('all');
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all');
+  const [previewSide, setPreviewSide] = useState<PreviewSide>('instagram');
   const [dragId, setDragId] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const [snapshotting, setSnapshotting] = useState(false);
@@ -72,12 +82,16 @@ export default function PlannerPage() {
     [posts, selectedId]
   );
 
+  useEffect(() => {
+    setPreviewSide('instagram');
+  }, [activePost?.id]);
+
   const visiblePosts = useMemo(
     () =>
       posts.filter(
         (post) =>
           (filter === 'all' || post.status === filter) &&
-          (platformFilter === 'all' || post.platform === platformFilter)
+          (platformFilter === 'all' || post.platform === platformFilter || post.platform === 'both')
       ),
     [posts, filter, platformFilter]
   );
@@ -89,13 +103,16 @@ export default function PlannerPage() {
       scheduled: posts.filter((post) => post.status === 'scheduled').length,
       published: posts.filter((post) => post.status === 'published').length,
       instagram: posts.filter((post) => post.platform !== 'tiktok').length,
-      tiktok: posts.filter((post) => post.platform === 'tiktok').length,
+      tiktok: posts.filter((post) => post.platform !== 'instagram').length,
     }),
     [posts]
   );
 
   const instagramPosts = useMemo(() => posts.filter((post) => post.platform !== 'tiktok'), [posts]);
-  const previewIsTikTok = !creating && activePost?.platform === 'tiktok';
+  const activePlatform: PostPlatform = creating ? 'instagram' : activePost?.platform ?? 'instagram';
+  const previewIsTikTok = activePlatform === 'tiktok';
+  const previewIsBoth = activePlatform === 'both';
+  const previewShowsTikTok = previewIsTikTok || (previewIsBoth && previewSide === 'tiktok');
 
   const handleSaved = (saved: Post) => {
     setPosts((current) => {
@@ -218,8 +235,8 @@ export default function PlannerPage() {
               type="button"
               className="btn btn-ghost"
               onClick={snapshot}
-              disabled={snapshotting || (previewIsTikTok && mode === 'post')}
-              title={previewIsTikTok && mode === 'post' ? 'Switch to the profile grid for a feed snapshot' : undefined}
+              disabled={snapshotting || previewShowsTikTok}
+              title={previewShowsTikTok ? 'Switch to the Instagram preview for a feed snapshot' : undefined}
             >
               <IconImage size={15} />
               {snapshotting ? 'Rendering …' : 'Feed as PNG'}
@@ -282,7 +299,16 @@ export default function PlannerPage() {
 
         <div className="planner-col preview-col">
           <div className="preview-toolbar">
-            {previewIsTikTok ? (
+            {previewIsBoth ? (
+              <Segmented<PreviewSide>
+                value={previewSide}
+                onChange={(value) => setPreviewSide(value)}
+                options={[
+                  { value: 'instagram', label: 'Instagram Reel' },
+                  { value: 'tiktok', label: 'TikTok' },
+                ]}
+              />
+            ) : previewIsTikTok ? (
               <span className="chip accent">TikTok · 9:16</span>
             ) : (
               <Segmented
@@ -295,24 +321,28 @@ export default function PlannerPage() {
               />
             )}
             <span className="mono small muted">
-              {previewIsTikTok
+              {previewIsBoth
                 ? activePost
-                  ? `#${activePost.id} · TikTok`
-                  : 'TikTok'
-                : mode === 'profile'
-                  ? 'click a tile'
-                  : activePost
-                    ? `#${activePost.id} · use ‹ ›`
-                    : 'no post'}
+                  ? `#${activePost.id} · ${previewSide === 'tiktok' ? 'TikTok' : 'Instagram Reel'}`
+                  : 'Both'
+                : previewIsTikTok
+                  ? activePost
+                    ? `#${activePost.id} · TikTok`
+                    : 'TikTok'
+                  : mode === 'profile'
+                    ? 'click a tile'
+                    : activePost
+                      ? `#${activePost.id} · use ‹ ›`
+                      : 'no post'}
             </span>
           </div>
-          {previewIsTikTok && activePost ? (
+          {previewShowsTikTok && activePost ? (
             <TikTokMock profile={profile} post={activePost} />
           ) : (
             <InstagramMock
               profile={profile}
               posts={instagramPosts}
-              mode={mode}
+              mode={previewIsBoth ? 'post' : mode}
               activePost={activePost}
               showStatus
               onSelectPost={(id) => {
@@ -327,9 +357,11 @@ export default function PlannerPage() {
           )}
           <p className="preview-hint">
             <IconSparkles size={13} />
-            {previewIsTikTok
-              ? 'TikTok posts stay out of the Instagram grid · one vertical video each'
-              : 'Click a tile for the single post · drag a tile to move it in the grid'}
+            {previewIsBoth
+              ? 'One video, two posts · switch between the Instagram Reel and the TikTok preview'
+              : previewIsTikTok
+                ? 'TikTok posts stay out of the Instagram grid · one vertical video each'
+                : 'Click a tile for the single post · drag a tile to move it in the grid'}
           </p>
         </div>
 
@@ -357,7 +389,7 @@ export default function PlannerPage() {
                 value={platformFilter}
                 onChange={(value) => setPlatformFilter(value)}
                 options={[
-                  { value: 'all', label: 'Both' },
+                  { value: 'all', label: 'All' },
                   { value: 'instagram', label: `IG ${counts.instagram}` },
                   { value: 'tiktok', label: `TT ${counts.tiktok}` },
                 ]}
@@ -414,9 +446,11 @@ export default function PlannerPage() {
                       </span>
 
                       <span className="queue-info">
-                        <span className="queue-caption">                            <span className={`queue-platform ${post.platform === 'tiktok' ? 'tt' : 'ig'}`}>
-                              {post.platform === 'tiktok' ? 'TT' : 'IG'}
-                            </span>                          {post.caption?.split('\n')[0]?.trim() || 'Untitled post'}
+                        <span className="queue-caption">
+                          <span className={`queue-platform ${platformClass(post.platform)}`}>
+                            {platformLabel(post.platform)}
+                          </span>
+                          {post.caption?.split('\n')[0]?.trim() || 'Untitled post'}
                         </span>
                         <span className="queue-meta">
                           <span className={`queue-dot ${post.status}`} aria-hidden="true" />
@@ -428,11 +462,24 @@ export default function PlannerPage() {
                               ? `${formatShortDate(post.scheduledAt)} · ${formatTime(post.scheduledAt)}`
                               : 'no date'}
                           </span>
-                          {(post.platform === 'tiktok' ? post.ttError : post.igError) ? (
+                          {post.platform !== 'tiktok' ? (
                             <span
-                              className="queue-error"
-                              title={(post.platform === 'tiktok' ? post.ttError : post.igError) ?? undefined}
+                              className={`queue-delivery ${post.igPublishedAt ? 'ok' : ''}`}
+                              title={post.igPublishedAt ? 'Published on Instagram' : 'Not on Instagram yet'}
                             >
+                              IG
+                            </span>
+                          ) : null}
+                          {post.platform !== 'instagram' ? (
+                            <span
+                              className={`queue-delivery ${post.ttPublishedAt ? 'ok' : ''}`}
+                              title={post.ttPublishedAt ? 'Published on TikTok' : 'Not on TikTok yet'}
+                            >
+                              TT
+                            </span>
+                          ) : null}
+                          {postError(post) ? (
+                            <span className="queue-error" title={postError(post)}>
                               <IconZap size={11} /> error
                             </span>
                           ) : null}

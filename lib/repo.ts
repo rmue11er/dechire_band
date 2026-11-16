@@ -19,6 +19,7 @@ import type {
   Release,
   ReleaseTask,
   PostMetrics,
+  PostPlatform,
   Profile,
   SchedulerRun,
   Snippet,
@@ -739,10 +740,13 @@ function metricsByPost(): Map<number, PostMetrics> {
   return map;
 }
 
+const postPlatform = (value: any): PostPlatform =>
+  value === 'tiktok' ? 'tiktok' : value === 'both' ? 'both' : 'instagram';
+
 function mapPost(row: any, media: MediaItem[], metrics: PostMetrics | null = null): Post {
   return {
     id: Number(row.id),
-    platform: row.platform === 'tiktok' ? 'tiktok' : 'instagram',
+    platform: postPlatform(row.platform),
     type: row.type,
     status: row.status,
     caption: row.caption ?? '',
@@ -814,7 +818,7 @@ export function createPost(input: Record<string, any>) {
     `INSERT INTO posts (platform, type, status, caption, first_comment, alt_text, location, song_title, song_artist, scheduled_at, published_at, position, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      input.platform === 'tiktok' ? 'tiktok' : 'instagram',
+      postPlatform(input.platform),
       input.type ?? 'photo',
       input.status ?? 'draft',
       input.caption ?? '',
@@ -1884,7 +1888,11 @@ export function dueScheduledPosts(now = new Date()) {
   return listPosts()
     .filter((post) => post.status === 'scheduled' && post.scheduledAt)
     .filter((post) => new Date(post.scheduledAt!).getTime() <= now.getTime())
-    .filter((post) => (post.platform === 'tiktok' ? !post.ttPublishedAt : !post.igPublishedAt))
+    .filter((post) => {
+      if (post.platform === 'instagram') return !post.igPublishedAt;
+      if (post.platform === 'tiktok') return !post.ttPublishedAt;
+      return !post.igPublishedAt || !post.ttPublishedAt;
+    })
     .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime());
 }
 

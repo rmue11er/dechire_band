@@ -1,11 +1,13 @@
 import { fail, ok, readJson, toInt } from '@/lib/api';
 import { deletePost, getMedia, getPost, updatePost } from '@/lib/repo';
+import type { PostPlatform } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const TYPES = ['photo', 'carousel', 'reel', 'story'];
 const STATUS = ['draft', 'scheduled', 'published'];
+const PLATFORMS: PostPlatform[] = ['instagram', 'tiktok', 'both'];
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -26,18 +28,23 @@ export async function PATCH(request: Request, { params }: Ctx) {
   const patch: Record<string, any> = { ...body };
   if (patch.type !== undefined && !TYPES.includes(patch.type)) delete patch.type;
   if (patch.status !== undefined && !STATUS.includes(patch.status)) delete patch.status;
-  if (patch.platform !== undefined && !['instagram', 'tiktok'].includes(patch.platform)) delete patch.platform;
+  if (patch.platform !== undefined && !PLATFORMS.includes(patch.platform)) delete patch.platform;
   if (patch.mediaIds !== undefined) {
     patch.mediaIds = Array.isArray(patch.mediaIds) ? patch.mediaIds.map(Number).filter(Boolean) : [];
   }
 
-  const platform = patch.platform ?? existing.platform;
-  if (platform === 'tiktok') {
+  const platform: PostPlatform = patch.platform ?? existing.platform;
+  if (platform !== 'instagram') {
     patch.type = 'reel';
     const mediaIds = patch.mediaIds ?? existing.media.map((item) => item.id);
     const media = mediaIds.map((mediaId) => getMedia(mediaId)).filter(Boolean);
     if (media.length !== 1 || !media[0].mime.startsWith('video/')) {
-      return fail('TikTok posts need exactly one video', 400);
+      return fail(
+        platform === 'both'
+          ? 'Instagram + TikTok needs exactly one video (it becomes a Reel and a TikTok)'
+          : 'TikTok posts need exactly one video',
+        400
+      );
     }
   }
 
