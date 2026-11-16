@@ -282,8 +282,7 @@ curl -s -o /dev/null -w '%{http_code}\n' https://example.com/api/posts # 401
 # DECHIRE Band HQ ready on … (production, auth on)
 ```
 
-If `/admin` still answers `200` and the log says `auth off`, the variable did not reach the process — set
-it again, restart, and check the log line.
+If `/admin` still answers `200` and the log says `auth off`, the variable did not reach the process — setit again, restart, and check the log line.
 
 > Plesk's own **“Password protect directories”** feature is *not* needed and fights with this: it produces a
 > separate Basic-Auth prompt (and a 401/403 in front of the app). Leave it off; the login mask is the door.
@@ -334,6 +333,28 @@ tar czf /var/backups/dechire-$(date +%F).tgz -C /var/www/vhosts/example.com/band
 > **If a restore fails** the message now names the step (`while restoring "media"`, `while unpacking
 > uploads/…`, …). Nothing is replaced unless the whole import went through: rows go in through one transaction
 > and the files are staged first, so a failed restore leaves the installation untouched.
+
+### Booking mailbox (optional)
+
+`/admin/booking` sends booking mail through your own mailbox. Configure it either in
+**Booking → E-Mail** (stored in the database, password never leaves the server) or via environment
+variables:
+
+| Variable | Example | Meaning |
+| --- | --- | --- |
+| `MAIL_HOST` | `smtp.ionos.de` | SMTP host |
+| `MAIL_PORT` | `465` | 465 = implicit TLS, 587 = STARTTLS |
+| `MAIL_SECURE` | `true` / `false` | `false` for STARTTLS |
+| `MAIL_USER` | `booking@dechire.band` | Usually the full address |
+| `MAIL_PASSWORD` | `…` | Mailbox password (app password with 2FA) |
+| `MAIL_FROM` | `booking@dechire.band` | Sender address |
+| `MAIL_FROM_NAME` | `déchire` | Sender name |
+| `MAIL_REPLY_TO` | `hallo@dechire.band` | Optional reply-to |
+| `MAIL_DAILY_LIMIT` | `40` | Mails per day, the queue stops there |
+
+Mail leaves through a background queue with a 6 s pause between messages, so a large wave cannot trip
+spam filters or a proxy timeout. Before the first wave: **Verbindung testen**. If your provider rejects
+the login, it is usually a missing app password (Gmail) or a wrong port (587 instead of 465).
 
 ---
 

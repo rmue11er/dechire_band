@@ -41,6 +41,12 @@ const TABLES = [
   'trash',
   'fonts',
   'scheduler_log',
+  'booking_contacts',
+  'booking_outreach',
+  'booking_steps',
+  'booking_templates',
+  'booking_profile',
+  'mail_connection',
 ] as const;
 
 const countRows = (table: string) => {
@@ -327,6 +333,12 @@ export function restoreFromZipFile(zipPath: string): ImportResult {
           DELETE FROM trash;
           DELETE FROM fonts;
           DELETE FROM scheduler_log;
+          DELETE FROM booking_outreach;
+          DELETE FROM booking_contacts;
+          DELETE FROM booking_steps;
+          DELETE FROM booking_templates;
+          DELETE FROM booking_profile;
+          DELETE FROM mail_connection;
         `)
       );
 

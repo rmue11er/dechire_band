@@ -383,6 +383,94 @@ CREATE INDEX IF NOT EXISTS idx_document_audio_document ON document_audio(documen
 CREATE INDEX IF NOT EXISTS idx_document_comments_document ON document_comments(document_id);
 CREATE INDEX IF NOT EXISTS idx_post_metrics_post ON post_metrics(post_id);
 CREATE INDEX IF NOT EXISTS idx_snippets_kind ON snippets(kind);
+
+CREATE TABLE IF NOT EXISTS booking_contacts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'venue',
+  city TEXT NOT NULL DEFAULT '',
+  region TEXT NOT NULL DEFAULT '',
+  country TEXT NOT NULL DEFAULT 'DE',
+  email TEXT NOT NULL DEFAULT '',
+  contact_name TEXT NOT NULL DEFAULT '',
+  website TEXT NOT NULL DEFAULT '',
+  instagram TEXT NOT NULL DEFAULT '',
+  source_url TEXT NOT NULL DEFAULT '',
+  fit_note TEXT NOT NULL DEFAULT '',
+  tags TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'new',
+  priority INTEGER NOT NULL DEFAULT 2,
+  capacity INTEGER,
+  deadline TEXT NOT NULL DEFAULT '',
+  distance_km INTEGER,
+  last_contact_at TEXT,
+  next_follow_up TEXT,
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS booking_outreach (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  contact_id INTEGER NOT NULL,
+  language TEXT NOT NULL DEFAULT 'de',
+  subject TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'queued',
+  error TEXT NOT NULL DEFAULT '',
+  sent_at TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (contact_id) REFERENCES booking_contacts(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS booking_steps (
+  key TEXT PRIMARY KEY,
+  done INTEGER NOT NULL DEFAULT 0,
+  done_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS booking_templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  language TEXT NOT NULL DEFAULT 'de',
+  kind TEXT NOT NULL DEFAULT '',
+  subject TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS booking_profile (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  homebase TEXT NOT NULL DEFAULT 'Augsburg',
+  genre TEXT NOT NULL DEFAULT 'emotional post-hardcore',
+  listen_url TEXT NOT NULL DEFAULT '',
+  live_url TEXT NOT NULL DEFAULT '',
+  press_url TEXT NOT NULL DEFAULT '',
+  sender TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS mail_connection (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  host TEXT NOT NULL DEFAULT '',
+  port INTEGER NOT NULL DEFAULT 465,
+  secure INTEGER NOT NULL DEFAULT 1,
+  username TEXT NOT NULL DEFAULT '',
+  password TEXT NOT NULL DEFAULT '',
+  from_name TEXT NOT NULL DEFAULT '',
+  from_email TEXT NOT NULL DEFAULT '',
+  reply_to TEXT NOT NULL DEFAULT '',
+  daily_limit INTEGER NOT NULL DEFAULT 40,
+  last_test_at TEXT,
+  last_test_ok INTEGER NOT NULL DEFAULT 0,
+  last_test_error TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_booking_contacts_kind ON booking_contacts(kind);
+CREATE INDEX IF NOT EXISTS idx_booking_contacts_status ON booking_contacts(status);
+CREATE INDEX IF NOT EXISTS idx_booking_outreach_contact ON booking_outreach(contact_id);
 `;
 
 /** Adds a column to an existing table when an older database is missing it. */

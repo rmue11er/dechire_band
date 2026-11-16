@@ -265,6 +265,22 @@ export const IconVideo = (p: IconProps) => (
   </Svg>
 );
 
+export const IconMail = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3" y="5" width="18" height="14" rx="2.4" />
+    <path d="m3.6 6.8 8.4 6.1 8.4-6.1" />
+  </Svg>
+);
+
+export const IconUsers = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="9.2" cy="8" r="3.2" />
+    <path d="M3.5 20c0-3.2 2.5-5.5 5.7-5.5s5.7 2.3 5.7 5.5" />
+    <path d="M16.4 5.3a3.1 3.1 0 0 1 0 5.9" />
+    <path d="M17.6 14.9c2 .7 3.2 2.4 3.2 4.6" />
+  </Svg>
+);
+
 export const IconExternal = (p: IconProps) => (
   <Svg {...p}>
     <path d="M14 4h6v6" />

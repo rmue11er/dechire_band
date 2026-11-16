@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['archiver'],
+  serverExternalPackages: ['archiver', 'nodemailer'],
   experimental: {
     // The auth proxy buffers request bodies (default 10 MB). Media uploads can be
     // up to 80 MB, so give them room; /api/restore is excluded from the proxy and

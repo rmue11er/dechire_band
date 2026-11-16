@@ -520,6 +520,29 @@ and rasterised to a transparent 1080×1920 PNG with `html-to-image` – what you
   caption. Clips must be raster photos (PNG/JPG/WebP) or videos – SVG artwork has to be exported to PNG first.
   Needs **ffmpeg** on the server (`FFMPEG_PATH` if it lives outside `PATH`).
 
+### 16. Booking (`/admin/booking`)
+The module that actually gets you the gig – a guide, a researched contact list and your own mail server.
+- **Leitfaden**: 15 steps in five phases (*Fundament → Recherche → Ansprache → Nachfassen → Label &
+  Presse*). Every step has a reason, concrete actions, a time estimate and a link into the module that
+  does the work (Brand Sheet, documents, contacts, templates). Ticking is stored in `booking_steps`, so
+  progress survives reloads; phases can be ticked at once.
+- **Kontakte**: 80 researched starting points (festivals, venues, promoters, labels, radio, press) with
+  type, city, rough distance from Augsburg, why it fits and the application window. Filter by type,
+  region, priority, status and “has an address”, search across everything, select in bulk and set status,
+  priority or a follow-up date in one go. Addresses are deliberately *not* invented – every row links to
+  the site where the booking contact lives.
+- **Vorlagen**: five ready German/English templates (venue, festival, follow-up, label pitch, press) with
+  `{{placeholders}}` for band, city, links and sender, a live preview per contact, and an *Absender &
+  Links* panel that feeds them.
+- **E-Mail**: your own SMTP mailbox (IONOS, Gmail, Mailbox.org, Posteo, All-Inkl presets or custom host,
+  password stored in the database, `MAIL_*` env vars as fallback), *Verbindung testen*, and a send log.
+  Sending goes through a **background queue**: `POST /api/booking/outreach` renders one personal mail per
+  contact and returns immediately, the queue sends with a delay and a daily limit (default 40), and the
+  page polls for progress – no proxy timeout, no mass mail. A sent mail flips the contact to
+  *Angeschrieben* and stores `last_contact_at`; failures land in the log with the server's message.
+- Everything is backed up (`booking_contacts`, `booking_outreach`, `booking_steps`, `booking_templates`,
+  `booking_profile`, `mail_connection`), found by ⌘K and cleared by the full reset.
+
 ## Export format
 
 `GET /api/export/plan` returns:
@@ -573,6 +596,7 @@ app/
   admin/videos/page.tsx    Video Lab – music video projects
   admin/videos/[id]/page.tsx Video planner – waveform timeline, shots, treatment import
   admin/reels/page.tsx     Reel Lab – clips, beat cuts, text layer, ffmpeg export
+  admin/booking/page.tsx   Booking – guide, contacts, templates, mailbox
   admin/website/page.tsx   Public site: blocks, letter, crew, media corner, live preview
   admin/brand/page.tsx     Brand sheet (CI guide, export)
   admin/settings/page.tsx  Profile, accent, Instagram, backup, bin, palette
@@ -656,6 +680,12 @@ docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + ngin
 | GET/POST/DELETE | `/api/fonts`, `/api/fonts/:id` | Self-hosted Google Fonts (search: `/api/fonts/search?q=`) |
 | POST | `/api/media/:id/replace` | Swap the file of an asset |
 | GET | `/api/backup`, `POST /api/restore` | Backup ZIP / restore it |
+| GET/POST | `/api/booking` | Booking bundle (contacts, templates, steps, mailbox) / seed & profile |
+| GET/POST/PATCH | `/api/booking/contacts`, `/api/booking/contacts/:id` | Contacts, bulk edit, create (PATCH/DELETE on `:id`) |
+| GET/POST | `/api/booking/outreach` | Send log and queue / queue personalised mails |
+| PATCH | `/api/booking/steps` | Tick guide steps |
+| PATCH | `/api/booking/templates/:id` | Edit a mail template |
+| GET/POST | `/api/booking/mail` | Mailbox settings, connection test |
 | GET | `/api/export/calendar` | `.ics` calendar feed |
 | GET | `/api/search?q=` | Global search for ⌘K |
 | GET/PATCH | `/api/profile` | Band profile incl. accent colour |

@@ -13,6 +13,7 @@ import {
   IconImage,
   IconInstagram,
   IconLayout,
+  IconMail,
   IconMusic,
   IconNote,
   IconSearch,
@@ -35,6 +36,7 @@ const GROUPS: { id: string; label: string; items: NavItem[] }[] = [
       { href: '/admin/planner', label: 'Post Planner', icon: IconInstagram },
       { href: '/admin/calendar', label: 'Calendar', icon: IconCalendar },
       { href: '/admin/releases', label: 'Release Wave', icon: IconZap },
+      { href: '/admin/booking', label: 'Booking', icon: IconMail },
     ],
   },
   {

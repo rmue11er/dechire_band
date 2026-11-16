@@ -32,6 +32,7 @@ const KIND_LABEL: Record<string, string> = {
   snippet: 'Snippet',
   song: 'Song',
   video: 'Video',
+  booking: 'Booking',
   action: 'Go',
 };
 

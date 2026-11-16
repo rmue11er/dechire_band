@@ -586,3 +586,108 @@ export interface Release {
   taskTotal?: number;
   taskDone?: number;
 }
+
+/* --------------------------------------------------------------- booking */
+
+export type BookingKind = 'festival' | 'venue' | 'promoter' | 'label' | 'agency' | 'radio' | 'press' | 'other';
+
+export type BookingStatus =
+  | 'new'
+  | 'researched'
+  | 'ready'
+  | 'sent'
+  | 'followup'
+  | 'replied'
+  | 'booked'
+  | 'declined';
+
+export type BookingOutreachStatus = 'queued' | 'sent' | 'failed';
+
+export interface BookingContact {
+  id: number;
+  name: string;
+  kind: BookingKind;
+  city: string;
+  region: string;
+  country: string;
+  email: string;
+  contactName: string;
+  website: string;
+  instagram: string;
+  sourceUrl: string;
+  fitNote: string;
+  tags: string[];
+  status: BookingStatus;
+  /** 1 = top target, 2 = normal, 3 = later / too big */
+  priority: number;
+  capacity: number | null;
+  /** Application window or booking lead time, free text. */
+  deadline: string;
+  /** Rough distance from home, used for sorting. */
+  distanceKm: number | null;
+  lastContactAt: string | null;
+  nextFollowUp: string | null;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+  /** filled by listBookingContacts() */
+  sentCount?: number;
+}
+
+export interface BookingOutreach {
+  id: number;
+  contactId: number;
+  contactName?: string;
+  language: string;
+  subject: string;
+  body: string;
+  status: BookingOutreachStatus;
+  error: string;
+  sentAt: string | null;
+  createdAt: string;
+}
+
+export interface BookingStep {
+  key: string;
+  done: boolean;
+  doneAt: string | null;
+}
+
+export interface BookingTemplate {
+  id: number;
+  key: string;
+  name: string;
+  language: string;
+  kind: string;
+  subject: string;
+  body: string;
+  updatedAt: string;
+}
+
+/** Everything the templates need that is not part of a single contact. */
+export interface BookingProfile {
+  homebase: string;
+  genre: string;
+  listenUrl: string;
+  liveUrl: string;
+  pressUrl: string;
+  sender: string;
+}
+
+export interface MailConnection {  host: string;
+  port: number;
+  secure: boolean;
+  username: string;
+  fromName: string;
+  fromEmail: string;
+  replyTo: string;
+  dailyLimit: number;
+  lastTestAt: string | null;
+  lastTestOk: boolean;
+  lastTestError: string;
+  updatedAt: string;
+  /** the password never leaves the server – only whether one is stored */
+  hasPassword: boolean;
+  /** true when the SMTP settings come from environment variables */
+  fromEnv?: boolean;
+}

@@ -48,6 +48,10 @@ export function resetToDemo() {
     DELETE FROM trash;
     DELETE FROM scheduler_log;
     DELETE FROM fonts;
+    DELETE FROM booking_outreach;
+    DELETE FROM booking_contacts;
+    DELETE FROM booking_steps;
+    DELETE FROM booking_templates;
     DELETE FROM profile;
   `);
 

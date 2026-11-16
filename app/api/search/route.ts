@@ -5,7 +5,17 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export type SearchHit = {
-  kind: 'post' | 'media' | 'note' | 'document' | 'milestone' | 'design' | 'snippet' | 'song' | 'video';
+  kind:
+    | 'post'
+    | 'media'
+    | 'note'
+    | 'document'
+    | 'milestone'
+    | 'design'
+    | 'snippet'
+    | 'song'
+    | 'video'
+    | 'booking';
   id: number;
   title: string;
   subtitle: string;
@@ -137,6 +147,20 @@ export async function GET(request: Request) {
       title: row.label,
       subtitle: `Snippet · ${row.kind}`,
       href: '/admin/planner',
+    });
+  }
+
+  for (const row of queryAll<any>(
+    `SELECT id, name, kind, city FROM booking_contacts
+     WHERE name LIKE ? OR city LIKE ? OR contact_name LIKE ? OR email LIKE ? OR fit_note LIKE ? LIMIT 8`,
+    [like, like, like, like, like]
+  )) {
+    hits.push({
+      kind: 'booking',
+      id: Number(row.id),
+      title: row.name,
+      subtitle: `Booking · ${row.kind}${row.city ? ` · ${row.city}` : ''}`,
+      href: `/admin/booking?tab=kontakte&contact=${row.id}`,
     });
   }
 

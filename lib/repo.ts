@@ -3,6 +3,11 @@ import { db, execute, queryAll, queryOne } from './db';
 import { buildTasks } from './release';
 import type {
   BandDocument,
+  BookingContact,
+  BookingOutreach,
+  BookingProfile,
+  BookingStep,
+  BookingTemplate,
   ChecklistItem,
   Design,
   DocFolder,
@@ -12,6 +17,7 @@ import type {
   MediaFolder,
   MediaGroup,
   MediaItem,
+  MailConnection,
   Milestone,
   Note,
   PaletteColor,
@@ -2268,3 +2274,418 @@ export function restorePlaybook(releaseId: number) {
   if (missing.length) insertBuiltTasks(releaseId, missing);
   return missing.length;
 }
+
+/* --------------------------------------------------------------- booking */
+
+function mapBookingContact(row: any): BookingContact {
+  return {
+    id: Number(row.id),
+    name: row.name,
+    kind: row.kind,
+    city: row.city ?? '',
+    region: row.region ?? '',
+    country: row.country ?? 'DE',
+    email: row.email ?? '',
+    contactName: row.contact_name ?? '',
+    website: row.website ?? '',
+    instagram: row.instagram ?? '',
+    sourceUrl: row.source_url ?? '',
+    fitNote: row.fit_note ?? '',
+    tags: parseList(row.tags),
+    status: row.status ?? 'new',
+    priority: Number(row.priority ?? 2),
+    capacity: row.capacity == null ? null : Number(row.capacity),
+    deadline: row.deadline ?? '',
+    distanceKm: row.distance_km == null ? null : Number(row.distance_km),
+    lastContactAt: row.last_contact_at ?? null,
+    nextFollowUp: row.next_follow_up ?? null,
+    notes: row.notes ?? '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    sentCount: row.sent_count == null ? undefined : Number(row.sent_count),
+  };
+}
+
+const CONTACT_SELECT = `
+  SELECT c.*, (SELECT COUNT(*) FROM booking_outreach o WHERE o.contact_id = c.id AND o.status = 'sent') AS sent_count
+  FROM booking_contacts c`;
+
+export function listBookingContacts(): BookingContact[] {
+  return queryAll<any>(
+    `${CONTACT_SELECT} ORDER BY c.priority ASC, c.distance_km IS NULL, c.distance_km ASC, c.name COLLATE NOCASE ASC`
+  ).map(mapBookingContact);
+}
+
+export function getBookingContact(id: number): BookingContact | null {
+  const row = queryOne<any>(`${CONTACT_SELECT} WHERE c.id = ?`, [id]);
+  return row ? mapBookingContact(row) : null;
+}
+
+const CONTACT_COLUMNS: Record<string, string> = {
+  name: 'name',
+  kind: 'kind',
+  city: 'city',
+  region: 'region',
+  country: 'country',
+  email: 'email',
+  contactName: 'contact_name',
+  website: 'website',
+  instagram: 'instagram',
+  sourceUrl: 'source_url',
+  fitNote: 'fit_note',
+  tags: 'tags',
+  status: 'status',
+  priority: 'priority',
+  capacity: 'capacity',
+  deadline: 'deadline',
+  distanceKm: 'distance_km',
+  lastContactAt: 'last_contact_at',
+  nextFollowUp: 'next_follow_up',
+  notes: 'notes',
+};
+
+export function createBookingContact(input: Record<string, any>): BookingContact {
+  const now = new Date().toISOString();
+  const result = execute(
+    `INSERT INTO booking_contacts
+      (name, kind, city, region, country, email, contact_name, website, instagram, source_url,
+       fit_note, tags, status, priority, capacity, deadline, distance_km, next_follow_up, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      String(input.name ?? '').slice(0, 160),
+      String(input.kind ?? 'venue'),
+      String(input.city ?? '').slice(0, 80),
+      String(input.region ?? '').slice(0, 80),
+      String(input.country ?? 'DE').slice(0, 8),
+      String(input.email ?? '').slice(0, 200),
+      String(input.contactName ?? '').slice(0, 120),
+      String(input.website ?? '').slice(0, 400),
+      String(input.instagram ?? '').slice(0, 200),
+      String(input.sourceUrl ?? '').slice(0, 400),
+      String(input.fitNote ?? '').slice(0, 2000),
+      JSON.stringify(Array.isArray(input.tags) ? input.tags.map(String) : []),
+      String(input.status ?? 'new'),
+      Number(input.priority ?? 2),
+      input.capacity == null || input.capacity === '' ? null : Number(input.capacity),
+      String(input.deadline ?? '').slice(0, 160),
+      input.distanceKm == null || input.distanceKm === '' ? null : Number(input.distanceKm),
+      input.nextFollowUp || null,
+      String(input.notes ?? '').slice(0, 8000),
+      now,
+      now,
+    ]
+  );
+  return getBookingContact(Number(result.lastInsertRowid))!;
+}
+
+export function updateBookingContact(id: number, patch: Record<string, any>) {
+  const sets: string[] = [];
+  const params: any[] = [];
+  for (const [key, column] of Object.entries(CONTACT_COLUMNS)) {
+    if (patch[key] === undefined) continue;
+    sets.push(`${column} = ?`);
+    if (key === 'tags') params.push(JSON.stringify(Array.isArray(patch.tags) ? patch.tags.map(String) : []));
+    else if (key === 'priority') params.push(Math.max(1, Math.min(3, Number(patch.priority) || 2)));
+    else if (key === 'capacity' || key === 'distanceKm')
+      params.push(patch[key] == null || patch[key] === '' ? null : Number(patch[key]));
+    else if (key === 'lastContactAt' || key === 'nextFollowUp') params.push(patch[key] || null);
+    else params.push(String(patch[key] ?? ''));
+  }
+  if (!sets.length) return getBookingContact(id);
+  sets.push('updated_at = ?');
+  params.push(new Date().toISOString());
+  params.push(id);
+  execute(`UPDATE booking_contacts SET ${sets.join(', ')} WHERE id = ?`, params);
+  return getBookingContact(id);
+}
+
+export function deleteBookingContact(id: number) {
+  execute('DELETE FROM booking_contacts WHERE id = ?', [id]);
+}
+
+/** Inserts the researched seed contacts that are not in the list yet (by name). */
+export function ensureBookingSeed(seeds: { name: string; kind: string; city: string; region: string; website: string; sourceUrl?: string; tags: string[]; fit: string; deadline?: string; km?: number; priority?: number }[]) {
+  const existing = new Set(
+    queryAll<any>('SELECT name FROM booking_contacts').map((row) => String(row.name).toLowerCase())
+  );
+  const now = new Date().toISOString();
+  const insert = db.prepare(
+    `INSERT INTO booking_contacts
+      (name, kind, city, region, country, website, source_url, fit_note, tags, status, priority, deadline, distance_km, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  let added = 0;
+  for (const seed of seeds) {
+    if (existing.has(seed.name.toLowerCase())) continue;
+    insert.run(
+      seed.name,
+      seed.kind,
+      seed.city,
+      seed.region,
+      seed.region === 'Österreich' ? 'AT' : seed.region === 'Schweiz' ? 'CH' : 'DE',
+      seed.website,
+      seed.sourceUrl ?? seed.website,
+      seed.fit,
+      JSON.stringify(seed.tags),
+      'new',
+      seed.priority ?? 2,
+      seed.deadline ?? '',
+      seed.km ?? null,
+      now,
+      now
+    );
+    added += 1;
+  }
+  return added;
+}
+
+/* templates */
+
+export function listBookingTemplates(): BookingTemplate[] {
+  return queryAll<any>('SELECT * FROM booking_templates ORDER BY id ASC').map((row) => ({
+    id: Number(row.id),
+    key: row.key,
+    name: row.name,
+    language: row.language,
+    kind: row.kind ?? '',
+    subject: row.subject ?? '',
+    body: row.body ?? '',
+    updatedAt: row.updated_at,
+  }));
+}
+
+export function ensureBookingTemplates(seeds: { key: string; name: string; language: string; kind: string; subject: string; body: string }[]) {
+  const existing = new Set(queryAll<any>('SELECT key FROM booking_templates').map((row) => String(row.key)));
+  const now = new Date().toISOString();
+  const insert = db.prepare(
+    'INSERT INTO booking_templates (key, name, language, kind, subject, body, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  );
+  let added = 0;
+  for (const seed of seeds) {
+    if (existing.has(seed.key)) continue;
+    insert.run(seed.key, seed.name, seed.language, seed.kind, seed.subject, seed.body, now);
+    added += 1;
+  }
+  return added;
+}
+
+export function updateBookingTemplate(id: number, patch: { subject?: string; body?: string; name?: string }) {
+  const sets: string[] = [];
+  const params: any[] = [];
+  if (patch.subject !== undefined) {
+    sets.push('subject = ?');
+    params.push(String(patch.subject).slice(0, 300));
+  }
+  if (patch.body !== undefined) {
+    sets.push('body = ?');
+    params.push(String(patch.body).slice(0, 20000));
+  }
+  if (patch.name !== undefined) {
+    sets.push('name = ?');
+    params.push(String(patch.name).slice(0, 160));
+  }
+  if (!sets.length) return;
+  sets.push('updated_at = ?');
+  params.push(new Date().toISOString(), id);
+  execute(`UPDATE booking_templates SET ${sets.join(', ')} WHERE id = ?`, params);
+}
+
+/* guided steps */
+
+export function listBookingSteps(): BookingStep[] {  return queryAll<any>('SELECT key, done, done_at FROM booking_steps').map((row) => ({
+    key: row.key,
+    done: Boolean(row.done),
+    doneAt: row.done_at ?? null,
+  }));
+}
+
+export function setBookingStep(key: string, done: boolean) {
+  execute(
+    `INSERT INTO booking_steps (key, done, done_at) VALUES (?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET done = excluded.done, done_at = excluded.done_at`,
+    [key, done ? 1 : 0, done ? new Date().toISOString() : null]
+  );
+}
+
+/* outreach */
+
+function mapBookingOutreach(row: any): BookingOutreach {
+  return {
+    id: Number(row.id),
+    contactId: Number(row.contact_id),
+    contactName: row.contact_name ?? undefined,
+    language: row.language ?? 'de',
+    subject: row.subject ?? '',
+    body: row.body ?? '',
+    status: row.status ?? 'queued',
+    error: row.error ?? '',
+    sentAt: row.sent_at ?? null,
+    createdAt: row.created_at,
+  };
+}
+
+const OUTREACH_SELECT = `
+  SELECT o.*, c.name AS contact_name FROM booking_outreach o
+  LEFT JOIN booking_contacts c ON c.id = o.contact_id`;
+
+export function listBookingOutreach(limit = 60): BookingOutreach[] {
+  return queryAll<any>(`${OUTREACH_SELECT} ORDER BY o.id DESC LIMIT ?`, [limit]).map(mapBookingOutreach);
+}
+
+export function queueBookingOutreach(
+  rows: { contactId: number; language: string; subject: string; body: string }[]
+) {
+  const now = new Date().toISOString();
+  const insert = db.prepare(
+    "INSERT INTO booking_outreach (contact_id, language, subject, body, status, created_at) VALUES (?, ?, ?, ?, 'queued', ?)"
+  );
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    for (const row of rows) insert.run(row.contactId, row.language, row.subject, row.body, now);
+    db.exec('COMMIT');
+  } catch (error) {
+    try {
+      db.exec('ROLLBACK');
+    } catch {
+      /* nothing to roll back */
+    }
+    throw error;
+  }
+  return rows.length;
+}
+
+export function nextQueuedOutreach(): (BookingOutreach & { email: string; contactName: string }) | null {
+  const row = queryOne<any>(
+    `SELECT o.*, c.name AS contact_name, c.email FROM booking_outreach o
+     JOIN booking_contacts c ON c.id = o.contact_id
+     WHERE o.status = 'queued' ORDER BY o.id ASC LIMIT 1`
+  );
+  if (!row) return null;
+  return { ...mapBookingOutreach(row), email: row.email ?? '', contactName: row.contact_name ?? '' };
+}
+
+export function queuedOutreachCount() {
+  const row = queryOne<any>("SELECT COUNT(*) AS c FROM booking_outreach WHERE status = 'queued'");
+  return Number(row?.c ?? 0);
+}
+
+export function markOutreachSent(id: number) {
+  const now = new Date().toISOString();
+  execute("UPDATE booking_outreach SET status = 'sent', error = '', sent_at = ? WHERE id = ?", [now, id]);
+  execute(
+    `UPDATE booking_contacts SET status = CASE WHEN status IN ('new','researched','ready') THEN 'sent' ELSE status END,
+       last_contact_at = ?, updated_at = ? WHERE id = (SELECT contact_id FROM booking_outreach WHERE id = ?)`,
+    [now, now, id]
+  );
+}
+
+export function markOutreachFailed(id: number, error: string) {
+  execute("UPDATE booking_outreach SET status = 'failed', error = ? WHERE id = ?", [error.slice(0, 500), id]);
+}
+
+/** How many mails already went out today – the queue stops at the daily limit. */
+export function bookingSentToday() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const row = queryOne<any>("SELECT COUNT(*) AS c FROM booking_outreach WHERE status = 'sent' AND sent_at >= ?", [
+    start.toISOString(),
+  ]);
+  return Number(row?.c ?? 0);
+}
+
+/* mail connection */
+
+export function getMailConnection(): (MailConnection & { password: string }) | null {
+  const row = queryOne<any>('SELECT * FROM mail_connection WHERE id = 1');
+  if (!row) return null;
+  return {
+    host: row.host ?? '',
+    port: Number(row.port ?? 465),
+    secure: Boolean(row.secure),
+    username: row.username ?? '',
+    password: row.password ?? '',
+    fromName: row.from_name ?? '',
+    fromEmail: row.from_email ?? '',
+    replyTo: row.reply_to ?? '',
+    dailyLimit: Number(row.daily_limit ?? 40),
+    lastTestAt: row.last_test_at ?? null,
+    lastTestOk: Boolean(row.last_test_ok),
+    lastTestError: row.last_test_error ?? '',
+    updatedAt: row.updated_at,
+    hasPassword: Boolean(row.password),
+  };
+}
+
+export function saveMailConnection(patch: Record<string, any>) {
+  const now = new Date().toISOString();
+  const current = getMailConnection();
+  const next = {
+    host: String(patch.host ?? current?.host ?? '').slice(0, 200),
+    port: Number(patch.port ?? current?.port ?? 465) || 465,
+    secure: (patch.secure ?? current?.secure ?? true) ? 1 : 0,
+    username: String(patch.username ?? current?.username ?? '').slice(0, 200),
+    /* an empty password field keeps the stored one – it is never sent to the browser */
+    password: patch.password === undefined || patch.password === null || patch.password === ''
+      ? current?.password ?? ''
+      : String(patch.password).slice(0, 400),
+    fromName: String(patch.fromName ?? current?.fromName ?? '').slice(0, 160),
+    fromEmail: String(patch.fromEmail ?? current?.fromEmail ?? '').slice(0, 200),
+    replyTo: String(patch.replyTo ?? current?.replyTo ?? '').slice(0, 200),
+    dailyLimit: Math.max(1, Math.min(200, Number(patch.dailyLimit ?? current?.dailyLimit ?? 40) || 40)),
+  };
+  execute(
+    `INSERT INTO mail_connection (id, host, port, secure, username, password, from_name, from_email, reply_to, daily_limit, updated_at)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET host = excluded.host, port = excluded.port, secure = excluded.secure,
+       username = excluded.username, password = excluded.password, from_name = excluded.from_name,
+       from_email = excluded.from_email, reply_to = excluded.reply_to, daily_limit = excluded.daily_limit,
+       updated_at = excluded.updated_at`,
+    [next.host, next.port, next.secure, next.username, next.password, next.fromName, next.fromEmail, next.replyTo, next.dailyLimit, now]
+  );
+  return getMailConnection();
+}
+
+export function saveMailTest(ok: boolean, error: string) {
+  execute('UPDATE mail_connection SET last_test_at = ?, last_test_ok = ?, last_test_error = ? WHERE id = 1', [
+    new Date().toISOString(),
+    ok ? 1 : 0,
+    error.slice(0, 500),
+  ]);
+}
+
+/* booking profile – what the templates say about the band */
+
+export function getBookingProfile(): BookingProfile {
+  const row = queryOne<any>('SELECT * FROM booking_profile WHERE id = 1');
+  return {
+    homebase: row?.homebase ?? 'Augsburg',
+    genre: row?.genre ?? 'emotional post-hardcore',
+    listenUrl: row?.listen_url ?? '',
+    liveUrl: row?.live_url ?? '',
+    pressUrl: row?.press_url ?? '',
+    sender: row?.sender ?? '',
+  };
+}
+
+export function saveBookingProfile(patch: Partial<BookingProfile>) {
+  const current = getBookingProfile();
+  const next = { ...current, ...patch };
+  execute(
+    `INSERT INTO booking_profile (id, homebase, genre, listen_url, live_url, press_url, sender, updated_at)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET homebase = excluded.homebase, genre = excluded.genre,
+       listen_url = excluded.listen_url, live_url = excluded.live_url, press_url = excluded.press_url,
+       sender = excluded.sender, updated_at = excluded.updated_at`,
+    [
+      String(next.homebase ?? '').slice(0, 80),
+      String(next.genre ?? '').slice(0, 120),
+      String(next.listenUrl ?? '').slice(0, 300),
+      String(next.liveUrl ?? '').slice(0, 300),
+      String(next.pressUrl ?? '').slice(0, 300),
+      String(next.sender ?? '').slice(0, 120),
+      new Date().toISOString(),
+    ]
+  );
+  return getBookingProfile();
+}
+
