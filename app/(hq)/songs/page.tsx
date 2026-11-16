@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  IconChevronRight,
   IconDocument,
   IconFilm,
   IconImage,
@@ -16,17 +15,11 @@ import {
 } from '@/components/icons';
 import { EmptyState, Field, Modal, PageHead, Spinner } from '@/components/ui';
 import { timeAgo } from '@/lib/format';
-import {
-  SONG_STATUS,
-  formatSongDuration,
-  formatSongTotal,
-  songStageIndex,
-  songStatusLabel,
-} from '@/lib/songs';
+import { SONG_STATUS, formatSongDuration, formatSongTotal, songStatusLabel } from '@/lib/songs';
 import { toast } from '@/lib/toast';
 import type { Song, SongStatus } from '@/lib/types';
 
-type SortKey = 'updated' | 'title' | 'stage';
+type SortKey = 'updated' | 'title' | 'status';
 type StatusFilter = 'all' | SongStatus;
 
 const EMPTY = {
@@ -66,6 +59,9 @@ const KEY_SUGGESTIONS = [
   'B minor',
 ];
 
+const statusIndex = (status: SongStatus) =>
+  Math.max(0, SONG_STATUS.findIndex((entry) => entry.value === status));
+
 /** Accepts "3:35" as well as raw seconds – the hint explains nothing, this just works. */
 function parseSongDuration(value: string) {
   const text = value.trim();
@@ -91,27 +87,29 @@ export default function SongsPage() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sort, setSort] = useState<SortKey>('updated');
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [statusSaving, setStatusSaving] = useState(false);
-  const sheetRef = useRef<HTMLElement | null>(null);
-
-  const load = async () => {
-    const response = await fetch('/api/songs');
-    const data = await response.json();
-    const items: Song[] = data.songs ?? [];
-    setSongs(items);
-    // Deep link from media, docs, videos or the command palette: /songs?song=3
-    const wanted = Number(new URLSearchParams(window.location.search).get('song') ?? '');
-    setSelectedId(items.some((song) => song.id === wanted) ? wanted : items[0]?.id ?? null);
-    setLoading(false);
-  };
+  const [highlightId, setHighlightId] = useState<number | null>(null);
 
   useEffect(() => {
-    load().catch(() => {
-      toast('Could not load the songs', 'error');
-      setLoading(false);
-    });
+    fetch('/api/songs')
+      .then((response) => response.json())
+      .then((data) => {
+        const items: Song[] = data.songs ?? [];
+        setSongs(items);
+        setLoading(false);
+        const wanted = Number(new URLSearchParams(window.location.search).get('song') ?? '');
+        if (items.some((song) => song.id === wanted)) setHighlightId(wanted);
+      })
+      .catch(() => {
+        toast('Could not load the songs', 'error');
+        setLoading(false);
+      });
   }, []);
+
+  useEffect(() => {
+    if (highlightId == null || loading) return;
+    const node = document.getElementById(`song-${highlightId}`);
+    node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [highlightId, loading]);
 
   const totals = useMemo(
     () => ({
@@ -123,7 +121,6 @@ export default function SongsPage() {
     [songs]
   );
 
-  /** Catalogue number stays stable when the list is filtered. */
   const catalogs = useMemo(
     () => new Map(songs.map((song, index) => [song.id, index + 1])),
     [songs]
@@ -148,75 +145,13 @@ export default function SongsPage() {
         .includes(needle);
     });
     if (sort === 'title') return [...items].sort((a, b) => a.title.localeCompare(b.title));
-    if (sort === 'stage') {
+    if (sort === 'status') {
       return [...items].sort(
-        (a, b) => songStageIndex(b.status) - songStageIndex(a.status) || a.title.localeCompare(b.title)
+        (a, b) => statusIndex(b.status) - statusIndex(a.status) || a.title.localeCompare(b.title)
       );
     }
-    // Server order is already newest-first; keep it stable while a song is edited.
     return items;
   }, [songs, query, statusFilter, sort]);
-
-  // Keep a valid selection when filters change.
-  useEffect(() => {
-    if (!filtered.length) {
-      setSelectedId(null);
-      return;
-    }
-    setSelectedId((current) =>
-      current != null && filtered.some((song) => song.id === current) ? current : filtered[0].id
-    );
-  }, [filtered]);
-
-  // Keep the deep link in sync without a navigation.
-  useEffect(() => {
-    if (selectedId == null) return;
-    const url = new URL(window.location.href);
-    if (url.searchParams.get('song') === String(selectedId)) return;
-    url.searchParams.set('song', String(selectedId));
-    window.history.replaceState(null, '', url);
-  }, [selectedId]);
-
-  const activeSong = songs.find((song) => song.id === selectedId) ?? null;
-  const activeStage = activeSong ? songStageIndex(activeSong.status) : 0;
-  const nextStage = SONG_STATUS[activeStage + 1];
-  const activeNumber = activeSong ? catalogs.get(activeSong.id) ?? 0 : 0;
-
-  const selectSong = (id: number) => {
-    setSelectedId(id);
-    if (window.matchMedia('(max-width: 980px)').matches) {
-      window.requestAnimationFrame(() =>
-        sheetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      );
-    }
-  };
-
-  const changeStatus = async (song: Song, status: SongStatus) => {
-    if (song.status === status || statusSaving) return;
-    const snapshot = songs;
-    setStatusSaving(true);
-    setSongs((current) =>
-      current.map((entry) => (entry.id === song.id ? { ...entry, status } : entry))
-    );
-    try {
-      const response = await fetch(`/api/songs/${song.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? 'Could not move the song');
-      setSongs((current) =>
-        current.map((entry) => (entry.id === data.song.id ? data.song : entry))
-      );
-      toast(`“${song.title}” is now ${songStatusLabel(status).toLowerCase()}`);
-    } catch (error: any) {
-      setSongs(snapshot);
-      toast(error.message ?? 'Could not move the song', 'error');
-    } finally {
-      setStatusSaving(false);
-    }
-  };
 
   const openCreate = () => {
     setEditing(null);
@@ -271,7 +206,7 @@ export default function SongsPage() {
       if (!editing) {
         setQuery('');
         setStatusFilter('all');
-        setSelectedId(data.song.id);
+        setHighlightId(data.song.id);
       }
       setCreating(false);
       setEditing(null);
@@ -294,27 +229,25 @@ export default function SongsPage() {
     try {
       const response = await fetch(`/api/songs/${song.id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Could not delete the song');
-      const remaining = filtered.filter((entry) => entry.id !== song.id);
       setSongs((current) => current.filter((entry) => entry.id !== song.id));
-      if (selectedId === song.id) setSelectedId(remaining[0]?.id ?? null);
       toast('Song deleted');
     } catch (error: any) {
       toast(error.message ?? 'Could not delete the song', 'error');
     }
   };
 
-  if (loading) return <Spinner label="Tuning the song index" />;
+  if (loading) return <Spinner label="Reading the song archive" />;
 
   return (
     <div className="songs-page">
       <PageHead
-        eyebrow="Song desk"
+        eyebrow="Song archive"
         title={
           <>
-            Songs<span className="slash">/</span>Index
+            Songs<span className="slash">/</span>Overview
           </>
         }
-        sub="One place per song. Link media, documents and music videos here, then open the song when you want to keep working on it."
+        sub="The collection at a glance: what exists, what state it is in, and where the files live. Open a song only when you need to change its details."
         actions={
           <button type="button" className="btn btn-primary" onClick={openCreate}>
             <IconPlus size={15} /> New song
@@ -326,7 +259,7 @@ export default function SongsPage() {
         <EmptyState
           icon={<IconMusic size={24} />}
           title="No songs yet"
-          hint="Add the songs you are working on. Every media file, document and music video can then point to one song."
+          hint="Add your first song. Media, lyrics and music videos can then point to it."
           action={
             <button type="button" className="btn btn-primary btn-sm" onClick={openCreate}>
               <IconPlus size={14} /> Add the first song
@@ -334,102 +267,160 @@ export default function SongsPage() {
           }
         />
       ) : (
-        <div className="song-desk">
-          <aside className="song-rail panel">
-            <div className="song-rail-head">
-              <span className="panel-title">Index</span>
-              <em>
-                {filtered.length} / {songs.length}
-              </em>
+        <>
+          <div className="song-stats">
+            <div className="song-stat">
+              <span>Songs</span>
+              <b>{songs.length}</b>
             </div>
+            <div className="song-stat">
+              <span>Runtime</span>
+              <b>{formatSongTotal(totals.runtime)}</b>
+            </div>
+            <div className="song-stat">
+              <span>Media</span>
+              <b>{totals.media}</b>
+            </div>
+            <div className="song-stat">
+              <span>Documents</span>
+              <b>{totals.docs}</b>
+            </div>
+            <div className="song-stat">
+              <span>Video</span>
+              <b>{totals.videos}</b>
+            </div>
+          </div>
 
-            <div className="song-filters">
-              <label className="song-search">
-                <IconSearch size={13} />
-                <input
-                  className="input"
-                  value={query}
-                  placeholder="Search title, key, notes"
-                  aria-label="Search songs"
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-              </label>
-              <div className="song-status-tabs" role="tablist" aria-label="Filter by status">
+          <div className="song-toolbar panel">
+            <label className="song-search">
+              <IconSearch size={13} />
+              <input
+                className="input"
+                value={query}
+                placeholder="Search title, key or notes"
+                aria-label="Search songs"
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </label>
+            <div className="song-status-tabs" role="tablist" aria-label="Filter by status">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={statusFilter === 'all'}
+                className={`song-status-tab ${statusFilter === 'all' ? 'on' : ''}`}
+                onClick={() => setStatusFilter('all')}
+              >
+                All <em>{songs.length}</em>
+              </button>
+              {SONG_STATUS.map((entry) => (
                 <button
+                  key={entry.value}
                   type="button"
                   role="tab"
-                  aria-selected={statusFilter === 'all'}
-                  className={`song-status-tab ${statusFilter === 'all' ? 'on' : ''}`}
-                  onClick={() => setStatusFilter('all')}
+                  aria-selected={statusFilter === entry.value}
+                  className={`song-status-tab ${statusFilter === entry.value ? 'on' : ''}`}
+                  onClick={() => setStatusFilter(entry.value)}
                 >
-                  All <em>{songs.length}</em>
+                  {entry.label} <em>{statusCounts[entry.value] ?? 0}</em>
                 </button>
-                {SONG_STATUS.map((entry) => (
-                  <button
-                    key={entry.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={statusFilter === entry.value}
-                    className={`song-status-tab ${statusFilter === entry.value ? 'on' : ''}`}
-                    onClick={() => setStatusFilter(entry.value)}
-                  >
-                    {entry.label} <em>{statusCounts[entry.value] ?? 0}</em>
-                  </button>
-                ))}
-              </div>
+              ))}
+            </div>
+            <select
+              className="song-sort"
+              aria-label="Sort songs"
+              value={sort}
+              onChange={(event) => setSort(event.target.value as SortKey)}
+            >
+              <option value="updated">Recent</option>
+              <option value="title">A–Z</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
+
+          <div className="song-overview panel">
+            <div className="song-table-head">
+              <span>No.</span>
+              <span>Song</span>
+              <span>Status</span>
+              <span>Key / tempo / length</span>
+              <span>Linked</span>
+              <span>Updated</span>
+              <span />
             </div>
 
-            <div className="song-list-bar">
-              <span className="song-list-count">
-                {filtered.length === songs.length ? 'All songs' : `${filtered.length} shown`}
-              </span>
-              <select
-                className="song-sort"
-                aria-label="Sort songs"
-                value={sort}
-                onChange={(event) => setSort(event.target.value as SortKey)}
-              >
-                <option value="updated">Recent</option>
-                <option value="title">A–Z</option>
-                <option value="stage">Stage</option>
-              </select>
-            </div>
+            <div className="song-table">
+              {filtered.map((song) => (
+                <article
+                  key={song.id}
+                  id={`song-${song.id}`}
+                  className={`song-table-row ${highlightId === song.id ? 'highlight' : ''}`}
+                >
+                  <span className="song-table-no">
+                    {String(catalogs.get(song.id) ?? 0).padStart(2, '0')}
+                  </span>
 
-            <div className="song-list">
-              {filtered.map((song) => {
-                const linked = song.mediaCount + song.docCount + song.videoCount;
-                return (
-                  <button
-                    key={song.id}
-                    type="button"
-                    className={`song-row ${activeSong?.id === song.id ? 'active' : ''}`}
-                    aria-current={activeSong?.id === song.id ? 'true' : undefined}
-                    onClick={() => selectSong(song.id)}
-                  >
-                    <span className="song-row-index">
-                      {String(catalogs.get(song.id) ?? 0).padStart(2, '0')}
-                    </span>
-                    <span className="song-row-body">
-                      <span className="song-row-title">{song.title}</span>
-                      <span className="song-row-meta">
-                        {song.songKey ? <span>{song.songKey}</span> : null}
-                        {song.bpm ? <span>{song.bpm} BPM</span> : null}
-                        {song.duration ? <span>{formatSongDuration(song.duration)}</span> : null}
-                        <span>{linked ? `${linked} linked` : 'nothing linked'}</span>
-                      </span>
-                    </span>
-                    <span className={`song-row-state ${song.status}`}>
-                      <span className="song-dot" />
-                      {songStatusLabel(song.status)}
-                    </span>
-                  </button>
-                );
-              })}
+                  <div className="song-table-main">
+                    <strong>{song.title}</strong>
+                    <span className="song-table-notes">{song.notes.trim() || 'No notes yet'}</span>
+                  </div>
+
+                  <span className={`song-pill ${song.status}`}>
+                    <i />
+                    {songStatusLabel(song.status)}
+                  </span>
+
+                  <div className="song-table-facts">
+                    <span>{song.songKey || '—'}</span>
+                    <span>{song.bpm ? `${song.bpm} BPM` : '—'}</span>
+                    <span>{song.duration ? formatSongDuration(song.duration) : '—'}</span>
+                  </div>
+
+                  <div className="song-table-links">
+                    <Link href={`/media?song=${song.id}`} title="Media for this song">
+                      <IconImage size={12} />
+                      <em>{song.mediaCount}</em>
+                    </Link>
+                    <Link href={`/docs?song=${song.id}`} title="Documents for this song">
+                      <IconDocument size={12} />
+                      <em>{song.docCount}</em>
+                    </Link>
+                    <Link href={`/videos?song=${song.id}`} title="Video projects for this song">
+                      <IconFilm size={12} />
+                      <em>{song.videoCount}</em>
+                    </Link>
+                  </div>
+
+                  <span className="song-table-updated">{timeAgo(song.updatedAt)}</span>
+
+                  <div className="song-table-actions">
+                    <button
+                      type="button"
+                      className="btn btn-icon"
+                      title="Edit song"
+                      aria-label={`Edit ${song.title}`}
+                      onClick={() => openEdit(song)}
+                    >
+                      <IconPencil size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-icon"
+                      title="Delete song"
+                      aria-label={`Delete ${song.title}`}
+                      onClick={() => remove(song)}
+                    >
+                      <IconTrash size={13} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+
               {!filtered.length ? (
-                <p className="song-list-empty">
-                  Nothing matches.
+                <div className="song-table-empty">
+                  <p>No song matches this search.</p>
                   <button
                     type="button"
+                    className="btn btn-sm btn-ghost"
                     onClick={() => {
                       setQuery('');
                       setStatusFilter('all');
@@ -437,203 +428,11 @@ export default function SongsPage() {
                   >
                     Clear filters
                   </button>
-                </p>
+                </div>
               ) : null}
             </div>
-
-            <div className="song-rail-foot">
-              <span>
-                <em>{formatSongTotal(totals.runtime)}</em> runtime
-              </span>
-              <span>
-                <em>{totals.media + totals.docs + totals.videos}</em> linked
-              </span>
-            </div>
-          </aside>
-
-          <section ref={sheetRef} className="song-sheet panel">
-            {activeSong ? (
-              <>
-                <header className="song-sheet-head">
-                  <div className="song-sheet-top">
-                    <span className="song-sheet-no">
-                      No. {String(activeNumber).padStart(2, '0')}
-                    </span>
-                    <div className="song-sheet-actions">
-                      <button
-                        type="button"
-                        className="btn btn-sm"
-                        onClick={() => openEdit(activeSong)}
-                      >
-                        <IconPencil size={12} /> Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-icon"
-                        title="Delete song"
-                        aria-label={`Delete ${activeSong.title}`}
-                        onClick={() => remove(activeSong)}
-                      >
-                        <IconTrash size={13} />
-                      </button>
-                    </div>
-                  </div>
-                  <h2>{activeSong.title}</h2>
-                  <p className="song-sheet-lede">{SONG_STATUS[activeStage]?.hint}</p>
-                </header>
-
-                <div className="song-stage" role="group" aria-label="Production stage">
-                  {SONG_STATUS.map((entry, index) => (
-                    <button
-                      key={entry.value}
-                      type="button"
-                      className={`song-stage-step ${index < activeStage ? 'past' : ''} ${
-                        index === activeStage ? 'now' : ''
-                      }`}
-                      aria-pressed={index === activeStage}
-                      title={entry.hint}
-                      disabled={statusSaving}
-                      onClick={() => changeStatus(activeSong, entry.value)}
-                    >
-                      <span className="num">{String(index + 1).padStart(2, '0')}</span>
-                      <span>{entry.label}</span>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="song-facts">
-                  <div className="song-fact">
-                    <span>Key</span>
-                    <b>{activeSong.songKey || '—'}</b>
-                  </div>
-                  <div className="song-fact">
-                    <span>Tempo</span>
-                    <b>{activeSong.bpm ? `${activeSong.bpm} BPM` : '—'}</b>
-                  </div>
-                  <div className="song-fact">
-                    <span>Length</span>
-                    <b>{formatSongDuration(activeSong.duration) || '—'}</b>
-                  </div>
-                  <div className="song-fact">
-                    <span>Updated</span>
-                    <b className="song-fact-time">{timeAgo(activeSong.updatedAt)}</b>
-                  </div>
-                </div>
-
-                <div className="song-sheet-body">
-                  <div className="song-notes">
-                    <span className="song-label">Notes</span>
-                    {activeSong.notes ? (
-                      <p>{activeSong.notes}</p>
-                    ) : (
-                      <p className="song-notes-empty">
-                        Nothing noted yet — arrangement, references, who still owes what.{' '}
-                        <button type="button" onClick={() => openEdit(activeSong)}>
-                          Add notes
-                        </button>
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="song-rooms">
-                    <span className="song-label">Rooms</span>
-                    <Link
-                      href={`/media?song=${activeSong.id}`}
-                      className={`song-room ${activeSong.mediaCount ? '' : 'zero'}`}
-                    >
-                      <span className="song-room-icon">
-                        <IconImage size={14} />
-                      </span>
-                      <span className="song-room-text">
-                        <b>Media</b>
-                        <em>demos, artwork, photos</em>
-                      </span>
-                      <span className="song-room-count">{activeSong.mediaCount}</span>
-                      <IconChevronRight size={14} className="song-room-go" />
-                    </Link>
-                    <Link
-                      href={`/docs?song=${activeSong.id}`}
-                      className={`song-room ${activeSong.docCount ? '' : 'zero'}`}
-                    >
-                      <span className="song-room-icon">
-                        <IconDocument size={14} />
-                      </span>
-                      <span className="song-room-text">
-                        <b>Documents</b>
-                        <em>lyrics, notes, paperwork</em>
-                      </span>
-                      <span className="song-room-count">{activeSong.docCount}</span>
-                      <IconChevronRight size={14} className="song-room-go" />
-                    </Link>
-                    <Link
-                      href={`/videos?song=${activeSong.id}`}
-                      className={`song-room ${activeSong.videoCount ? '' : 'zero'}`}
-                    >
-                      <span className="song-room-icon">
-                        <IconFilm size={14} />
-                      </span>
-                      <span className="song-room-text">
-                        <b>Video</b>
-                        <em>music video projects</em>
-                      </span>
-                      <span className="song-room-count">{activeSong.videoCount}</span>
-                      <IconChevronRight size={14} className="song-room-go" />
-                    </Link>
-                  </div>
-                </div>
-
-                <footer className="song-sheet-foot">
-                  <div className="song-next">
-                    <span className="song-label">Next step</span>
-                    {nextStage ? (
-                      <>
-                        <b>{nextStage.label}</b>
-                        <p>{nextStage.hint}</p>
-                      </>
-                    ) : (
-                      <>
-                        <b>Out in the world</b>
-                        <p>Released — keep the thread alive with live shots, videos and press.</p>
-                      </>
-                    )}
-                  </div>
-                  {nextStage ? (
-                    <button
-                      type="button"
-                      className="btn btn-sm"
-                      disabled={statusSaving}
-                      onClick={() => changeStatus(activeSong, nextStage.value)}
-                    >
-                      Move to {nextStage.label} <IconChevronRight size={12} />
-                    </button>
-                  ) : null}
-                </footer>
-              </>
-            ) : (
-              <div className="song-sheet-empty">
-                <IconMusic size={22} />
-                <h3>{songs.length ? 'No song matches' : 'No song selected'}</h3>
-                <p>
-                  {songs.length
-                    ? 'Loosen the search or the status filter.'
-                    : 'Pick a song from the index.'}
-                </p>
-                {songs.length ? (
-                  <button
-                    type="button"
-                    className="btn btn-sm"
-                    onClick={() => {
-                      setQuery('');
-                      setStatusFilter('all');
-                    }}
-                  >
-                    Clear filters
-                  </button>
-                ) : null}
-              </div>
-            )}
-          </section>
-        </div>
+          </div>
+        </>
       )}
 
       <Modal
@@ -643,7 +442,7 @@ export default function SongsPage() {
           setEditing(null);
         }}
         title={editing ? 'Edit song' : 'New song'}
-        subtitle="The song is the thread: media, lyrics and paperwork can all point here."
+        subtitle="Only the basics – media, lyrics and paperwork stay in their own modules."
         footer={
           <>
             <button
@@ -680,9 +479,7 @@ export default function SongsPage() {
               <select
                 className="select"
                 value={form.status}
-                onChange={(event) =>
-                  setForm({ ...form, status: event.target.value as SongStatus })
-                }
+                onChange={(event) => setForm({ ...form, status: event.target.value as SongStatus })}
               >
                 {SONG_STATUS.map((entry) => (
                   <option key={entry.value} value={entry.value}>

@@ -201,6 +201,90 @@ body::after {
   background: linear-gradient(90deg, var(--line), transparent);
 }
 
+/* collapsible navigation groups ---------------------------------------- */
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nav-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 6px 0 2px;
+  padding: 7px 8px 6px;
+  border: 0;
+  border-radius: 2px;
+  background: none;
+  color: var(--muted-2);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.16s var(--ease), background 0.16s var(--ease);
+}
+
+.nav-group-head:hover {
+  color: var(--paper);
+  background: rgb(255 255 255 / 0.03);
+}
+
+.nav-group-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.nav-group-label i {
+  font-style: normal;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  font-size: 8px;
+  opacity: 0.85;
+}
+
+.nav-group-count {
+  min-width: 17px;
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--muted-2);
+}
+
+.nav-group-caret {
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: transform 0.18s var(--ease);
+}
+
+.nav-group.collapsed .nav-group-caret {
+  transform: rotate(-90deg);
+}
+
+.nav-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nav-group.collapsed .nav-group-items {
+  display: none;
+}
+
+.nav-dashboard {
+  margin-top: 6px;
+}
+
 .nav-item {
   gap: 10px;
   padding: 8px 9px;
@@ -388,8 +472,8 @@ body::after {
 
 .main {
   grid-column: 2;
-  max-width: 1560px;
-  padding: 26px clamp(20px, 3vw, 44px) 96px;
+  max-width: min(2800px, 100%);
+  padding: 26px clamp(20px, 2.4vw, 64px) 96px;
 }
 
 /* ------------------------------------------------------------ page head */
@@ -829,6 +913,25 @@ body::after {
     flex-direction: row;
     gap: 2px;
     padding: 0;
+  }
+
+  .nav-group {
+    display: contents;
+  }
+
+  .nav-group-head {
+    display: none;
+  }
+
+  .nav-group.collapsed .nav-group-items,
+  .nav-group-items {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+  }
+
+  .nav-dashboard {
+    margin-top: 0;
   }
 
   .nav-item {

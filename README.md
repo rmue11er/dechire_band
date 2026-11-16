@@ -60,10 +60,11 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
 - **Display voice**: page titles in the serif voice (Redaction), lowercase and roomy; micro labels in
   Instrument Sans or DM Mono with wide tracking and a `///` accent tick. Dashboard figures use the same face, so
   numbers read like a poster, not a BI tool.
-- **Shell**: a 246 px sidebar with numbered entries (`01 … 11`), grouped by `/// STUDIO` / `/// SETUP`, a quick-jump
-  field that forwards `⌘K` to the command palette, and a slim sticky **context bar** on every page
-  (`déchire /// MEDIA` · date · `⌘K`). Content is capped at 1560 px and centred; a 2 px accent strip sits at the
-  very top of the app.
+- **Shell**: a 246 px sidebar with numbered entries (`01 … 14`) in collapsible groups — **Plan**, **Music**,
+  **Design**, **Library**, **Setup** — plus a standalone dashboard, a quick-jump field that forwards `⌘K` to
+  the command palette, and a slim sticky **context bar** on every page (`déchire /// MEDIA` · date · `⌘K`).
+  The current group opens automatically and the open/closed choice is remembered. Content grows up to 2800 px,
+  so ultrawide screens are actually used; a 2 px accent strip sits at the very top of the app.
 - **Components**: buttons, inputs, panels, badges, tables, empty states, modals and toasts share one language –
   2–3 px radii, 1 px hairlines, accent focus ring, a crop-mark corner on panels, mono uppercase labels.
 - Below 1080 px the sidebar becomes a horizontal icon bar with the accent underline on the active entry, and the
@@ -151,12 +152,14 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   **draft post** with one click (PNG → media → draft). Plus *3 sizes* as a ZIP for feed and story in one go.
 
 ### 3. Media library (`/media`)
-- **Folders** (`media_folders`, nestable): a rail on the left holds *All files*, *Unfiled* and the folder tree with
-  rolled-up counts. Create, rename and delete folders; deleting one moves its files and subfolders one level up.
+- **Folders** (`media_folders`, nestable) work like a file manager: `/media` opens the folder home with
+  top-level folders and unfiled files, double-click a folder (or click the rail) to enter a level, use the
+  breadcrumb / up button to go back, and create a subfolder right in the current level. The rail additionally
+  offers *All files* (flat view) and *Unfiled*; deleting a folder moves its files and subfolders one level up.
   A folder cannot be moved into itself.
-- **Drag & drop** an asset onto a folder (rail row or folder card) to move it; dropping onto *All files* files it
-  back to *Unfiled*. Uploads land in the folder you have open. Any file can also be re-filed from its detail dialog
-  (`Folder` select, indented tree).
+- **Drag & drop** an asset onto a folder (rail row or folder card) to move it; dropping onto *Media* files it
+  back to the top level. Uploads land in the folder you have open. Any file can also be re-filed from its detail
+  dialog (`Folder` select, indented tree).
 - Upload via button or **drag & drop** onto the window, images and videos.
 - **Asset groups = versions**: a logo exists as “White/transparent”, “Smoke”, “Sticker 1080×1080”,
   “Social avatar” and so on. Every version downloads on its own (`?download=1`) or via “download version” in the group dialog.
@@ -442,8 +445,10 @@ press text rendered as printable HTML pages in the CI accent. Everything is gene
 the media library and the document module, so the kit is never out of date.
 
 ### 13. Songs (`/songs`)
-- Every song has a title, status (Idea, Demo, Recording, Mix, Master, Released), key, BPM, length and notes.
-  The card shows how many media files, documents and music videos point at it and links straight to the
+- A single **overview table** instead of a heavy detail desk: catalogue number, title + note preview, status,
+  key / tempo / length, linked media / documents / videos and last update. Search, status chips and sorting stay
+  on top; the edit dialog holds title, status, key, BPM, length and notes.
+- Every song shows how many media files, documents and music videos point at it and links straight to the
   filtered lists: `/media?song=id`, `/docs?song=id` and `/videos?song=id`.
 - Media files and documents carry `song_id`. Deleting a song only removes the link – assets and documents stay.
 - In the media library and document list there is a **song filter**; the document editor has a `Song` select.
@@ -557,7 +562,7 @@ app/
   (hq)/media/page.tsx      Media library
   (hq)/notes/page.tsx      Notes
   (hq)/docs/page.tsx       Documents (rider, contracts, orga)
-  (hq)/songs/page.tsx      Songs – media/document links and filters
+  (hq)/songs/page.tsx      Songs – collection overview with linked counts
   (hq)/videos/page.tsx     Video Lab – music video projects
   (hq)/videos/[id]/page.tsx Video planner – waveform timeline, shots, treatment import
   (hq)/reels/page.tsx      Reel Lab – clips, beat cuts, text layer, ffmpeg export
