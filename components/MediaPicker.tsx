@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { IconCheck, IconLayers, IconPlus, IconSearch, IconUpload } from '@/components/icons';
 import { MediaThumb } from '@/components/MediaThumb';
+import StockSearch from '@/components/studio/StockSearch';
 import StockVideoSearch from '@/components/studio/StockVideoSearch';
 import { Modal, Segmented } from '@/components/ui';
 import { toast } from '@/lib/toast';
@@ -40,7 +41,7 @@ export default function MediaPicker({
   const [selection, setSelection] = useState<number[]>(selectedIds);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
-  const [source, setSource] = useState<'library' | 'stock'>('library');
+  const [source, setSource] = useState<'library' | 'photos' | 'videos'>('library');
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -55,7 +56,9 @@ export default function MediaPicker({
   }, [open]);
 
   const only = kind ?? (audioOnly ? 'audio' : imagesOnly ? 'image' : null);
-  const stockEnabled = visualOnly || only === 'video';
+  /* stock tabs follow what the picker is allowed to return */
+  const stockPhotos = !audioOnly && only !== 'video';
+  const stockVideos = !audioOnly && only !== 'image';
 
   const filtered = media.filter((item) => {
     if (visualOnly && (item.mime === 'image/svg+xml' || !(item.mime.startsWith('image/') || item.mime.startsWith('video/')))) {
@@ -112,20 +115,24 @@ export default function MediaPicker({
       open={open}
       onClose={onClose}
       title={
-        source === 'stock'
-          ? 'Stock clips'
-          : only === 'audio'
-            ? 'Select audio'
-            : only === 'video'
-              ? 'Select video'
-              : only === 'image'
-                ? 'Select image'
-                : visualOnly
-                  ? 'Select clips'
-                  : 'Select media'
+        source === 'photos'
+          ? 'Stock photos'
+          : source === 'videos'
+            ? 'Stock clips'
+            : only === 'audio'
+              ? 'Select audio'
+              : only === 'video'
+                ? 'Select video'
+                : only === 'image'
+                  ? 'Select image'
+                  : visualOnly
+                    ? 'Select clips'
+                    : 'Select media'
       }
       subtitle={
-        source === 'stock'
+        source === 'photos'
+          ? 'Free stock photos from five providers – copied into your media library.'
+          : source === 'videos'
           ? 'Free-to-use footage – copied into your media library, then cut in the reel.'
           : only === 'audio'
           ? 'The finished master – plays at the top of the release.'
@@ -164,13 +171,14 @@ export default function MediaPicker({
       }
     >
       <div className="row wrap between" style={{ marginBottom: 14, gap: 10 }}>
-        {stockEnabled ? (
+        {stockPhotos || stockVideos ? (
           <Segmented
             value={source}
-            onChange={(value) => setSource(value)}
+            onChange={(value) => setSource(value as 'library' | 'photos' | 'videos')}
             options={[
               { value: 'library', label: 'Library' },
-              { value: 'stock', label: 'Stock videos' },
+              ...(stockPhotos ? [{ value: 'photos', label: 'Stock photos' }] : []),
+              ...(stockVideos ? [{ value: 'videos', label: 'Stock videos' }] : []),
             ]}
           />
         ) : null}
@@ -223,7 +231,14 @@ export default function MediaPicker({
         ) : null}
       </div>
 
-      {source === 'stock' ? (
+      {source === 'photos' ? (
+        <StockSearch
+          onUse={(item) => {
+            onUploaded?.([item]);
+            setSelection((current) => (multiple ? [...current, item.id] : [item.id]));
+          }}
+        />
+      ) : source === 'videos' ? (
         <StockVideoSearch
           onUse={(item) => {
             onUploaded?.([item]);
