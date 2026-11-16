@@ -1706,3 +1706,46 @@
 .stock-more {
   justify-self: start;
 }
+
+/* ------------------------------------------------ stock providers */
+
+.stock-providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.stock-provider {
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.stock-provider:hover:not(:disabled) {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.stock-provider.is-active {
+  border-color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.1);
+  color: var(--accent);
+}
+
+.stock-provider.is-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.stock-note-warn {
+  border-left: 2px solid var(--warn);
+  padding-left: 8px;
+  color: var(--warn);
+}

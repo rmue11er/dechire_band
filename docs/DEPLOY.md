@@ -356,6 +356,20 @@ Mail leaves through a background queue with a 6 s pause between messages, so a l
 spam filters or a proxy timeout. Before the first wave: **Verbindung testen**. If your provider rejects
 the login, it is usually a missing app password (Gmail) or a wrong port (587 instead of 465).
 
+### Optional: more stock photo providers
+
+The studio's **Stock** tab and the shot references in Video Lab search several free-photo providers.
+Openverse and Wikimedia Commons need no key; the other three unlock with a key in the same place as the
+variables above:
+
+| Variable | Provider | Where to get it |
+| --- | --- | --- |
+| `PEXELS_API_KEY` | Pexels (photos **and** the reel stock clips) | free account → <https://www.pexels.com/api/> |
+| `UNSPLASH_ACCESS_KEY` | Unsplash | <https://unsplash.com/developers> (demo app, 50 req/h) |
+| `PIXABAY_API_KEY` | Pixabay | free account → <https://pixabay.com/api/docs/> |
+
+Without a key the provider simply shows up locked in the picker; nothing breaks.
+
 ---
 
 ## 7. Auto-publish without an open browser tab

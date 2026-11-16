@@ -30,7 +30,14 @@ const EXT: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
-  const body = await readJson<{ url?: string; title?: string; provider?: string; license?: string }>(request);
+  const body = await readJson<{
+    url?: string;
+    title?: string;
+    provider?: string;
+    license?: string;
+    creator?: string;
+    pageUrl?: string;
+  }>(request);
   const raw = String(body.url ?? '').trim();
   if (!raw) return fail('No image URL');
 
@@ -79,6 +86,7 @@ export async function POST(request: Request) {
 
   const provider = String(body.provider ?? 'openverse').slice(0, 40);
   const license = String(body.license ?? 'cc0').slice(0, 20);
+  const creator = String(body.creator ?? '').slice(0, 80);
   const id = createMedia({
     title: String(body.title ?? 'Stock photo').slice(0, 120),
     filename,
@@ -87,8 +95,9 @@ export async function POST(request: Request) {
     size: buffer.length,
     width,
     height,
-    alt: String(body.title ?? '').slice(0, 200),
-    tags: ['stock', license, provider].filter(Boolean),
+    /* attribution lives with the file – CC BY sources need it */
+    alt: [body.title ?? '', creator ? `by ${creator}` : '', provider, license].filter(Boolean).join(' · ').slice(0, 200),
+    tags: ['stock', license, provider, creator ? `by ${creator}` : ''].filter(Boolean),
     groupId: null,
     variantLabel: '',
   });

@@ -132,11 +132,16 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   in `public/fonts`),
   **Instrument Sans** (body, captions, UI) and **DM Mono** (meta, labels, dates). No font carousel: everything in the
   studio, the documents, the reels and the public site uses this set.
-- **Free photos in the studio** (`Stock` tab): search **Openverse** (WordPress/Automattic) filtered to
-  **CC0 / public domain only** – usable commercially, **no credit and no payment**. Clicking a result downloads
-  the file server-side (`/api/stock/import`), stores it in the media library with `stock`, licence and provider
-  tags and drops it onto the canvas. Local copies matter: the canvas export needs same-origin images, and the
-  design keeps working when the provider is offline.
+- **Free photos in the studio** (`Stock` tab, and for shot references in Video Lab): one search across
+  **five providers** – **Openverse** (CC0/public domain), **Wikimedia Commons** (CC0, public domain, plain
+  CC BY – share-alike is filtered out), **Pexels**, **Unsplash** and **Pixabay**. Openverse and Wikimedia work
+  without a key; the other three appear as soon as their key is in the environment (`PEXELS_API_KEY`,
+  `UNSPLASH_ACCESS_KEY`, `PIXABAY_API_KEY`) – unavailable providers are shown locked instead of silently
+  missing. Results are mixed round-robin, so no single provider fills the grid, and every tile shows its
+  source and photographer. Clicking a result downloads the file server-side (`/api/stock/import`), stores it
+  with `stock`, licence, provider and creator tags plus an attribution line in `alt`, and drops it onto the
+  canvas. Local copies matter: the canvas export needs same-origin images, and the design keeps working when
+  the provider is offline.
 - **Free clips in the reel editor** (`Clips wählen → Stock videos`): search **Pexels** when `PEXELS_API_KEY` is
   set (free commercial licence, no credit needed); without a key it falls back to **Wikimedia Commons**, filtered
   to CC0, public domain or plain CC BY and 2–30 s. The chosen clip is downloaded into `data/uploads`
