@@ -77,6 +77,7 @@ export default function VideoDetailPage() {
   const [audioError, setAudioError] = useState(false);
 
   const [shotModal, setShotModal] = useState<{ shot: VideoShot | null; section?: string } | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [projectModal, setProjectModal] = useState(false);
   const [audioPicker, setAudioPicker] = useState(false);
   const [showIdeas, setShowIdeas] = useState(false);
@@ -655,7 +656,7 @@ export default function VideoDetailPage() {
                       <button
                         key={shot.id}
                         type="button"
-                        className="vwizard-shot"
+                        className={`vwizard-shot ${selectedId === shot.id ? 'is-selected' : ''}`}
                         onClick={() => setShotModal({ shot })}
                       >
                         <span className="vwizard-shot-thumb">
@@ -695,13 +696,17 @@ export default function VideoDetailPage() {
                   beats={analysis?.beats ?? []}
                   time={time}
                   shots={shots}
-                  selectedId={null}
+                  selectedId={selectedId}
                   zoom={2}
                   snap
                   onSeek={seekTo}
-                  onSelect={(shot) => setShotModal({ shot })}
+                  /* dragging or clicking only selects – Enter/double-click opens the editor */
+                  onSelect={(shot) => setSelectedId(shot.id)}
                   onTimingChange={updateShotTiming}
-                  onOpenShot={(shot) => setShotModal({ shot })}
+                  onOpenShot={(shot) => {
+                    setSelectedId(shot.id);
+                    setShotModal({ shot });
+                  }}
                   onAddShot={(seconds) => {
                     seekTo(seconds);
                     setShotModal({ shot: null, section: currentSection });

@@ -2023,3 +2023,8 @@
     display: none;
   }
 }
+
+.vwizard-shot.is-selected {
+  background: rgb(var(--accent-rgb) / 0.08);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
