@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  IconChevronDown,
+  IconCheck,
   IconChevronLeft,
+  IconChevronRight,
   IconClock,
   IconDocument,
   IconFilm,
@@ -17,13 +18,12 @@ import {
   IconPencil,
   IconPlay,
   IconPlus,
-  IconSearch,
   IconSparkles,
   IconTrash,
-  IconUpload,
   IconVideo,
   IconX,
 } from '@/components/icons';
+import MediaPicker from '@/components/MediaPicker';
 import { MediaThumb } from '@/components/MediaThumb';
 import { Field, PageHead, Spinner } from '@/components/ui';
 import VideoProjectModal from '@/components/videos/VideoProjectModal';
@@ -45,25 +45,14 @@ import {
 } from '@/lib/videos';
 import type { BandDocument, MediaItem, Song, VideoProject, VideoShot } from '@/lib/types';
 
-const LOOK_SUGGESTIONS = [
-  'kalt',
-  'nass',
-  'leer',
-  'still',
-  'nah',
-  'Gegenlicht',
-  'Handkamera',
-  'Staub',
-  'Nacht',
-  'Grau',
-];
+const LOOK_SUGGESTIONS = ['kalt', 'nass', 'leer', 'still', 'nah', 'Gegenlicht', 'Handkamera', 'Staub', 'Nacht', 'Grau'];
 
-const CHAPTERS = [
-  { id: 'song', label: 'Song & Ton' },
-  { id: 'idee', label: 'Die Idee' },
-  { id: 'ablauf', label: 'Ablauf' },
-  { id: 'dreh', label: 'Drehtag' },
-  { id: 'pitch', label: 'Pitch' },
+const STEPS = [
+  { key: 'song', label: 'Song', question: 'Welcher Song?' },
+  { key: 'idee', label: 'Idee', question: 'Worum geht es?' },
+  { key: 'ablauf', label: 'Ablauf', question: 'Was sieht man?' },
+  { key: 'dreh', label: 'Drehtag', question: 'Wann und wo?' },
+  { key: 'pitch', label: 'Pitch', question: 'Zeigen.' },
 ];
 
 export default function VideoDetailPage() {
@@ -78,6 +67,7 @@ export default function VideoDetailPage() {
   const [documents, setDocuments] = useState<BandDocument[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [step, setStep] = useState(0);
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [peaks, setPeaks] = useState<number[]>([]);
@@ -86,24 +76,20 @@ export default function VideoDetailPage() {
   const [analysing, setAnalysing] = useState(false);
   const [audioError, setAudioError] = useState(false);
 
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [shotModal, setShotModal] = useState<{ shot: VideoShot | null } | null>(null);
+  const [shotModal, setShotModal] = useState<{ shot: VideoShot | null; section?: string } | null>(null);
   const [projectModal, setProjectModal] = useState(false);
-  const [libraryQuery, setLibraryQuery] = useState('');
-  const [uploadingShot, setUploadingShot] = useState(false);
-  const [busyAction, setBusyAction] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
-  const [snap, setSnap] = useState(true);
+  const [audioPicker, setAudioPicker] = useState(false);
+  const [showIdeas, setShowIdeas] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  /* the pitch fields are edited in place and saved quietly */
   const [concept, setConcept] = useState('');
   const [needs, setNeeds] = useState('');
   const [lookWords, setLookWords] = useState<string[]>([]);
-  const [savedAt, setSavedAt] = useState<string | null>(null);
   const [wordDraft, setWordDraft] = useState('');
+  const [savedAt, setSavedAt] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
-  const shotInput = useRef<HTMLInputElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
@@ -138,7 +124,21 @@ export default function VideoDetailPage() {
     load();
   }, [load]);
 
-  /* fill the editable pitch fields once per project */
+  /* the step lives in the URL so a reload keeps the place */
+  useEffect(() => {
+    const wanted = Number(new URLSearchParams(window.location.search).get('step') ?? '0');
+    if (Number.isInteger(wanted) && wanted >= 0 && wanted < STEPS.length) setStep(wanted);
+  }, []);
+
+  const goTo = (next: number) => {
+    const value = Math.max(0, Math.min(STEPS.length - 1, next));
+    setStep(value);
+    const url = new URL(window.location.href);
+    url.searchParams.set('step', String(value));
+    window.history.replaceState(null, '', url);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     if (!project) return;
     setConcept(project.concept);
@@ -234,26 +234,27 @@ export default function VideoDetailPage() {
 
   const coverageInfo = useMemo(() => shotCoverage(shots, duration), [shots, duration]);
 
-  const currentSection =
-    [...shots].filter((shot) => shot.start <= time).sort((a, b) => b.start - a.start)[0]?.section ?? 'verse';
-
   const orderedShots = useMemo(
     () => [...shots].sort((a, b) => a.start - b.start || a.position - b.position),
     [shots]
   );
 
-  const sectionCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const shot of shots) counts[shot.section] = (counts[shot.section] ?? 0) + 1;
-    return counts;
-  }, [shots]);
+  const currentSection =
+    [...shots].filter((shot) => shot.start <= time).sort((a, b) => b.start - a.start)[0]?.section ?? 'verse';
+
+  /** Only the song parts that actually have shots – no empty form to fill in. */
+  const shotGroups = useMemo(
+    () =>
+      SHOT_SECTIONS.map((section) => ({
+        section,
+        shots: orderedShots.filter((shot) => shot.section === section.value),
+      })).filter((group) => group.shots.length),
+    [orderedShots]
+  );
 
   const togglePlay = async () => {
     const audio = audioRef.current;
-    if (!project?.audioUrl || !audio) {
-      toast('Verknüpfe zuerst den Song im Projekt.', 'error');
-      return;
-    }
+    if (!project?.audioUrl || !audio) return;
     if (playing) {
       audio.pause();
       setPlaying(false);
@@ -277,32 +278,29 @@ export default function VideoDetailPage() {
 
   /* -------------------------------------------------------------- shots */
 
-  const updateShotTiming = useCallback(
-    async (id: number, start: number, durationValue: number) => {
+  const updateShotTiming = useCallback(async (id: number, start: number, durationValue: number) => {
+    setShots((current) =>
+      [...current.map((shot) => (shot.id === id ? { ...shot, start, duration: durationValue } : shot))].sort(
+        (a, b) => a.start - b.start || a.position - b.position
+      )
+    );
+    try {
+      const response = await fetch(`/api/video-shots/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ start, duration: durationValue }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Konnte den Shot nicht verschieben');
       setShots((current) =>
-        [...current.map((shot) => (shot.id === id ? { ...shot, start, duration: durationValue } : shot))].sort(
+        [...current.map((shot) => (shot.id === id ? data.shot : shot))].sort(
           (a, b) => a.start - b.start || a.position - b.position
         )
       );
-      try {
-        const response = await fetch(`/api/video-shots/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ start, duration: durationValue }),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error ?? 'Konnte den Shot nicht verschieben');
-        setShots((current) =>
-          [...current.map((shot) => (shot.id === id ? data.shot : shot))].sort(
-            (a, b) => a.start - b.start || a.position - b.position
-          )
-        );
-      } catch (error: any) {
-        toast(error.message ?? 'Konnte den Shot nicht verschieben', 'error');
-      }
-    },
-    []
-  );
+    } catch (error: any) {
+      toast(error.message ?? 'Konnte den Shot nicht verschieben', 'error');
+    }
+  }, []);
 
   const saveShot = (saved: VideoShot) => {
     if (saved.media) {
@@ -316,20 +314,18 @@ export default function VideoDetailPage() {
         (a, b) => a.start - b.start || a.position - b.position
       );
     });
-    setSelectedId(saved.id);
     seekTo(saved.start);
     setShotModal(null);
   };
 
   const deleteShot = (id: number) => {
     setShots((current) => current.filter((shot) => shot.id !== id));
-    if (selectedId === id) setSelectedId(null);
     setShotModal(null);
   };
 
   const addIdea = async (idea: (typeof SHOT_IDEAS)[number]) => {
     const mood = SHOT_MOODS.find((entry) => entry.value === idea.mood);
-    setBusyAction(idea.id);
+    setBusy(idea.id);
     try {
       const response = await fetch(`/api/videos/${videoId}/shots`, {
         method: 'POST',
@@ -349,17 +345,18 @@ export default function VideoDetailPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? 'Konnte den Shot nicht anlegen');
       saveShot(data.shot);
-      toast(`„${idea.label}“ hinzugefügt – Text gern anpassen`);
+      setShowIdeas(true);
+      toast(`„${idea.label}“ ist drin – Text kannst du noch ändern`);
     } catch (error: any) {
       toast(error.message ?? 'Konnte den Shot nicht anlegen', 'error');
     } finally {
-      setBusyAction(null);
+      setBusy(null);
     }
   };
 
   const distribute = async () => {
     if (!shots.length) return;
-    setBusyAction('distribute');
+    setBusy('distribute');
     try {
       const response = await fetch(`/api/videos/${videoId}/shots`, {
         method: 'POST',
@@ -373,34 +370,7 @@ export default function VideoDetailPage() {
     } catch (error: any) {
       toast(error.message ?? 'Konnte nicht verteilen', 'error');
     } finally {
-      setBusyAction(null);
-    }
-  };
-
-  const addShotFromMedia = async (item: MediaItem) => {
-    setUploadingShot(true);
-    try {
-      const response = await fetch(`/api/videos/${videoId}/shots`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          description: item.title,
-          start: Number(time.toFixed(1)),
-          duration: 3,
-          section: currentSection,
-          mediaId: item.id,
-          location: project?.location ?? '',
-          status: 'idea',
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? 'Konnte den Shot nicht anlegen');
-      saveShot(data.shot);
-      toast('Shot aus der Mediathek angelegt');
-    } catch (error: any) {
-      toast(error.message ?? 'Konnte den Shot nicht anlegen', 'error');
-    } finally {
-      setUploadingShot(false);
+      setBusy(null);
     }
   };
 
@@ -416,20 +386,6 @@ export default function VideoDetailPage() {
     }
   };
 
-  const library = useMemo(
-    () =>
-      media
-        .filter((item) => item.mime.startsWith('image/') || item.mime.startsWith('video/'))
-        .filter((item) => item.mime !== 'image/svg+xml')
-        .filter((item) => (libraryQuery.trim() ? item.title.toLowerCase().includes(libraryQuery.toLowerCase()) : true))
-        .slice(0, 40),
-    [media, libraryQuery]
-  );
-
-  if (loading) return <Spinner label="Projekt wird geladen" />;
-  if (!project) return null;
-
-  const notesDocument = documents.find((entry) => entry.id === project.treatmentDocId) ?? null;
   const addWord = (word: string) => {
     const value = word.trim().slice(0, 24);
     if (!value || lookWords.includes(value)) return;
@@ -444,525 +400,438 @@ export default function VideoDetailPage() {
     void patchProject({ lookWords: next });
   };
 
+  if (loading) return <Spinner label="Projekt wird geladen" />;
+  if (!project) return null;
+
+  const notesDocument = documents.find((entry) => entry.id === project.treatmentDocId) ?? null;
+  const done = [
+    Boolean(project.audioMediaId),
+    Boolean(concept.trim()),
+    shots.length > 0,
+    Boolean(project.shootDate || project.location),
+    false,
+  ];
+  const audioTitle = media.find((item) => item.id === project.audioMediaId)?.title ?? project.audioTitle;
+
   return (
-    <div className="video-detail video-guided">
+    <div className="vwizard">
       <PageHead
         eyebrow="Musikvideo"
         title={project.title}
-        sub={
-          [project.songTitle, project.director ? `Regie ${project.director}` : '', project.location]
-            .filter(Boolean)
-            .join(' · ') || 'Song, Idee, Ablauf – in dieser Reihenfolge.'
-        }
+        sub={[project.songTitle, project.status ? videoStatusLabel(project.status) : ''].filter(Boolean).join(' · ')}
         actions={
           <>
             <Link className="btn btn-ghost" href="/admin/videos">
               <IconChevronLeft size={14} /> Alle Videos
             </Link>
-            <Link className="btn btn-primary" href={`/admin/videos/${project.id}/pitch`}>
-              <IconSparkles size={14} /> Pitch öffnen
+            <Link className="btn btn-ghost" href={`/admin/videos/${project.id}/pitch`}>
+              <IconSparkles size={14} /> Pitch
             </Link>
             <button type="button" className="btn btn-ghost" onClick={() => setProjectModal(true)}>
               <IconPencil size={14} /> Projekt
-            </button>
-            <button type="button" className="btn btn-danger" onClick={removeProject} title="Video löschen">
-              <IconTrash size={14} />
             </button>
           </>
         }
       />
 
-      <nav className="video-chapters">
-        {CHAPTERS.map((chapter, index) => (
-          <a key={chapter.id} href={`#${chapter.id}`} className="video-chapter">
-            <span className="mono">{String(index + 1).padStart(2, '0')}</span>
-            {chapter.label}
-          </a>
+      {/* ---------------------------------------------------------- rail */}
+      <nav className="vwizard-rail" aria-label="Schritte">
+        {STEPS.map((entry, index) => (
+          <button
+            key={entry.key}
+            type="button"
+            className={`vwizard-step ${index === step ? 'is-active' : ''} ${done[index] ? 'is-done' : ''}`}
+            aria-current={index === step ? 'step' : undefined}
+            onClick={() => goTo(index)}
+          >
+            <span className="vwizard-step-no mono">{done[index] ? <IconCheck size={11} /> : String(index + 1).padStart(2, '0')}</span>
+            <span className="vwizard-step-label">{entry.label}</span>
+          </button>
         ))}
-        <span className="video-chapter-meta mono small muted">
-          {shots.length} Shots · {durationLabel(duration)} · {Math.round(coverageInfo.ratio * 100)} % Ablauf
-        </span>
       </nav>
 
-      {/* ---------------------------------------------------- 01 song */}
-      <section className="panel video-section" id="song">
-        <div className="video-section-head">
-          <div>
-            <span className="video-section-no mono">01</span>
-            <h2>Song &amp; Ton</h2>
-            <p>Der Song ist der Takt. Ohne ihn kann niemand einen Ablauf planen.</p>
-          </div>
-          <span className={`video-status ${project.status}`}>{videoStatusLabel(project.status)}</span>
+      <section className="panel vwizard-card">
+        <div className="vwizard-head">
+          <span className="mono small muted">
+            Schritt {step + 1} von {STEPS.length}
+          </span>
+          <h2>{STEPS[step].question}</h2>
         </div>
-        <div className="video-section-body">
-          {project.audioUrl ? (
-            <div className="video-song-row">
-              <button type="button" className="btn btn-primary btn-sm" onClick={togglePlay}>
-                {playing ? <IconPause size={14} /> : <IconPlay size={14} />}
-                {playing ? 'Pause' : 'Anhören'}
-              </button>
-              <span className="mono video-time">
-                {timecode(time)} <em>/ {timecode(duration)}</em>
-              </span>
-              <span className="mono small muted">
-                {analysis ? `${analysis.bpm} BPM` : analysing ? 'Analysiere …' : audioError ? 'Kein Waveform' : ''}
-              </span>
-              <button type="button" className="btn btn-sm btn-ghost" onClick={() => setShotModal({ shot: null })}>
-                <IconPlus size={13} /> Shot bei {timecode(time)}
-              </button>
-              <audio
-                ref={audioRef}
-                src={project.audioUrl}
-                onTimeUpdate={(event) => setTime(event.currentTarget.currentTime)}
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
-                onEnded={() => {
-                  setPlaying(false);
-                  setTime(duration);
-                }}
-              />
+
+        {/* ----------------------------------------------------- 01 song */}
+        {step === 0 ? (
+          <div className="vwizard-body">
+            <div className="vwizard-choice">
+              <Field label="Song" hint={<span className="count">Der Song bestimmt Länge und Takt.</span>}>
+                <select
+                  className="input"
+                  value={project.songId ?? ''}
+                  onChange={(event) => patchProject({ songId: event.target.value ? Number(event.target.value) : null })}
+                >
+                  <option value="">– noch keiner –</option>
+                  {songs.map((song) => (
+                    <option key={song.id} value={song.id}>
+                      {song.title}
+                      {song.songKey ? ` · ${song.songKey}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Audiodatei" hint={<span className="count">Damit du hören kannst, wo welches Bild sitzt.</span>}>
+                <div className="vwizard-audio">
+                  <span className="truncate">{audioTitle || 'keine Datei'}</span>
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => setAudioPicker(true)}>
+                    <IconMusic size={13} /> {audioTitle ? 'Ändern' : 'Wählen'}
+                  </button>
+                </div>
+              </Field>
             </div>
-          ) : (
-            <p className="video-hint">
-              Noch kein Audio verknüpft. <button type="button" className="linkish" onClick={() => setProjectModal(true)}>Song hinzufügen</button>
+
+            {project.audioUrl ? (
+              <div className="vwizard-player">
+                <button type="button" className="btn btn-primary" onClick={togglePlay}>
+                  {playing ? <IconPause size={15} /> : <IconPlay size={15} />}
+                  {playing ? 'Pause' : 'Anhören'}
+                </button>
+                <span className="mono">
+                  {timecode(time)} <em className="muted">/ {timecode(duration)}</em>
+                </span>
+                <span className="mono small muted">
+                  {analysis ? `${analysis.bpm} BPM` : analysing ? 'Analysiere …' : audioError ? 'kein Waveform' : ''}
+                </span>
+                <audio
+                  ref={audioRef}
+                  src={project.audioUrl}
+                  onTimeUpdate={(event) => setTime(event.currentTarget.currentTime)}
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
+                  onEnded={() => {
+                    setPlaying(false);
+                    setTime(duration);
+                  }}
+                />
+              </div>
+            ) : (
+              <p className="vwizard-hint">
+                Ohne Audio kannst du trotzdem planen – die Länge wird dann auf 60 Sekunden geschätzt.
+              </p>
+            )}
+
+            <p className="vwizard-hint">
+              Der Song hat Teile: Intro, Strophe, Refrain, Bridge, Outro. Im nächsten Schritt beschreibst du, was
+              man sieht – pro Teil ein paar Bilder reichen.
             </p>
-          )}
-
-          <div className="video-sections">
-            {SHOT_SECTIONS.filter((section) => section.value !== 'other').map((section) => (
-              <span key={section.value} className={`video-section-chip ${sectionCounts[section.value] ? 'has-shots' : ''}`}>
-                {section.label}
-                {sectionCounts[section.value] ? <em>{sectionCounts[section.value]}</em> : null}
-              </span>
-            ))}
           </div>
-          <p className="video-hint">
-            {project.songTitle ? `Song: ${project.songTitle}` : 'Kein Song verknüpft'} · Shots bekommen automatisch den
-            Abschnitt, in dem der Playhead gerade steht.
-          </p>
-        </div>
-      </section>
+        ) : null}
 
-      {/* ---------------------------------------------------- 02 idea */}
-      <section className="panel video-section" id="idee">
-        <div className="video-section-head">
-          <div>
-            <span className="video-section-no mono">02</span>
-            <h2>Die Idee</h2>
-            <p>Drei Antworten reichen – daraus entsteht später die Pitch-Präsentation.</p>
-          </div>
-          {savedAt ? <span className="mono small muted">gespeichert</span> : null}
-        </div>
-        <div className="video-section-body">
-          <Field
-            label="Worum geht es?"
-            hint={<span className="count">Was passiert, wie fühlt es sich an, wie endet es?</span>}
-          >
-            <textarea
-              className="textarea video-concept"
-              rows={5}
-              value={concept}
-              placeholder={
-                'Ein Raum, eine Person, ein Song.\n\nEs fängt still an, wird lauter, und am Ende steht niemand mehr im Bild.'
-              }
-              onChange={(event) => {
-                setConcept(event.target.value);
-                queueSave({ concept: event.target.value });
-              }}
-            />
-          </Field>
-
-          <Field label="Wie sieht es aus?" hint={<span className="count">Stichworte – sie werden zur Bildsprache im Pitch.</span>}>
-            <div className="video-words">
-              {lookWords.map((word) => (
-                <button key={word} type="button" className="video-word on" onClick={() => removeWord(word)}>
-                  {word} <IconX size={11} />
-                </button>
-              ))}
-              {LOOK_SUGGESTIONS.filter((word) => !lookWords.includes(word)).map((word) => (
-                <button key={word} type="button" className="video-word" onClick={() => addWord(word)}>
-                  {word}
-                </button>
-              ))}
-              <input
-                className="video-word-input"
-                placeholder="eigenes Wort …"
-                value={wordDraft}
-                onChange={(event) => setWordDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    addWord(wordDraft);
-                  }
+        {/* ----------------------------------------------------- 02 idea */}
+        {step === 1 ? (
+          <div className="vwizard-body">
+            <Field
+              label="Worum geht es?"
+              hint={<span className="count">Drei Sätze genügen: Anfang, Mitte, Ende.</span>}
+            >
+              <textarea
+                className="textarea vwizard-concept"
+                rows={7}
+                value={concept}
+                autoFocus
+                placeholder={
+                  'Ein Raum, eine Person, ein Song.\n\nEs fängt still an – Staub im Licht, eine Lampe, niemand da. Mit dem ersten Schlag kommt die Band ins Bild, aber nie ganz.\n\nAm Ende steht der Raum wieder leer.'
+                }
+                onChange={(event) => {
+                  setConcept(event.target.value);
+                  queueSave({ concept: event.target.value });
                 }}
               />
-            </div>
-          </Field>
+            </Field>
 
-          {notesDocument ? (
-            <details className="video-fold" open>
-              <summary>
-                <IconDocument size={13} /> {notesDocument.title}
+            <Field label="Wie fühlt es sich an?" hint={<span className="count">Drei bis fünf Worte reichen.</span>}>
+              <div className="vwizard-words">
+                {lookWords.map((word) => (
+                  <button key={word} type="button" className="video-word on" onClick={() => removeWord(word)}>
+                    {word} <IconX size={11} />
+                  </button>
+                ))}
+                {LOOK_SUGGESTIONS.filter((word) => !lookWords.includes(word)).map((word) => (
+                  <button key={word} type="button" className="video-word" onClick={() => addWord(word)}>
+                    {word}
+                  </button>
+                ))}
+                <input
+                  className="video-word-input"
+                  placeholder="eigenes Wort …"
+                  value={wordDraft}
+                  onChange={(event) => setWordDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      addWord(wordDraft);
+                    }
+                  }}
+                />
+              </div>
+            </Field>
+
+            {notesDocument ? (
+              <div className="vwizard-doc">
+                <IconDocument size={14} />
+                <span>{notesDocument.title}</span>
                 <Link className="btn btn-sm btn-ghost" href={`/admin/docs?doc=${notesDocument.id}`}>
                   Öffnen
                 </Link>
-              </summary>
-              <div
-                className="prose video-notes-body"
-                dangerouslySetInnerHTML={{ __html: notesDocument.content || '<p>Keine Notizen hinterlegt.</p>' }}
-              />
-            </details>
-          ) : (
-            <p className="video-hint">
-              Notizen als Dokument?{' '}
-              <button type="button" className="linkish" onClick={() => setProjectModal(true)}>
-                Dokument verknüpfen
-              </button>
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* --------------------------------------------------- 03 shots */}
-      <section className="panel video-section" id="ablauf">
-        <div className="video-section-head">
-          <div>
-            <span className="video-section-no mono">03</span>
-            <h2>Ablauf</h2>
-            <p>Ein Satz pro Bild. Klick dich durch die Ideen – niemand verlangt eine Shotliste.</p>
-          </div>
-          <div className="row" style={{ gap: 8 }}>
-            <button
-              type="button"
-              className="btn btn-sm btn-ghost"
-              onClick={distribute}
-              disabled={!shots.length || busyAction === 'distribute'}
-              title="Verteilt alle Shots gleichmäßig über den Song"
-            >
-              <IconGrid size={13} /> {busyAction === 'distribute' ? 'Verteilt …' : 'Gleichmäßig verteilen'}
-            </button>
-            <button type="button" className="btn btn-sm btn-primary" onClick={() => setShotModal({ shot: null })}>
-              <IconPlus size={13} /> Shot
-            </button>
-          </div>
-        </div>
-
-        <div className="video-section-body">
-          <div className="video-ideas">
-            {SHOT_IDEAS.map((idea) => (
-              <button
-                key={idea.id}
-                type="button"
-                className="video-idea"
-                onClick={() => addIdea(idea)}
-                disabled={busyAction === idea.id}
-                title={idea.description}
-              >
-                <span>{idea.label}</span>
-                <em>{idea.description.split(':')[0]}</em>
-              </button>
-            ))}
-          </div>
-
-          {orderedShots.length === 0 ? (
-            <div className="video-empty">
-              <IconVideo size={24} />
-              <h3>Noch kein Bild</h3>
-              <p>Wähle oben eine Idee – sie landet genau an der Stelle, an der du gerade hörst.</p>
-            </div>
-          ) : (
-            <div className="shot-list">
-              {orderedShots.map((shot, index) => (
-                <article
-                  key={shot.id}
-                  className={`shot-row ${selectedId === shot.id ? 'on' : ''}`}
-                  onClick={() => {
-                    setSelectedId(shot.id);
-                    seekTo(shot.start);
-                  }}
-                >
-                  <span className="shot-number mono">{String(index + 1).padStart(2, '0')}</span>
-                  <button
-                    type="button"
-                    className="shot-thumb"
-                    title="Bearbeiten"
-                    aria-label="Shot bearbeiten"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setSelectedId(shot.id);
-                      setShotModal({ shot });
-                    }}
-                  >
-                    {shot.sketch ? (
-                      <img src={shot.sketch} alt="" className="shot-thumb-img shot-thumb-sketch" />
-                    ) : shot.media ? (
-                      <MediaThumb media={shot.media} className="shot-thumb-img" />
-                    ) : (
-                      <IconImage size={18} />
-                    )}
-                  </button>
-                  <div className="shot-main">
-                    <div className="shot-top">
-                      <span className="shot-time mono">
-                        {timecode(shot.start)} <em>· {shot.duration.toFixed(1)} s</em>
-                      </span>
-                      <span className="chip">{sectionLabel(shot.section)}</span>
-                      <span className={`shot-status status-${shot.status}`}>{shotStatusLabel(shot.status)}</span>
-                    </div>
-                    <p className="shot-description">{shot.description || 'Ohne Beschreibung'}</p>
-                    <div className="shot-meta mono">
-                      {shot.location ? (
-                        <span>
-                          <IconMapPin size={10} /> {shot.location}
-                        </span>
-                      ) : null}
-                      {shot.shotType ? <span>{shot.shotType}</span> : null}
-                      {shot.movement ? <span>{shot.movement}</span> : null}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-icon shot-edit"
-                    title="Bearbeiten"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setSelectedId(shot.id);
-                      setShotModal({ shot });
-                    }}
-                  >
-                    <IconPencil size={13} />
-                  </button>
-                </article>
-              ))}
-            </div>
-          )}
-
-          <details className="video-fold">
-            <summary>
-              <IconClock size={13} /> Timeline – Shots schieben und kürzen
-              <span className="mono small muted">
-                {Math.round(coverageInfo.ratio * 100)} % abgedeckt
-                {coverageInfo.gaps.length ? ` · ${coverageInfo.gaps.length} Lücken` : ''}
-              </span>
-            </summary>
-            <div className="video-timeline-tools">
-              <div className="video-timeline-actions">
-                <button
-                  type="button"
-                  className={`video-toggle ${snap ? 'on' : ''}`}
-                  aria-pressed={snap}
-                  onClick={() => setSnap((value) => !value)}
-                  title="Rastet auf Takte und Shotkanten – ⇧ beim Ziehen hebt das Raster auf"
-                >
-                  <IconGrid size={12} /> Raster
-                </button>
-                <div className="video-zoom" role="group" aria-label="Zoom">
-                  {[1, 2, 4].map((level) => (
-                    <button
-                      key={level}
-                      type="button"
-                      className={zoom === level ? 'on' : ''}
-                      aria-pressed={zoom === level}
-                      onClick={() => setZoom(level)}
-                    >
-                      {level}×
-                    </button>
-                  ))}
-                </div>
               </div>
-            </div>
-            <VideoTimeline
-              peaks={peaks}
-              duration={duration}
-              beats={analysis?.beats ?? []}
-              time={time}
-              shots={shots}
-              selectedId={selectedId}
-              zoom={zoom}
-              snap={snap}
-              onSeek={seekTo}
-              onSelect={(shot) => setSelectedId(shot.id)}
-              onTimingChange={updateShotTiming}
-              onOpenShot={(shot) => {
-                setSelectedId(shot.id);
-                setShotModal({ shot });
-              }}
-              onAddShot={(seconds) => {
-                seekTo(seconds);
-                setShotModal({ shot: null });
-              }}
-            />
-            <p className="video-hint">
-              Ziehen: verschieben · an den Rändern: kürzen · Doppelklick in die Spur: neuer Shot · ⇧ hält das
-              Raster an.
-            </p>
-          </details>
+            ) : (
+              <p className="vwizard-hint">
+                Du hast längere Notizen? Verknüpfe sie über <button type="button" className="linkish" onClick={() => setProjectModal(true)}>Projekt</button>.
+              </p>
+            )}
+            {savedAt ? <span className="mono small muted">gespeichert</span> : null}
+          </div>
+        ) : null}
 
-          <details className="video-fold">
-            <summary>
-              <IconImage size={13} /> Material aus der Mediathek
-              <span className="mono small muted">{library.length} Bilder & Videos</span>
-            </summary>
-            <div className="video-library-search">
-              <IconSearch size={14} />
-              <input
-                className="input"
-                value={libraryQuery}
-                placeholder="Suchen …"
-                onChange={(event) => setLibraryQuery(event.target.value)}
-              />
-              <button type="button" className="btn btn-sm btn-ghost" onClick={() => shotInput.current?.click()}>
-                <IconUpload size={13} /> Hochladen
+        {/* --------------------------------------------------- 03 shots */}
+        {step === 2 ? (
+          <div className="vwizard-body">
+            <div className="vwizard-actions">
+              <button type="button" className="btn btn-primary" onClick={() => setShotModal({ shot: null, section: currentSection })}>
+                <IconPlus size={14} /> Bild hinzufügen
               </button>
-              <input
-                ref={shotInput}
-                type="file"
-                accept="image/*,video/*"
-                hidden
-                onChange={async (event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  const form = new FormData();
-                  form.append('files', file);
-                  if (project.songId) form.append('songId', String(project.songId));
-                  const response = await fetch('/api/media', { method: 'POST', body: form });
-                  const data = await response.json();
-                  if (response.ok && data.media?.[0]) {
-                    setMedia((current) => [...data.media, ...current]);
-                    toast('Datei liegt in der Mediathek');
-                  } else {
-                    toast(data.error ?? 'Upload fehlgeschlagen', 'error');
-                  }
-                  if (shotInput.current) shotInput.current.value = '';
+              <button type="button" className="btn btn-ghost" onClick={() => setShowIdeas((value) => !value)}>
+                <IconSparkles size={13} /> Ideen vorschlagen
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={distribute}
+                disabled={!shots.length || busy === 'distribute'}
+                title="Verteilt die Bilder gleichmäßig über den Song"
+              >
+                <IconGrid size={13} /> {busy === 'distribute' ? 'Verteilt …' : 'Über den Song verteilen'}
+              </button>
+            </div>
+
+            {showIdeas || orderedShots.length < 3 ? (
+              <div className="vwizard-ideas">
+                {SHOT_IDEAS.map((idea) => (
+                  <button
+                    key={idea.id}
+                    type="button"
+                    className="vwizard-idea"
+                    onClick={() => addIdea(idea)}
+                    disabled={busy === idea.id}
+                    title={idea.description}
+                  >
+                    <strong>{idea.label}</strong>
+                    <span>{idea.description}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            {orderedShots.length === 0 ? (
+              <div className="video-empty">
+                <IconVideo size={24} />
+                <h3>Noch kein Bild</h3>
+                <p>Klick oben auf eine Idee – sie landet genau an der Stelle, an der du gerade hörst.</p>
+              </div>
+            ) : (
+              <div className="vwizard-storyboard">
+                {shotGroups.map((group) => (
+                  <div key={group.section.value} className="vwizard-group">
+                    <div className="vwizard-group-head">
+                      <span className="mono">{sectionLabel(group.section.value)}</span>
+                      <span className="mono small muted">{group.shots.length}</span>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-ghost"
+                        onClick={() => setShotModal({ shot: null, section: group.section.value })}
+                      >
+                        <IconPlus size={12} /> Bild
+                      </button>
+                    </div>
+                    {group.shots.map((shot) => (
+                      <button
+                        key={shot.id}
+                        type="button"
+                        className="vwizard-shot"
+                        onClick={() => setShotModal({ shot })}
+                      >
+                        <span className="vwizard-shot-thumb">
+                          {shot.sketch ? (
+                            <img src={shot.sketch} alt="" />
+                          ) : shot.media ? (
+                            <MediaThumb media={shot.media} className="vwizard-shot-img" />
+                          ) : (
+                            <IconImage size={16} />
+                          )}
+                        </span>
+                        <span className="vwizard-shot-text">{shot.description || 'Ohne Beschreibung'}</span>
+                        <span className="vwizard-shot-time mono">{timecode(shot.start)}</span>
+                        <span className={`shot-status status-${shot.status}`}>{shotStatusLabel(shot.status)}</span>
+                        <IconPencil size={13} />
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="vwizard-footlinks">
+              <button type="button" className="linkish" onClick={() => setShowTimeline((value) => !value)}>
+                {showTimeline ? 'Timeline ausblenden' : 'Timeline (Profi): Bilder schieben und kürzen'}
+              </button>
+              <span className="mono small muted">
+                {shots.length} Bilder · {durationLabel(duration)} · {Math.round(coverageInfo.ratio * 100)} % abgedeckt
+              </span>
+            </div>
+
+            {showTimeline ? (
+              <div className="vwizard-timeline">
+                <VideoTimeline
+                  peaks={peaks}
+                  duration={duration}
+                  beats={analysis?.beats ?? []}
+                  time={time}
+                  shots={shots}
+                  selectedId={null}
+                  zoom={2}
+                  snap
+                  onSeek={seekTo}
+                  onSelect={(shot) => setShotModal({ shot })}
+                  onTimingChange={updateShotTiming}
+                  onOpenShot={(shot) => setShotModal({ shot })}
+                  onAddShot={(seconds) => {
+                    seekTo(seconds);
+                    setShotModal({ shot: null, section: currentSection });
+                  }}
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* ---------------------------------------------------- 04 shoot */}
+        {step === 3 ? (
+          <div className="vwizard-body">
+            <div className="form-row">
+              <Field label="Datum">
+                <input
+                  className="input"
+                  type="date"
+                  value={project.shootDate}
+                  onChange={(event) => setProject({ ...project, shootDate: event.target.value })}
+                  onBlur={(event) => patchProject({ shootDate: event.target.value })}
+                />
+              </Field>
+              <Field label="Ort">
+                <input
+                  className="input"
+                  value={project.location}
+                  placeholder="z. B. alte Turnhalle, Augsburg"
+                  onChange={(event) => setProject({ ...project, location: event.target.value })}
+                  onBlur={(event) => patchProject({ location: event.target.value })}
+                />
+              </Field>
+            </div>
+            <Field
+              label="Was brauchen wir?"
+              hint={<span className="count">Leute, Technik, Genehmigung – steht später so im Pitch.</span>}
+            >
+              <textarea
+                className="textarea"
+                rows={4}
+                value={needs}
+                placeholder={'Zwei Lampen, ein Stativ, drei Leute, die mitspielen.\nDreh von 16 bis 20 Uhr.'}
+                onChange={(event) => {
+                  setNeeds(event.target.value);
+                  queueSave({ needs: event.target.value });
                 }}
               />
+            </Field>
+            <p className="vwizard-hint">
+              Regie und Status änderst du bei Bedarf über <button type="button" className="linkish" onClick={() => setProjectModal(true)}>Projekt</button>.
+            </p>
+          </div>
+        ) : null}
+
+        {/* ---------------------------------------------------- 05 pitch */}
+        {step === 4 ? (
+          <div className="vwizard-body">
+            <div className="vwizard-summary">
+              <div className="vwizard-summary-item">
+                <span className="mono small muted">Song</span>
+                <strong>{project.songTitle ?? 'noch keiner'}</strong>
+              </div>
+              <div className="vwizard-summary-item">
+                <span className="mono small muted">Idee</span>
+                <strong>{concept.trim() ? 'steht' : 'fehlt'}</strong>
+              </div>
+              <div className="vwizard-summary-item">
+                <span className="mono small muted">Bilder</span>
+                <strong>{shots.length}</strong>
+              </div>
+              <div className="vwizard-summary-item">
+                <span className="mono small muted">Dreh</span>
+                <strong>{project.shootDate ? formatDate(project.shootDate) : project.location || 'offen'}</strong>
+              </div>
             </div>
-            <div className="video-library-list">
-              {library.map((item) => (
-                <div key={item.id} className="video-library-item">
-                  <MediaThumb media={item} className="video-library-thumb" />
-                  <div className="grow">
-                    <div className="truncate">{item.title}</div>
-                    <span className="mono small muted">{item.mime}</span>
+
+            <p className="vwizard-hint">
+              Die Präsentation wird bei jedem Öffnen aus deinen Angaben gebaut: Cover, Idee, Bildsprache,
+              Storyboard, Drehtag, Kontakt. „Als HTML“ exportiert eine einzelne Datei mit allen Bildern – die
+              kannst du direkt verschicken.
+            </p>
+
+            <div className="vwizard-actions">
+              <Link className="btn btn-primary" href={`/admin/videos/${project.id}/pitch`}>
+                <IconSparkles size={14} /> Pitch öffnen
+              </Link>
+              <button type="button" className="btn btn-ghost" onClick={() => window.print()}>
+                <IconFilm size={14} /> Storyboard drucken
+              </button>
+              <button type="button" className="btn btn-danger btn-ghost" onClick={removeProject}>
+                <IconTrash size={14} /> Video löschen
+              </button>
+            </div>
+
+            {shots.length ? (
+              <div className="vwizard-mini-board">
+                {orderedShots.slice(0, 8).map((shot, index) => (
+                  <div key={shot.id} className="vwizard-mini-frame">
+                    {shot.sketch ? <img src={shot.sketch} alt="" /> : shot.media ? <MediaThumb media={shot.media} /> : null}
+                    <span className="mono">{String(index + 1).padStart(2, '0')}</span>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-ghost"
-                    disabled={uploadingShot}
-                    onClick={() => addShotFromMedia(item)}
-                  >
-                    <IconPlus size={12} /> Shot
-                  </button>
-                </div>
-              ))}
-              {library.length === 0 ? <p className="small muted">Nichts gefunden.</p> : null}
-            </div>
-          </details>
-        </div>
-      </section>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
-      {/* ---------------------------------------------------- 04 shoot */}
-      <section className="panel video-section" id="dreh">
-        <div className="video-section-head">
-          <div>
-            <span className="video-section-no mono">04</span>
-            <h2>Drehtag</h2>
-            <p>Ein Tag, ein Ort, ein kleines Team. Mehr braucht es für den Anfang nicht.</p>
-          </div>
-        </div>
-        <div className="video-section-body">
-          <div className="form-row">
-            <Field label="Datum">
-              <input
-                className="input"
-                type="date"
-                value={project.shootDate}
-                onChange={(event) => setProject({ ...project, shootDate: event.target.value })}
-                onBlur={(event) => patchProject({ shootDate: event.target.value })}
-              />
-            </Field>
-            <Field label="Ort">
-              <input
-                className="input"
-                value={project.location}
-                placeholder="z. B. alte Turnhalle, Augsburg"
-                onChange={(event) => setProject({ ...project, location: event.target.value })}
-                onBlur={(event) => patchProject({ location: event.target.value })}
-              />
-            </Field>
-            <Field label="Regie">
-              <input
-                className="input"
-                value={project.director}
-                placeholder="Du selbst reicht"
-                onChange={(event) => setProject({ ...project, director: event.target.value })}
-                onBlur={(event) => patchProject({ director: event.target.value })}
-              />
-            </Field>
-          </div>
-          <Field
-            label="Was brauchen wir?"
-            hint={<span className="count">Leute, Technik, Genehmigung – erscheint im Pitch unter „Dreh“.</span>}
+        {/* ------------------------------------------------------ footer */}
+        <div className="vwizard-footer">
+          <button type="button" className="btn btn-ghost" onClick={() => goTo(step - 1)} disabled={step === 0}>
+            <IconChevronLeft size={14} /> Zurück
+          </button>
+          <span className="mono small muted">
+            {STEPS[step].key === 'song' && !project.audioMediaId
+              ? 'Tipp: erst den Song wählen – dann hört man beim Planen, wo man ist.'
+              : STEPS[step].key === 'ablauf' && !shots.length
+                ? 'Tipp: eine der Ideen antippen reicht für den Anfang.'
+                : STEPS[step].key === 'pitch'
+                  ? 'Fertig – jetzt zeigen.'
+                  : ''}
+          </span>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => goTo(step + 1)}
+            disabled={step === STEPS.length - 1}
+            style={step === STEPS.length - 1 ? { visibility: 'hidden' } : undefined}
           >
-            <textarea
-              className="textarea"
-              rows={3}
-              value={needs}
-              placeholder={'Zwei Lampen, ein Stativ, drei Leute, die mitspielen.\nDreh von 16 bis 20 Uhr.'}
-              onChange={(event) => {
-                setNeeds(event.target.value);
-                queueSave({ needs: event.target.value });
-              }}
-            />
-          </Field>
-          {orderedShots.filter((shot) => shot.location).length ? (
-            <p className="video-hint">
-              <IconMapPin size={12} /> Drehorte in den Shots: {[...new Set(orderedShots.map((shot) => shot.location).filter(Boolean))].join(', ')}
-            </p>
-          ) : null}
-        </div>
-      </section>
-
-      {/* ---------------------------------------------------- 05 pitch */}
-      <section className="panel video-section video-pitch-teaser" id="pitch">
-        <div className="video-section-head">
-          <div>
-            <span className="video-section-no mono">05</span>
-            <h2>Pitch</h2>
-            <p>
-              Aus Song, Idee, Bildsprache, Storyboard und Drehtag wird automatisch eine kleine Präsentation –
-              zum Zeigen, Verschicken, Begeistern.
-            </p>
-          </div>
-          <div className="row" style={{ gap: 8 }}>
-            <Link className="btn btn-sm btn-primary" href={`/admin/videos/${project.id}/pitch`}>
-              <IconSparkles size={13} /> Präsentation öffnen
-            </Link>
-            <button type="button" className="btn btn-sm btn-ghost" onClick={() => window.print()}>
-              <IconFilm size={13} /> Storyboard drucken
-            </button>
-          </div>
-        </div>
-        <div className="video-section-body">
-          <div className="video-pitch-facts">
-            <span>
-              <IconMusic size={12} /> {project.songTitle ?? 'kein Song'}
-            </span>
-            <span>
-              <IconVideo size={12} /> {orderedShots.length} Shots
-            </span>
-            <span>
-              <IconClock size={12} /> {durationLabel(duration)}
-            </span>
-            <span>
-              <IconMapPin size={12} /> {project.location || 'Ort offen'}
-            </span>
-            <span>{lookWords.length ? lookWords.join(' · ') : 'noch keine Bildworte'}</span>
-          </div>
-          <p className="video-hint">
-            Die Präsentation entsteht bei jedem Öffnen neu aus deinen Daten. „Als HTML“ exportiert eine einzelne
-            Datei mit allen Bildern – die kannst du per Mail verschicken, sie läuft in jedem Browser.
-          </p>
+            {step === STEPS.length - 2 ? 'Zum Pitch' : 'Weiter'} <IconChevronRight size={14} />
+          </button>
         </div>
       </section>
 
@@ -990,9 +859,22 @@ export default function VideoDetailPage() {
         shots={shots}
         media={media}
         playhead={time}
+        defaultSection={shotModal?.section}
         onClose={() => setShotModal(null)}
         onSaved={saveShot}
         onDeleted={deleteShot}
+      />
+
+      <MediaPicker
+        open={audioPicker}
+        onClose={() => setAudioPicker(false)}
+        media={media}
+        selectedIds={project.audioMediaId ? [project.audioMediaId] : []}
+        audioOnly
+        onConfirm={(ids) => {
+          void patchProject({ audioMediaId: ids[0] ?? null });
+          setAudioPicker(false);
+        }}
       />
     </div>
   );

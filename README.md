@@ -462,26 +462,24 @@ the media library and the document module, so the kit is never out of date.
   Global ⌘K search finds songs by title, key or notes.
 
 ### 14. Video Lab (`/admin/videos`)
-Built for people who are not videographers: the project is a guided path of five chapters, not a shot-list
-spreadsheet.
-- **01 Song & Ton** – play the song, see BPM and which song sections already have shots. New shots inherit the
-  section the playhead is standing in.
-- **02 Die Idee** – three answers instead of a treatment: *Worum geht es?* (free text), *Wie sieht es aus?*
-  (mood words like kalt / leer / Gegenlicht, clickable suggestions) and an optional notes document. Exactly
-  this text becomes the pitch later.
-- **03 Ablauf** – ten ready-made **shot ideas** (“Leerer Raum”, “Gesicht, still”, “Silhouette”, “Publikum” …)
-  land at the playhead with one click; each shot needs one sentence and one **Wirkung** (still & weit, ganz
-  nah, Handkamera, dunkel, hartes Licht, Bewegung, Detail, Publikum) which sets shot type, camera move and
-  lighting automatically. **Gleichmäßig verteilen** spreads every shot over the song, so a rough plan exists
-  without typing a single timecode. The waveform timeline (drag, trim, snap, zoom) is still there, folded away
-  under “Timeline – Shots schieben und kürzen”, as is the media library.
-- **04 Drehtag** – date, location, director and *Was brauchen wir?* (people, gear, permits).
-- **05 Pitch** – builds a **presentation** from all of the above: cover with band/song/date/length, the idea,
-  the visual language with frames, the storyboard in pages of six, the shoot day and a contact slide. Arrow
-  keys and dots navigate, fullscreen for the room, print produces one slide per page (light), and **Als HTML**
-  exports a single self-contained file with every image inlined – send it, open it anywhere.
-- Technical details (exact start/duration, status, shot type, camera, light, notes, frame sketch, media
-  reference) are still stored per shot; they simply hide behind “Zeit & Profi-Details”.
+A **wizard, not a workspace**: one question per screen, five steps, a single “Weiter” button. Nothing else
+is visible until you need it, and the step lives in the URL (`?step=2`) so a reload keeps your place.
+- **01 Song** – pick the song and the audio file from dropdowns, play it right there, see BPM and length.
+  Without audio the plan simply assumes 60 seconds.
+- **02 Idee** – one text field (“Worum geht es?”, three sentences are enough) plus mood words (kalt, leer,
+  Gegenlicht … clickable). This is exactly what the pitch later quotes.
+- **03 Ablauf** – the storyboard, grouped by song part. Ten **shot ideas** (“Leerer Raum”, “Gesicht, still”,
+  “Silhouette”, “Publikum” …) drop in with one click; “Bild hinzufügen” opens an editor with **two** fields:
+  one sentence and a **Wirkung** (still & weit, ganz nah, Handkamera, dunkel, hartes Licht, Bewegung, Detail,
+  Publikum), which sets shot type, camera and light automatically. “Über den Song verteilen” lays all pictures
+  over the track, so no timecode has to be typed. The waveform timeline still exists but only appears when you
+  click “Timeline (Profi)”.
+- **04 Drehtag** – date, place, “Was brauchen wir?”. Das war's.
+- **05 Pitch** – summary plus one button: the **presentation** (cover, idea, look, storyboard in pages of six,
+  shoot day, contact). Arrow keys/dots navigate, fullscreen for the room, print gives one slide per page and
+  **Als HTML** exports a single self-contained file with every image inlined.
+- Everything a videographer needs (exact start/duration, status, shot type, camera, light, notes, frame
+  sketch, media reference) is still stored per shot, tucked into “Zeit & Profi-Details”.
 
 ### 15. Reel Lab (`/admin/reels`)
 The mini reel machine: clips from the library, one song, three steps, one MP4.

@@ -32,6 +32,7 @@ export default function VideoShotModal({
   shots,
   media,
   playhead,
+  defaultSection,
   onClose,
   onSaved,
   onDeleted,
@@ -42,6 +43,7 @@ export default function VideoShotModal({
   shots: VideoShot[];
   media: MediaItem[];
   playhead: number;
+  defaultSection?: string;
   onClose: () => void;
   onSaved: (shot: VideoShot) => void;
   onDeleted: (id: number) => void;
@@ -103,7 +105,7 @@ export default function VideoShotModal({
       .filter((entry) => entry.start <= playhead)
       .sort((a, b) => b.start - a.start)[0];
     setDescription('');
-    setSection(previous?.section ?? 'verse');
+    setSection(defaultSection ?? previous?.section ?? 'verse');
     setStatus('idea');
     setStart(playhead.toFixed(1));
     setDuration(String(Math.max(0.5, Math.min(3, next ? next.start - playhead : 3)).toFixed(1)));
@@ -116,7 +118,7 @@ export default function VideoShotModal({
     setSketch(null);
     setMood('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, shot, playhead]);
+  }, [open, shot, playhead, defaultSection]);
 
   const nextShot = useMemo(() => {
     const startValue = Number(start) || 0;
@@ -239,15 +241,6 @@ export default function VideoShotModal({
           </Field>
 
           <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <Field label="Im Song">
-              <select className="select" value={section} onChange={(event) => setSection(event.target.value)}>
-                {SHOT_SECTIONS.map((entry) => (
-                  <option key={entry.value} value={entry.value}>
-                    {entry.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
             <Field label="Bild">
               <div className="row" style={{ gap: 6 }}>
                 <button
@@ -278,6 +271,15 @@ export default function VideoShotModal({
           <details className="shot-advanced">
             <summary>Zeit &amp; Profi-Details</summary>
             <div className="video-form-row">
+              <Field label="Im Song">
+                <select className="select" value={section} onChange={(event) => setSection(event.target.value)}>
+                  {SHOT_SECTIONS.map((entry) => (
+                    <option key={entry.value} value={entry.value}>
+                      {entry.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
               <Field label="Start (Sekunden)">
                 <div className="shot-time-row">
                   <input
