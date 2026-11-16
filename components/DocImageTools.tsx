@@ -22,6 +22,10 @@ type Box = {
   contentWidth: number;
   widthPercent: number;
   align: ImageAlign;
+  caption: string;
+  free: boolean;
+  x: number;
+  y: number;
   below: boolean;
 };
 
@@ -68,7 +72,11 @@ export default function DocImageTools({ editor }: { editor: Editor | null }) {
       contentWidth: editor.view.dom.getBoundingClientRect().width || rect.width,
       widthPercent: Math.round(Number(selection.node.attrs.width) || 70),
       align: ((selection.node.attrs.align as ImageAlign) || 'center') as ImageAlign,
-      below: rect.bottom + 58 < window.innerHeight,
+      caption: String(selection.node.attrs.caption ?? ''),
+      free: Boolean(selection.node.attrs.free),
+      x: Number(selection.node.attrs.x) || 0,
+      y: Number(selection.node.attrs.y) || 0,
+      below: rect.bottom + 96 < window.innerHeight,
     });
   }, [editor]);
 
@@ -176,18 +184,76 @@ export default function DocImageTools({ editor }: { editor: Editor | null }) {
     editor?.chain().focus(undefined, { scrollIntoView: false }).updateAttributes('image', { align }).run();
   };
 
+  const setCaption = (caption: string) => {
+    editor?.chain().updateAttributes('image', { caption }).run();
+  };
+
+  /** Lift the picture out of the text flow, starting where it currently sits. */
+  const toggleFree = (next: boolean) => {
+    if (!editor || !box) return;
+    if (!next) {
+      editor.chain().updateAttributes('image', { free: false }).run();
+      return;
+    }
+    const content = editor.view.dom.getBoundingClientRect();
+    const dom = editor.view.nodeDOM(editor.state.selection.from);
+    if (!(dom instanceof HTMLElement) || !content.width) return;
+    const rect = dom.getBoundingClientRect();
+    const x = Math.round(((rect.left - content.left) / content.width) * 1000) / 10;
+    const y = Math.max(0, Math.round(rect.top - content.top));
+    editor.chain().updateAttributes('image', { free: true, x, y }).run();
+  };
+
+  const startMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!editor || !box || event.button !== 0) return;
+    event.preventDefault();
+
+    const content = editor.view.dom.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const leftStart = (box.x / 100) * content.width;
+    const topStart = box.y;
+    const perPixel = 100 / Math.max(160, content.width);
+
+    document.body.classList.add('doc-img-moving');
+
+    const move = (moveEvent: PointerEvent) => {
+      const left = leftStart + (moveEvent.clientX - startX);
+      const top = topStart + (moveEvent.clientY - startY);
+      editor
+        .chain()
+        .updateAttributes('image', {
+          x: Math.round(Math.max(-30, Math.min(95, left * perPixel)) * 10) / 10,
+          y: Math.max(0, Math.round(top)),
+        })
+        .run();
+    };
+    const stop = () => {
+      document.body.classList.remove('doc-img-moving');
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+    };
+
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+  };
+
   if (!mounted || !box) return null;
 
   const viewportWidth = window.innerWidth;
   const barWidth = Math.min(BAR_WIDTH, Math.max(260, viewportWidth - 16));
   const barLeft = Math.max(8, Math.min(box.left + box.width / 2 - barWidth / 2, viewportWidth - barWidth - 8));
-  const barTop = box.below ? box.top + box.height + 10 : box.top - 52;
+  const barTop = box.below ? box.top + box.height + 10 : box.top - 88;
 
   return createPortal(
     <>
       <div
-        className="doc-img-frame"
+        className={`doc-img-frame ${box.free ? 'is-free' : ''}`.trim()}
         style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+        onPointerDown={box.free ? startMove : undefined}
+        title={box.free ? 'Ziehen, um das Bild zu verschieben' : undefined}
       >
         <span
           className="doc-img-grip doc-img-grip-sw"
@@ -219,7 +285,8 @@ export default function DocImageTools({ editor }: { editor: Editor | null }) {
       </div>
 
       <div className="doc-img-bar" style={{ left: barLeft, top: barTop, width: barWidth }}>
-        <span className="mono doc-img-bar-label">Size</span>
+        <div className="doc-img-row">
+          <span className="mono doc-img-bar-label">Size</span>
 
         <button
           type="button"
@@ -288,6 +355,33 @@ export default function DocImageTools({ editor }: { editor: Editor | null }) {
             {ALIGN_ICONS[align]}
           </button>
         ))}
+        </div>
+
+        <div className="doc-img-row doc-img-row-caption">
+          <input
+            className="doc-img-caption-input"
+            value={box.caption}
+            placeholder="Bildunterschrift …"
+            aria-label="Image caption"
+            onChange={(event) => setCaption(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') event.currentTarget.blur();
+              if (event.key === 'Escape') event.currentTarget.blur();
+            }}
+          />
+          <button
+            type="button"
+            className={`doc-img-free ${box.free ? 'on' : ''}`}
+            title={
+              box.free
+                ? 'Zurück in den Textfluss'
+                : 'Aus dem Text lösen – danach frei über das Blatt ziehen'
+            }
+            onClick={() => toggleFree(!box.free)}
+          >
+            {box.free ? 'im text' : 'frei'}
+          </button>
+        </div>
       </div>
     </>,
     document.body,

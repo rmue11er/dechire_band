@@ -7,10 +7,20 @@ import { partLabel } from '@/lib/kinds';
 
 export type ImageAlign = 'left' | 'center' | 'right' | 'full';
 
+/** Attributes may sit on the `<img>` or on the figure around it – read both. */
+const hostOf = (element: HTMLElement): HTMLElement => {
+  const parent = element.parentElement;
+  return parent && parent.classList.contains('doc-figure') ? parent : element;
+};
+
+const attrOf = (element: HTMLElement, name: string) =>
+  element.getAttribute(name) ?? hostOf(element).getAttribute(name);
+
 /**
- * Image node with the two things a printed band document needs: a width in
- * percent and a placement (float left / right, centred, full bleed). Both are
- * plain attributes that survive `getHTML()` and therefore the HTML export.
+ * Image node with what a printed band document needs: a caption, a width in
+ * percent, a placement (float left / right, centred, full bleed) and the option
+ * to lift the picture out of the text and put it anywhere on the sheet. All of
+ * it are plain attributes, so `getHTML()`, the export and print keep them.
  */
 export const DocImage = Image.extend({
   addAttributes() {
@@ -20,7 +30,7 @@ export const DocImage = Image.extend({
         default: 70,
         parseHTML: (element) => {
           const raw =
-            element.getAttribute('data-width') ?? (element as HTMLElement).style?.width ?? '';
+            attrOf(element, 'data-width') ?? (element as HTMLElement).style?.width ?? '';
           const value = parseFloat(String(raw).replace('%', ''));
           return Number.isFinite(value) && value > 0 ? Math.min(100, value) : 70;
         },
@@ -28,23 +38,80 @@ export const DocImage = Image.extend({
       },
       align: {
         default: 'center' as ImageAlign,
-        parseHTML: (element) => (element.getAttribute('data-align') as ImageAlign) || 'center',
+        parseHTML: (element) => (attrOf(element, 'data-align') as ImageAlign) || 'center',
+        renderHTML: () => ({}),
+      },
+      caption: {
+        default: '',
+        parseHTML: (element) => attrOf(element, 'data-caption') ?? '',
+        renderHTML: () => ({}),
+      },
+      free: {
+        default: false,
+        parseHTML: (element) => attrOf(element, 'data-free') === '1',
+        renderHTML: () => ({}),
+      },
+      x: {
+        default: 0,
+        parseHTML: (element) => {
+          const value = Number(attrOf(element, 'data-x'));
+          return Number.isFinite(value) ? value : 0;
+        },
+        renderHTML: () => ({}),
+      },
+      y: {
+        default: 0,
+        parseHTML: (element) => {
+          const value = Number(attrOf(element, 'data-y'));
+          return Number.isFinite(value) ? value : 0;
+        },
         renderHTML: () => ({}),
       },
     };
   },
 
+  parseHTML() {
+    return [
+      ...(this.parent?.() ?? []),
+      // the caption lives in a data attribute – the rendered text must not be
+      // parsed back into the document as body copy
+      { tag: 'figcaption', ignore: true } as never,
+    ];
+  },
+
   renderHTML({ node, HTMLAttributes }) {
     const align = (node.attrs.align as ImageAlign) || 'center';
     const width = Number(node.attrs.width) || 70;
+    const caption = String(node.attrs.caption ?? '').trim();
+    const free = Boolean(node.attrs.free);
+    const x = Number(node.attrs.x) || 0;
+    const y = Number(node.attrs.y) || 0;
+    const size = align === 'full' ? 100 : width;
+
+    const data = {
+      'data-width': String(width),
+      'data-align': align,
+      'data-caption': caption || null,
+      'data-free': free ? '1' : null,
+      'data-x': free ? String(x) : null,
+      'data-y': free ? String(y) : null,
+    };
+
     return [
-      'img',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes as Record<string, unknown>, {
-        class: 'doc-img',
-        'data-align': align,
-        'data-width': String(width),
-        style: `width:${align === 'full' ? 100 : width}%`,
+      'figure',
+      mergeAttributes({ class: 'doc-figure' }, data, {
+        style: free ? `width:${size}%;left:${x}%;top:${y}px` : `width:${size}%`,
       }),
+      [
+        'img',
+        mergeAttributes(this.options.HTMLAttributes, HTMLAttributes as Record<string, unknown>, {
+          class: 'doc-img',
+          // the figure owns the width; this keeps the picture at that width in
+          // places that only have the raw HTML (press kit) and no sheet CSS
+          style: 'width:100%',
+        }),
+      ],
+      ['figcaption', { class: 'doc-figure-cap' }, caption],
     ];
   },
 });

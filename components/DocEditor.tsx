@@ -346,8 +346,8 @@ export default function DocEditor({
   }, [editor]);
 
   /**
-   * Pasted images are uploaded first, then inserted at the cursor. The last one
-   * is selected afterwards, so the size tools are already open.
+   * Pasted images are uploaded first, then inserted at the cursor. The first one
+   * is selected afterwards, so the size, caption and placement tools are open.
    */
   const pasteImages = useCallback(async (files: File[]) => {
     const instance = editorRef.current;
@@ -374,12 +374,24 @@ export default function DocEditor({
           .run();
       });
 
-      for (let offset = 0; offset < 6; offset += 1) {
+      let firstImage = -1;
+      for (let offset = 0; offset < 8; offset += 1) {
         if (instance.state.doc.nodeAt(from + offset)?.type.name === 'image') {
-          instance.commands.setNodeSelection(from + offset);
+          firstImage = from + offset;
           break;
         }
       }
+      if (firstImage < 0) return;
+
+      // inserting a block splits the paragraph – drop the empty half in front
+      const before = instance.state.doc.resolve(firstImage).nodeBefore;
+      if (before && before.type.name === 'paragraph' && before.content.size === 0) {
+        const start = firstImage - before.nodeSize;
+        instance.view.dispatch(instance.state.tr.delete(start, firstImage));
+        firstImage = start;
+      }
+
+      instance.commands.setNodeSelection(firstImage);
 
       toast(uploaded.length === 1 ? 'Image pasted' : `${uploaded.length} images pasted`);
     } catch (error: any) {
@@ -817,6 +829,15 @@ export default function DocEditor({
   .body img.doc-img[data-align="left"] { float: left; margin: 4px 20px 14px 0; }
   .body img.doc-img[data-align="right"] { float: right; margin: 4px 0 14px 20px; }
   .body img.doc-img[data-align="full"] { width: 100% !important; margin: 22px 0; }
+  .body figure.doc-figure { margin: 18px auto; max-width: 100%; }
+  .body figure.doc-figure img.doc-img { width: 100%; margin: 0; }
+  .body figure.doc-figure[data-align="left"] { float: left; margin: 4px 20px 14px 0; }
+  .body figure.doc-figure[data-align="right"] { float: right; margin: 4px 0 14px 20px; }
+  .body figure.doc-figure[data-align="full"] { width: 100% !important; margin: 22px 0; }
+  .body figure.doc-figure[data-free="1"] { position: absolute; z-index: 2; margin: 0 !important; float: none !important; page-break-inside: avoid; }
+  .body .doc-figure-cap { display: block; margin-top: 7px; font-family: ${mono}; font-size: 8.5px; letter-spacing: .14em; text-transform: uppercase; line-height: 1.5; color: rgba(29, 24, 38, .55); }
+  .body .doc-figure-cap::before { content: ''; display: inline-block; width: 10px; height: 1px; margin-right: 7px; vertical-align: 3px; background: var(--accent-2); }
+  .body .doc-figure-cap:empty { display: none; }
   .body::after { content: ''; display: block; clear: both; }
   .body .doc-icon { display: inline-block; vertical-align: -.12em; line-height: 0; color: var(--accent-deep); }
   .body .doc-icon svg { width: var(--ico, 16px); height: var(--ico, 16px); fill: currentColor; }  .body ul[data-type="taskList"] { list-style: none; padding-left: 0; }

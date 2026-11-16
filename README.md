@@ -239,8 +239,14 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   and a **size bar** appears right under it: − / + in 5 % steps, a slider, presets `25 / 50 / 75 / 100` and
   placement `left / center / right / full`. Dragging one of the two corner **grips** resizes it directly; the
   arrow keys nudge a focused grip. Left and right float, so text wraps around the picture – exactly the way a
-  rider or a stage plot reads best. Size and placement live in `data-width` / `data-align`, which means they
-  survive autosave, the HTML export and the PDF print.
+  rider or a stage plot reads best.
+- **Captions + free placement**: the same bar has a caption field – the text sits under the picture in the
+  sheet (mono micro label with an accent dash), the field is empty by default and the line disappears again
+  when you clear it. The button `frei` lifts the picture out of the text flow: it becomes absolutely
+  positioned on the sheet, and dragging it moves it anywhere (corner grips keep working). `im text` puts it
+  back where it belongs in the reading order. Size, placement, caption and free position live in
+  `data-width` / `data-align` / `data-caption` / `data-free` + `data-x` / `data-y`, so they survive autosave,
+  the HTML export and the PDF print.
 - **Icons**: 124 hand-picked **Font Awesome Free (Solid)** icons – band, mood, on the road, orga, promo,
   marks – searchable, with recents. They are inserted as **inline SVG** (not a webfont), take the accent
   colour and stay self-contained in the exported HTML. Licence: icons CC BY 4.0, fonts OFL 1.1, code MIT.
