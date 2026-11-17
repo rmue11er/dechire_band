@@ -247,6 +247,12 @@ no second hue in the chrome, no drop shadows. Contrast comes from hairlines, typ
   back where it belongs in the reading order. Size, placement, caption and free position live in
   `data-width` / `data-align` / `data-caption` / `data-free` + `data-x` / `data-y`, so they survive autosave,
   the HTML export and the PDF print.
+- **Every picture ends up in the library**: a document may only reference `/api/files/…`. Pictures that arrive
+  as `blob:` (browser session), `data:` (base64) or as a hot link to another site are copied into the media
+  library on the next open and the document is rewritten to the local copy – otherwise they show up on the
+  machine that pasted them and as an empty frame everywhere else. While that happens a red `nicht lokal`
+  chip sits in the image bar (click to retry), and a picture whose file is really gone gets a hatched
+  `image missing` box instead of nothing.
 - **Icons**: 124 hand-picked **Font Awesome Free (Solid)** icons – band, mood, on the road, orga, promo,
   marks – searchable, with recents. They are inserted as **inline SVG** (not a webfont), take the accent
   colour and stay self-contained in the exported HTML. Licence: icons CC BY 4.0, fonts OFL 1.1, code MIT.
@@ -673,6 +679,7 @@ docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + ngin
 | GET/PATCH/DELETE | `/api/posts/:id` | Detail / update / delete |
 | POST | `/api/posts/reorder` | `{ ids }` or `{ action: "sort-by-date" }` |
 | GET/POST | `/api/media` | List / multipart upload (`files`) |
+| POST | `/api/media/ingest` | Copy a `data:` or `http(s)` image into the library |
 | GET/PATCH/DELETE | `/api/media/:id` | Detail / metadata / delete |
 | GET/POST/PATCH/DELETE | `/api/media-groups` | Asset groups |
 | GET/POST | `/api/notes`, `/api/notes/:id` | Notes |

@@ -858,6 +858,45 @@
   display: none;
 }
 
+/* a picture whose file is gone: hatched box instead of an empty frame ------ */
+
+.doc-page .doc-content img.doc-img[data-missing] {
+  min-height: 96px;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(20, 19, 17, 0.06) 0 7px,
+    rgba(20, 19, 17, 0.12) 7px 14px
+  );
+  outline: 1px dashed rgba(20, 19, 17, 0.4);
+  outline-offset: -1px;
+  box-shadow: none;
+}
+
+.doc-page .doc-content figure.doc-figure:has(img.doc-img[data-missing]) {
+  position: relative;
+}
+
+.doc-page .doc-content figure.doc-figure[data-free='1']:has(img.doc-img[data-missing]) {
+  position: absolute;
+}
+
+.doc-page .doc-content figure.doc-figure:has(img.doc-img[data-missing])::after {
+  content: 'image missing';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 4px 9px;
+  border: 1px solid rgba(20, 19, 17, 0.22);
+  background: rgba(244, 241, 234, 0.94);
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(20, 19, 17, 0.6);
+  white-space: nowrap;
+}
+
 .doc-page .doc-content::after {
   content: '';
   display: block;
@@ -1012,6 +1051,17 @@ body.doc-img-moving {
   color: var(--accent);
   border-color: rgb(var(--accent-rgb) / 0.6);
   background: rgb(var(--accent-rgb) / 0.12);
+}
+
+.doc-img-free.doc-img-repair {
+  border-color: #b4543f;
+  color: #e08b73;
+}
+
+.doc-img-free.doc-img-repair:hover {
+  border-color: #d4715a;
+  color: #f0a48c;
+  background: rgba(180, 84, 63, 0.14);
 }
 
 .doc-img-bar-label {

@@ -26,6 +26,7 @@ type Box = {
   free: boolean;
   x: number;
   y: number;
+  remote: boolean;
   below: boolean;
 };
 
@@ -40,7 +41,13 @@ const ALIGN_ICONS = {
   full: <IconExpand size={14} />,
 } as const;
 
-export default function DocImageTools({ editor }: { editor: Editor | null }) {
+export default function DocImageTools({
+  editor,
+  onRepair,
+}: {
+  editor: Editor | null;
+  onRepair?: () => void;
+}) {
   const [box, setBox] = useState<Box | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -76,6 +83,7 @@ export default function DocImageTools({ editor }: { editor: Editor | null }) {
       free: Boolean(selection.node.attrs.free),
       x: Number(selection.node.attrs.x) || 0,
       y: Number(selection.node.attrs.y) || 0,
+      remote: !String(selection.node.attrs.src ?? '').startsWith('/api/files/'),
       below: rect.bottom + 96 < window.innerHeight,
     });
   }, [editor]);
@@ -381,6 +389,16 @@ export default function DocImageTools({ editor }: { editor: Editor | null }) {
           >
             {box.free ? 'im text' : 'frei'}
           </button>
+          {box.remote ? (
+            <button
+              type="button"
+              className="doc-img-free doc-img-repair"
+              title="Das Bild liegt nicht in der Mediathek – auf anderen Geräten bleibt es deshalb leer. Klicken, um es lokal zu speichern."
+              onClick={onRepair}
+            >
+              nicht lokal
+            </button>
+          ) : null}
         </div>
       </div>
     </>,

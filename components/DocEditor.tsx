@@ -125,6 +125,8 @@ export default function DocEditor({
   const contentRef = useRef({ html: doc.content, text: doc.plainText });
   const editorRef = useRef<Editor | null>(null);
   const pasteImagesRef = useRef<(files: File[]) => void>(() => {});
+  const repairRef = useRef<() => void>(() => {});
+  const repairingRef = useRef(false);
   const palette = usePalette();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
@@ -177,7 +179,9 @@ export default function DocEditor({
       TableRow,
       TableHeader,
       TableCell,
-      DocImage.configure({ inline: false, allowBase64: false }),
+      // base64 is accepted so old/pasted-inline pictures survive parsing and can
+      // be copied into the library (see repairImages) instead of being dropped
+      DocImage.configure({ inline: false, allowBase64: true }),
       DocIcon,
       DocSection,
       DocCollapsibleHeadings.configure({ enabled: doc.kind !== 'lyrics' }),
@@ -215,7 +219,15 @@ export default function DocEditor({
               .map((match, index) => dataUrlToFile(match[1], index))
               .filter((file): file is File => Boolean(file));
 
-        if (!pasted.length) return false;
+        if (!pasted.length) {
+          // a picture that points somewhere else (blob:, https: …) is inserted
+          // by the editor and moved into the library right afterwards
+          if (/<img\b/i.test(data.getData('text/html'))) {
+            window.setTimeout(() => repairRef.current(), 400);
+          }
+          return false;
+        }
+
         event.preventDefault();
         pasteImagesRef.current(pasted);
         return true;
@@ -247,6 +259,9 @@ export default function DocEditor({
       editor.commands.setContent(doc.content || '<p></p>', false);
       setWords(editor.getText().split(/\s+/).filter(Boolean).length);
     }
+    // pictures that live outside the library are pulled in after the switch
+    const repairTimer = window.setTimeout(() => repairRef.current(), 150);
+    return () => window.clearTimeout(repairTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc.id, editor]);
 
@@ -345,6 +360,24 @@ export default function DocEditor({
     editorRef.current = editor;
   }, [editor]);
 
+  /* a picture whose file is gone gets a hatched box instead of an empty frame */
+  useEffect(() => {
+    const dom = editor?.view.dom;
+    if (!dom) return;
+    const onError = (event: Event) => {
+      if (event.target instanceof HTMLImageElement) event.target.dataset.missing = '1';
+    };
+    const onLoad = (event: Event) => {
+      if (event.target instanceof HTMLImageElement) delete event.target.dataset.missing;
+    };
+    dom.addEventListener('error', onError, true);
+    dom.addEventListener('load', onLoad, true);
+    return () => {
+      dom.removeEventListener('error', onError, true);
+      dom.removeEventListener('load', onLoad, true);
+    };
+  }, [editor]);
+
   /**
    * Pasted images are uploaded first, then inserted at the cursor. The first one
    * is selected afterwards, so the size, caption and placement tools are open.
@@ -402,6 +435,95 @@ export default function DocEditor({
   useEffect(() => {
     pasteImagesRef.current = pasteImages;
   }, [pasteImages]);
+
+  const refreshMedia = useCallback(() => {
+    fetch('/api/media')
+      .then((response) => response.json())
+      .then((data) => setMedia(data.media ?? []))
+      .catch(() => {});
+  }, []);
+
+  /** One picture: blob → upload, data:/http(s) → server-side copy. */
+  const migrateImage = async (src: string): Promise<string | null> => {
+    if (src.startsWith('blob:')) {
+      const response = await fetch(src);
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      const type = blob.type || 'image/png';
+      const ext = type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'png';
+      const form = new FormData();
+      form.append('files', new File([blob], `clipboard-${Date.now()}.${ext}`, { type }));
+      const upload = await fetch('/api/media', { method: 'POST', body: form });
+      const data = await upload.json();
+      return upload.ok ? (data.media?.[0]?.url ?? null) : null;
+    }
+
+    const response = await fetch('/api/media/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(src.startsWith('data:') ? { dataUrl: src } : { url: src }),
+    });
+    const data = await response.json();
+    return response.ok ? (data.media?.url ?? null) : null;
+  };
+
+  /**
+   * Pictures that only exist in the browser that pasted them (blob:, data:) or
+   * that are hot-linked (https:) are invisible on every other device. This
+   * copies them into the library and rewrites the document to use the copy.
+   */
+  const repairImages = useCallback(async () => {
+    const instance = editorRef.current;
+    if (!instance || instance.isDestroyed || repairingRef.current) return;
+
+    const targets: { src: string }[] = [];
+    instance.state.doc.descendants((node) => {
+      if (node.type.name !== 'image') return true;
+      const src = String(node.attrs.src ?? '');
+      if (!src || src.startsWith('/api/files/')) return true;
+      if (!/^(blob:|data:image\/|https?:\/\/)/i.test(src)) return true;
+      if (!targets.some((entry) => entry.src === src)) targets.push({ src });
+      return true;
+    });
+    if (!targets.length) return;
+
+    repairingRef.current = true;
+    let moved = 0;
+
+    for (const target of targets) {
+      try {
+        const local = await migrateImage(target.src);
+        if (!local) continue;
+
+        let position = -1;
+        instance.state.doc.descendants((node, pos) => {
+          if (position < 0 && node.type.name === 'image' && node.attrs.src === target.src) {
+            position = pos;
+            return false;
+          }
+          return position < 0;
+        });
+        if (position < 0) continue;
+
+        instance.view.dispatch(instance.state.tr.setNodeAttribute(position, 'src', local));
+        moved += 1;
+      } catch {
+        /* keep the original source */
+      }
+    }
+
+    repairingRef.current = false;
+
+    if (moved) {
+      markDirty();
+      refreshMedia();
+      toast(moved === 1 ? 'Image copied into the library' : `${moved} images copied into the library`);
+    }
+  }, [markDirty, refreshMedia]);
+
+  useEffect(() => {
+    repairRef.current = repairImages;
+  }, [repairImages]);
 
   const refreshAudio = async () => {
     try {
@@ -1312,7 +1434,7 @@ export default function DocEditor({
 
           <EditorContent editor={editor} />
 
-          <DocImageTools editor={editor} />
+          <DocImageTools editor={editor} onRepair={() => void repairImages()} />
 
           <footer className="doc-sheet-foot">
             <span>{band} /// Post-hardcore</span>
