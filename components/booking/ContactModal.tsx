@@ -77,6 +77,7 @@ export default function ContactModal({
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [looking, setLooking] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -84,6 +85,35 @@ export default function ContactModal({
   }, [open, contact]);
 
   const set = (patch: Partial<Draft>) => setDraft((current) => ({ ...current, ...patch }));
+
+  /** Reads the address off the venue's own site (Impressum/Kontakt). */
+  const lookupEmail = async () => {
+    if (!contact) return;
+    setLooking(true);
+    try {
+      const response = await fetch('/api/booking/research', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [contact.id], wait: true, overwrite: true, website: draft.website }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Suche fehlgeschlagen');
+      if (data.result?.email) {
+        set({ email: data.result.email });
+        toast(
+          data.result.sourceUrl
+            ? `${data.result.email} gefunden – Quelle: ${data.result.sourceUrl}`
+            : `${data.result.email} gefunden`
+        );
+      } else {
+        toast(data.result?.note ?? 'Keine Adresse gefunden', 'error');
+      }
+    } catch (error: any) {
+      toast(error.message ?? 'Suche fehlgeschlagen', 'error');
+    } finally {
+      setLooking(false);
+    }
+  };
 
   const save = async () => {
     if (!draft.name.trim()) {
@@ -192,13 +222,24 @@ export default function ContactModal({
         </div>
         <div className="form-row">
           <Field label="E-Mail" hint={<span className="mono small muted">Pflicht zum Senden</span>}>
-            <input
-              className="input"
-              type="email"
-              placeholder="booking@…"
-              value={draft.email}
-              onChange={(event) => set({ email: event.target.value })}
-            />
+            <div className="booking-lookup">
+              <input
+                className="input"
+                type="email"
+                placeholder="booking@…"
+                value={draft.email}
+                onChange={(event) => set({ email: event.target.value })}
+              />
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost"
+                onClick={lookupEmail}
+                disabled={looking || !contact || !draft.website.trim()}
+                title="Adresse auf der Website des Kontakts suchen (Impressum, Kontaktseite)"
+              >
+                {looking ? 'sucht …' : 'suchen'}
+              </button>
+            </div>
           </Field>
           <Field label="Ansprechpartner">
             <input

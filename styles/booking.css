@@ -308,6 +308,28 @@
   accent-color: var(--accent);
 }
 
+/* e-mail lookup – field with a search button, plus the batch progress ----- */
+
+.booking-lookup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.booking-lookup .input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.booking-lookup .btn {
+  flex: 0 0 auto;
+}
+
+.booking-research-note {
+  flex-basis: 100%;
+  padding-top: 2px;
+}
+
 .booking-statuses {
   display: flex;
   flex-wrap: wrap;

@@ -12,6 +12,16 @@ import ContactModal from './ContactModal';
 
 const PRIORITY_LABEL: Record<number, string> = { 1: 'Top-Ziel', 2: 'normal', 3: 'später' };
 
+type ResearchProgress = {
+  running: boolean;
+  total: number;
+  done: number;
+  found: number;
+  skipped: number;
+  failed: number;
+  current: string;
+};
+
 export default function ContactsPanel({
   contacts,
   templates,
@@ -44,6 +54,50 @@ export default function ContactsPanel({
   const [creating, setCreating] = useState(false);
   const [composing, setComposing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [research, setResearch] = useState<ResearchProgress | null>(null);
+
+  /* the lookup runs in the background – poll it like the mail queue */
+  useEffect(() => {
+    if (!research?.running) return;
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await fetch('/api/booking/research');
+        const data = await response.json();
+        if (!response.ok) return;
+        setResearch(data.research);
+        if (!data.research.running) {
+          toast(`${data.research.found} E-Mail-Adressen gefunden`);
+          onRefresh();
+        }
+      } catch {
+        /* keep polling */
+      }
+    }, 2500);
+    return () => window.clearInterval(timer);
+  }, [research?.running, onRefresh]);
+
+  const startResearch = async () => {
+    setBusy(true);
+    try {
+      const response = await fetch('/api/booking/research', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ overwrite: false }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Recherche konnte nicht starten');
+      if (!data.started) {
+        toast('Alle Kontakte haben schon eine Adresse');
+        return;
+      }
+      setResearch(data.research);
+      toast(`Recherche für ${data.started} Kontakte gestartet`);
+    } catch (error: any) {
+      toast(error.message ?? 'Recherche fehlgeschlagen', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   /* a hit from the global search opens that contact straight away */
   useEffect(() => {
@@ -127,6 +181,15 @@ export default function ContactsPanel({
             <span className="mono small muted">
               {filtered.length} von {contacts.length}
             </span>
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={startResearch}
+              disabled={busy || research?.running}
+              title="E-Mail-Adressen auf den Websites der Kontakte suchen (Impressum, Kontaktseite)"
+            >
+              {research?.running ? `${research.done}/${research.total}` : 'E-Mails suchen'}
+            </button>
             <button type="button" className="btn btn-sm btn-ghost" onClick={onRestoreSeed} disabled={busy}>
               {seedMissing ? `Recherche +${seedMissing}` : 'Recherche'}
             </button>
@@ -172,6 +235,12 @@ export default function ContactsPanel({
             <input type="checkbox" checked={mailOnly} onChange={(event) => setMailOnly(event.target.checked)} />
             <span>nur mit E-Mail</span>
           </label>
+          {research?.running ? (
+            <span className="mono small muted booking-research-note">
+              sucht {research.done} von {research.total} · {research.found} gefunden
+              {research.current ? ` · ${research.current}` : ''}
+            </span>
+          ) : null}
         </div>
 
         <div className="panel-body booking-statuses">

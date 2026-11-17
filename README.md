@@ -558,7 +558,16 @@ The module that actually gets you the gig – a guide, a researched contact list
   invented – every row links to the site where the booking contact lives.
 - **Vorlagen**: five ready German/English templates (venue, festival, follow-up, label pitch, press) with
   `{{placeholders}}` for band, city, links and sender, a live preview per contact, and an *Absender &
-  Links* panel that feeds them.
+  Links* panel that feeds them.- **E-Mail-Adressen recherchieren** (`lib/bookingResearch.ts`): *E-Mails suchen* in the contacts toolbar reads
+  the address off the venue's own site – `mailto:` links and plain text, following the links to
+  Impressum/Kontakt/Booking (plus the usual `/impressum`, `/kontakt` paths for JavaScript-only sites). Booking
+  and programme addresses are ranked above `info@`, ticket and shop addresses; addresses that are obviously
+  assets, trackers or placeholders are dropped. Never guessed: an invented `info@venue.de` bounces or lands on
+  the wrong desk. The run goes through all contacts without an address, reports progress in the toolbar
+  (`sucht 12 von 204 · 7 gefunden`) and writes the address **plus the page it came from** into the contact
+  notes; a single contact can be looked up from its dialog (*suchen* next to the field, works with a freshly
+  typed website). Contacts whose seeded link is only a search query need their domain entered once – the
+  lookup cannot search the web.
 - **E-Mail**: your own SMTP mailbox (IONOS, Gmail, Mailbox.org, Posteo, All-Inkl presets or custom host,
   password stored in the database, `MAIL_*` env vars as fallback), *Verbindung testen*, and a send log.
   Sending goes through a **background queue**: `POST /api/booking/outreach` renders one personal mail per
@@ -710,6 +719,7 @@ docs/DEPLOY.md             Server setup: Plesk Node.js extension, systemd + ngin
 | GET/POST | `/api/booking` | Booking bundle (contacts, templates, steps, mailbox) / seed & profile |
 | GET/POST/PATCH | `/api/booking/contacts`, `/api/booking/contacts/:id` | Contacts, bulk edit, create (PATCH/DELETE on `:id`) |
 | GET/POST | `/api/booking/outreach` | Send log and queue / queue personalised mails |
+| GET/POST | `/api/booking/research` | E-mail lookup: progress / start for all or `{ ids }`, `{ wait:true }` answers directly |
 | PATCH | `/api/booking/steps` | Tick guide steps |
 | PATCH | `/api/booking/templates/:id` | Edit a mail template |
 | GET/POST | `/api/booking/mail` | Mailbox settings, connection test |
