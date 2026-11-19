@@ -981,15 +981,29 @@
 
 .doc-page .doc-content .doc-icon {
   display: inline-block;
-  vertical-align: -0.12em;
+  /* centred on the cap height of the text around it – works for body copy,
+     headings and table cells, and for any icon size (--ico) */
+  vertical-align: calc(0.36em - var(--ico, 16px) / 2);
   line-height: 0;
+  /* makes the baseline the bottom edge of the box, so the offset above is the
+     one that is actually applied (an inline-block with line boxes reports the
+     baseline of its content instead) */
+  overflow: hidden;
 }
 
 .doc-page .doc-content .doc-icon svg {
   width: var(--ico, 16px);
   height: var(--ico, 16px);
   fill: currentColor;
-  vertical-align: inherit;
+  /* top, not inherit – inheriting the span's offset double-shifted the icon */
+  vertical-align: top;
+}
+
+/* h2 and task rows are flex containers – vertical-align is ignored there, and
+   baseline alignment would hang the icon under the line */
+.doc-page .doc-content h2 .doc-icon,
+.doc-page .doc-content ul[data-type='taskList'] li .doc-icon {
+  align-self: center;
 }
 
 /* image size – frame with grips plus a small bar right at the picture ------- */

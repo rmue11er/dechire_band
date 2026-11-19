@@ -963,8 +963,9 @@ export default function DocEditor({
   .body .doc-figure-cap::before { content: ''; display: inline-block; width: 10px; height: 1px; margin-right: 7px; vertical-align: 3px; background: var(--accent-2); }
   .body .doc-figure-cap:empty { display: none; }
   .body::after { content: ''; display: block; clear: both; }
-  .body .doc-icon { display: inline-block; vertical-align: -.12em; line-height: 0; color: var(--doc-fg, var(--accent-deep)); }
-  .body .doc-icon svg { width: var(--ico, 16px); height: var(--ico, 16px); fill: currentColor; }  .body ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+  .body .doc-icon { display: inline-block; vertical-align: calc(0.36em - var(--ico, 16px) / 2); line-height: 0; color: var(--doc-fg, var(--accent-deep)); }
+  .body .doc-icon svg { width: var(--ico, 16px); height: var(--ico, 16px); vertical-align: top; fill: currentColor; }
+  .body h2 .doc-icon, .body ul[data-type="taskList"] li .doc-icon { align-self: center; }  .body ul[data-type="taskList"] { list-style: none; padding-left: 0; }
   .body ul[data-type="taskList"] li { display: flex; gap: 8px; align-items: flex-start; }
   .body ul[data-type="taskList"] input { accent-color: var(--accent-deep); }
   .demos { display: grid; gap: 10px; margin: 30px 0 0; padding-top: 16px; border-top: 1px dashed rgb(20 19 17 / .26); }
