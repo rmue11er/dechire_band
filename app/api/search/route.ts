@@ -1,5 +1,7 @@
 import { ok } from '@/lib/api';
 import { queryAll } from '@/lib/db';
+import { isHrefHidden, normaliseHiddenModules } from '@/lib/modules';
+import { getProfile } from '@/lib/repo';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -35,6 +37,8 @@ export async function GET(request: Request) {
 
   const like = `%${term.replace(/[%_]/g, '')}%`;
   const hits: SearchHit[] = [];
+  // modules switched off in Settings are not searchable either
+  const hidden = normaliseHiddenModules(getProfile().hiddenModules);
 
   for (const row of queryAll<any>(
     'SELECT id, caption, status FROM posts WHERE caption LIKE ? OR first_comment LIKE ? OR location LIKE ? ORDER BY position ASC LIMIT 8',
@@ -164,5 +168,5 @@ export async function GET(request: Request) {
     });
   }
 
-  return ok({ hits });
+  return ok({ hits: hits.filter((hit) => !isHrefHidden(hidden, hit.href)) });
 }

@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { db, execute, queryAll, queryOne } from './db';
+import { normaliseHiddenModules } from './modules';
 import { buildTasks } from './release';
 import type {
   BandDocument,
@@ -1045,6 +1046,7 @@ export function getProfile(): Profile {
       docMediaId: null,
       docImageUrl: null,
       docMarkStrength: 30,
+      hiddenModules: [],
       updatedAt: new Date().toISOString(),
     };
   }
@@ -1065,6 +1067,7 @@ export function getProfile(): Profile {
     docMediaId: row.doc_media_id == null ? null : Number(row.doc_media_id),
     docImageUrl: docImage?.url ?? null,
     docMarkStrength: Number(row.doc_mark_strength ?? 30),
+    hiddenModules: normaliseHiddenModules(parseList(row.hidden_modules)),
     updatedAt: row.updated_at,
   };
 }
@@ -1085,11 +1088,15 @@ export function updateProfile(patch: Record<string, any>) {
     accent2Hex: 'accent_2_hex',
     docMediaId: 'doc_media_id',
     docMarkStrength: 'doc_mark_strength',
+    hiddenModules: 'hidden_modules',
   };
   for (const [key, column] of Object.entries(map)) {
     if (patch[key] !== undefined) {
       sets.push(`${column} = ?`);
-      const value = key === 'highlightNames' ? JSON.stringify(patch[key] ?? []) : patch[key] ?? null;
+      const value =
+        key === 'highlightNames' || key === 'hiddenModules'
+          ? JSON.stringify(patch[key] ?? [])
+          : patch[key] ?? null;
       params.push(value);
     }
   }

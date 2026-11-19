@@ -193,6 +193,8 @@ export interface Profile {
   docMediaId: number | null;
   docImageUrl: string | null;
   docMarkStrength: number;
+  /** Modules switched off in Settings – ids from `lib/modules.ts`. */
+  hiddenModules: string[];
   updatedAt: string;
 }
 

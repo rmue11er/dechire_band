@@ -10,6 +10,7 @@ import {
   IconDocument,
   IconDownload,
   IconEye,
+  IconGrid,
   IconImage,
   IconInstagram,
   IconPlus,
@@ -20,6 +21,8 @@ import {
 } from '@/components/icons';
 import MediaPicker from '@/components/MediaPicker';
 import { Field, PageHead, Spinner } from '@/components/ui';
+import { setHiddenModules as publishHiddenModules } from '@/components/useHiddenModules';
+import { MODULE_GROUPS, normaliseHiddenModules } from '@/lib/modules';
 import { DEFAULT_ACCENT, DEFAULT_PALETTE, PALETTE_ROLES, applyAccent, isHex, isLightHex } from '@/lib/palette';
 import { toast } from '@/lib/toast';
 import type { MediaItem, PaletteColor, Profile, TrashEntry } from '@/lib/types';
@@ -57,6 +60,8 @@ export default function SettingsPage() {
   const [docImageUrl, setDocImageUrl] = useState<string | null>(null);
   const [docMark, setDocMark] = useState(30);
   const [docSaving, setDocSaving] = useState(false);
+  const [hidden, setHidden] = useState<string[]>([]);
+  const [moduleSaving, setModuleSaving] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [removingDemo, setRemovingDemo] = useState(false);
@@ -131,6 +136,7 @@ export default function SettingsPage() {
     setDocMediaId(next.docMediaId ?? null);
     setDocImageUrl(next.docImageUrl ?? null);
     setDocMark(next.docMarkStrength ?? 30);
+    setHidden(next.hiddenModules ?? []);
   };
 
   useEffect(() => {
@@ -232,6 +238,35 @@ export default function SettingsPage() {
       toast(error.message ?? 'Failed to save', 'error');
     } finally {
       setDocSaving(false);
+    }
+  };
+
+  /**
+   * A module switch saves right away – it is a preference, not a form field.
+   * Sidebar and ⌘K follow through the shared hidden-modules store.
+   */
+  const toggleModule = async (id: string, label: string) => {
+    const next = hidden.includes(id) ? hidden.filter((entry) => entry !== id) : [...hidden, id];
+    setHidden(next);
+    setModuleSaving(id);
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hiddenModules: next }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? 'Failed to save');
+      setProfile(data.profile);
+      const saved = normaliseHiddenModules(data.profile.hiddenModules);
+      setHidden(saved);
+      publishHiddenModules(saved);
+      toast(saved.includes(id) ? `${label} hidden` : `${label} is back`);
+    } catch (error: any) {
+      setHidden(hidden);
+      toast(error.message ?? 'Could not save', 'error');
+    } finally {
+      setModuleSaving(null);
     }
   };
 
@@ -831,6 +866,64 @@ export default function SettingsPage() {
           </div>
         </section>
       </div>
+
+      <section className="panel modules-panel">
+        <div className="panel-head">
+          <div className="panel-title">
+            <IconGrid size={16} />
+            Modules
+          </div>
+          <span className="mono small muted">
+            {MODULE_GROUPS.reduce((total, group) => total + group.items.filter((item) => !hidden.includes(item.id)).length, 0)} active
+          </span>
+        </div>
+        <div className="panel-body">
+          <p className="palette-intro">
+            Switch off what this band does not use: the entry disappears from the sidebar and from ⌘K. Nothing
+            is deleted – everything stays in the database and the module comes straight back when you switch it
+            on again.
+          </p>
+
+          <div className="module-groups">
+            {MODULE_GROUPS.map((group) => (
+              <div key={group.id} className="module-group">
+                <span className="module-group-label mono">
+                  /// {group.label}
+                </span>
+                <div className="module-rows">
+                  {group.items.map((module) => {
+                    const on = !hidden.includes(module.id);
+                    return (
+                      <div key={module.id} className={`module-row ${on ? '' : 'off'}`}>
+                        <div className="module-text">
+                          <strong>{module.label}</strong>
+                          <span>{module.note}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className={`switch ${on ? 'on' : ''}`}
+                          role="switch"
+                          aria-checked={on}
+                          aria-label={`${module.label} visible`}
+                          title={
+                            module.locked
+                              ? 'Settings always stays visible'
+                              : on
+                                ? 'Hide this module'
+                                : 'Show this module again'
+                          }
+                          disabled={module.locked || moduleSaving !== null}
+                          onClick={() => toggleModule(module.id, module.label)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <section className="panel accent-panel">
         <div className="panel-head">

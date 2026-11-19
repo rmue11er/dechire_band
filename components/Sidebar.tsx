@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useHiddenModules } from '@/components/useHiddenModules';
+import { MODULE_GROUPS } from '@/lib/modules';
 import {
   IconBookmark,
   IconCalendar,
@@ -24,57 +26,34 @@ import {
   IconZap,
 } from '@/components/icons';
 
-type NavItem = { href: string; label: string; icon: typeof IconLayout };
+type NavItem = { id: string; href: string; label: string; icon: typeof IconLayout };
 
-const DASHBOARD: NavItem = { href: '/admin', label: 'Dashboard', icon: IconLayout };
+const DASHBOARD: NavItem = { id: 'dashboard', href: '/admin', label: 'Dashboard', icon: IconLayout };
 
-const GROUPS: { id: string; label: string; items: NavItem[] }[] = [
-  {
-    id: 'plan',
-    label: 'Plan',
-    items: [
-      { href: '/admin/planner', label: 'Post Planner', icon: IconInstagram },
-      { href: '/admin/calendar', label: 'Calendar', icon: IconCalendar },
-      { href: '/admin/releases', label: 'Release Wave', icon: IconZap },
-      { href: '/admin/booking', label: 'Booking', icon: IconMail },
-    ],
-  },
-  {
-    id: 'music',
-    label: 'Music',
-    items: [
-      { href: '/admin/songs', label: 'Songs', icon: IconMusic },
-      { href: '/admin/reels', label: 'Reel Lab', icon: IconFilm },
-      { href: '/admin/videos', label: 'Video Lab', icon: IconVideo },
-    ],
-  },
-  {
-    id: 'design',
-    label: 'Design',
-    items: [
-      { href: '/admin/studio', label: 'Design Studio', icon: IconSparkles },
-      { href: '/admin/palette', label: 'Colour Lab', icon: IconSwatch },
-    ],
-  },
-  {
-    id: 'library',
-    label: 'Library',
-    items: [
-      { href: '/admin/media', label: 'Media', icon: IconImage },
-      { href: '/admin/notes', label: 'Notes', icon: IconNote },
-      { href: '/admin/docs', label: 'Documents', icon: IconDocument },
-    ],
-  },
-  {
-    id: 'setup',
-    label: 'Setup',
-    items: [
-      { href: '/admin/website', label: 'Website', icon: IconGlobe },
-      { href: '/admin/brand', label: 'Brand Sheet', icon: IconBookmark },
-      { href: '/admin/settings', label: 'Settings', icon: IconSettings },
-    ],
-  },
-];
+/** Icons belong to the look, not to the module list – mapped by href. */
+const ICONS: Record<string, typeof IconLayout> = {
+  '/admin/planner': IconInstagram,
+  '/admin/calendar': IconCalendar,
+  '/admin/releases': IconZap,
+  '/admin/booking': IconMail,
+  '/admin/songs': IconMusic,
+  '/admin/reels': IconFilm,
+  '/admin/videos': IconVideo,
+  '/admin/studio': IconSparkles,
+  '/admin/palette': IconSwatch,
+  '/admin/media': IconImage,
+  '/admin/notes': IconNote,
+  '/admin/docs': IconDocument,
+  '/admin/website': IconGlobe,
+  '/admin/brand': IconBookmark,
+  '/admin/settings': IconSettings,
+};
+
+const GROUPS: { id: string; label: string; items: NavItem[] }[] = MODULE_GROUPS.map((group) => ({
+  id: group.id,
+  label: group.label,
+  items: group.items.map((item) => ({ ...item, icon: ICONS[item.href] ?? IconLayout })),
+}));
 
 const ALL_ITEMS = GROUPS.flatMap((group) => group.items);
 const INDEX_BY_HREF = new Map(ALL_ITEMS.map((item, index) => [item.href, String(index + 1).padStart(2, '0')]));
@@ -85,6 +64,7 @@ export default function Sidebar() {
   const [locked, setLocked] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [navReady, setNavReady] = useState(false);
+  const hiddenModules = useHiddenModules();
   const isActive = (href: string) =>
     href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
   const activeGroup = GROUPS.find((group) => group.items.some((item) => isActive(item.href)))?.id;
@@ -161,6 +141,8 @@ export default function Sidebar() {
         </Link>
 
         {GROUPS.map((group) => {
+          const items = group.items.filter((item) => !hiddenModules.includes(item.id));
+          if (!items.length) return null;
           const open = Boolean(openGroups[group.id]);
           return (
             <div key={group.id} className={`nav-group ${open ? 'open' : 'collapsed'}`}>
@@ -174,11 +156,11 @@ export default function Sidebar() {
                   <i>///</i>
                   {group.label}
                 </span>
-                <span className="nav-group-count">{group.items.length}</span>
+                <span className="nav-group-count">{items.length}</span>
                 <IconChevronDown size={12} className="nav-group-caret" />
               </button>
               <div className="nav-group-items">
-                {group.items.map((item) => {
+                {items.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
                   return (

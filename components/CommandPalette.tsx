@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconSearch, IconX } from '@/components/icons';
+import { useHiddenModules } from '@/components/useHiddenModules';
+import { isHrefHidden } from '@/lib/modules';
 
 type Hit = {
   kind: string;
@@ -38,11 +40,15 @@ const KIND_LABEL: Record<string, string> = {
 
 export default function CommandPalette() {
   const router = useRouter();
+  const hiddenModules = useHiddenModules();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<Hit[]>([]);
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  /* switched-off modules stay out of the palette – also their results */
+  const quick = QUICK.filter((hit) => !isHrefHidden(hiddenModules, hit.href));
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -83,7 +89,7 @@ export default function CommandPalette() {
     return () => clearTimeout(timer);
   }, [query, open]);
 
-  const results = query.trim().length < 2 ? QUICK : hits;
+  const results = query.trim().length < 2 ? quick : hits.filter((hit) => !isHrefHidden(hiddenModules, hit.href));
 
   const go = useCallback(
     (hit: Hit) => {

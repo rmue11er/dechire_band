@@ -1,4 +1,5 @@
 import { ok, readJson } from '@/lib/api';
+import { normaliseHiddenModules } from '@/lib/modules';
 import { isHex } from '@/lib/palette';
 import { getProfile, updateProfile } from '@/lib/repo';
 
@@ -31,6 +32,7 @@ export async function PATCH(request: Request) {
     const strength = Math.max(0, Math.min(60, Math.round(Number(body.docMarkStrength) || 0)));
     patch.docMarkStrength = strength;
   }
+  if (Array.isArray(body.hiddenModules)) patch.hiddenModules = normaliseHiddenModules(body.hiddenModules);
 
   return ok({ profile: updateProfile(patch) });
 }
