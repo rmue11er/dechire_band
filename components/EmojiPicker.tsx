@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { IconSmile, IconX } from '@/components/icons';
+import { usePopoverPlacement } from '@/components/usePopoverPlacement';
 
 type Group = { name: string; items: string[] };
 
@@ -19,6 +20,7 @@ export default function EmojiPicker({ onPick }: { onPick: (emoji: string) => voi
   const [open, setOpen] = useState(false);
   const [recent, setRecent] = useState<string[]>([]);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const { popRef, popStyle } = usePopoverPlacement(open);
 
   useEffect(() => {
     if (!open) return;
@@ -74,7 +76,13 @@ export default function EmojiPicker({ onPick }: { onPick: (emoji: string) => voi
       </button>
 
       {open ? (
-        <div className="emoji-pop" role="dialog" aria-label="Emoji picker">
+        <div
+          className="emoji-pop"
+          role="dialog"
+          aria-label="Emoji picker"
+          ref={popRef}
+          style={popStyle}
+        >
           <div className="emoji-pop-head">
             <span className="mono small muted">Emoji</span>
             <button type="button" className="emoji-close" onClick={() => setOpen(false)} aria-label="Close">

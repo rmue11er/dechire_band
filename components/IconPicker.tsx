@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { IconStar, IconX } from '@/components/icons';
+import { usePopoverPlacement } from '@/components/usePopoverPlacement';
 import { DOC_ICON_GROUPS, type DocIconDef } from '@/lib/docIcons';
 
 const RECENT_KEY = 'doc-icon-recent';
@@ -21,6 +22,7 @@ export default function IconPicker({ onPick }: { onPick: (name: string) => void 
   const [query, setQuery] = useState('');
   const [recent, setRecent] = useState<string[]>([]);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const { popRef, popStyle } = usePopoverPlacement(open);
 
   useEffect(() => {
     if (!open) return;
@@ -50,6 +52,7 @@ export default function IconPicker({ onPick }: { onPick: (name: string) => void 
     }
   }, [open]);
 
+  /* the popover hangs off a 28 px button – keep it inside narrow windows */
   const groups = useMemo(() => {
     const term = query.trim().toLowerCase();
     const all = DOC_ICON_GROUPS.map((group) => ({
@@ -94,7 +97,13 @@ export default function IconPicker({ onPick }: { onPick: (name: string) => void 
       </button>
 
       {open ? (
-        <div className="emoji-pop icon-pop" role="dialog" aria-label="Icon picker">
+        <div
+          className="emoji-pop icon-pop"
+          role="dialog"
+          aria-label="Icon picker"
+          ref={popRef}
+          style={popStyle}
+        >
           <div className="emoji-pop-head">
             <span className="mono small muted">Icons</span>
             <button type="button" className="emoji-close" onClick={() => setOpen(false)} aria-label="Close">

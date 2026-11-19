@@ -43,11 +43,12 @@ import {
   IconUndo,
 } from '@/components/icons';
 import DocAudio from '@/components/DocAudio';
+import DocColorPicker from '@/components/DocColorPicker';
 import DocImageTools from '@/components/DocImageTools';
 import EmojiPicker from '@/components/EmojiPicker';
 import IconPicker from '@/components/IconPicker';
 import MediaPicker from '@/components/MediaPicker';
-import { DocIcon, DocImage, DocSection } from '@/components/docNodes';
+import { DocColor, DocIcon, DocImage, DocSection } from '@/components/docNodes';
 import { DocCollapsibleHeadings } from '@/components/docCollapsibleHeadings';
 import { Modal } from '@/components/ui';
 import { usePalette } from '@/components/PaletteProvider';
@@ -183,6 +184,7 @@ export default function DocEditor({
       // be copied into the library (see repairImages) instead of being dropped
       DocImage.configure({ inline: false, allowBase64: true }),
       DocIcon,
+      DocColor,
       DocSection,
       DocCollapsibleHeadings.configure({ enabled: doc.kind !== 'lyrics' }),
     ],
@@ -961,7 +963,7 @@ export default function DocEditor({
   .body .doc-figure-cap::before { content: ''; display: inline-block; width: 10px; height: 1px; margin-right: 7px; vertical-align: 3px; background: var(--accent-2); }
   .body .doc-figure-cap:empty { display: none; }
   .body::after { content: ''; display: block; clear: both; }
-  .body .doc-icon { display: inline-block; vertical-align: -.12em; line-height: 0; color: var(--accent-deep); }
+  .body .doc-icon { display: inline-block; vertical-align: -.12em; line-height: 0; color: var(--doc-fg, var(--accent-deep)); }
   .body .doc-icon svg { width: var(--ico, 16px); height: var(--ico, 16px); fill: currentColor; }  .body ul[data-type="taskList"] { list-style: none; padding-left: 0; }
   .body ul[data-type="taskList"] li { display: flex; gap: 8px; align-items: flex-start; }
   .body ul[data-type="taskList"] input { accent-color: var(--accent-deep); }
@@ -1195,6 +1197,13 @@ export default function DocEditor({
         {tool(editor.isActive('underline'), () => editor.chain().focus().toggleUnderline().run(), <IconUnderline size={15} />, 'Underline')}
         {tool(editor.isActive('strike'), () => editor.chain().focus().toggleStrike().run(), <IconStrike size={15} />, 'Strikethrough')}
         {tool(editor.isActive('highlight'), () => editor.chain().focus().toggleHighlight().run(), <IconPin size={15} />, 'Highlight')}
+        <DocColorPicker
+          value={(editor.getAttributes('docColor').color as string | undefined) ?? null}
+          onPick={(color) => {
+            if (color) editor.chain().focus().setDocColor(color).run();
+            else editor.chain().focus().unsetDocColor().run();
+          }}
+        />
         <span className="tool-sep" />
         {tool(editor.isActive('bulletList'), () => editor.chain().focus().toggleBulletList().run(), <IconList size={15} />, 'Bullet list')}
         {tool(editor.isActive('orderedList'), () => editor.chain().focus().toggleOrderedList().run(), <IconListOrdered size={15} />, 'Numbered list')}

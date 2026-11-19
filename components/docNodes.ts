@@ -1,9 +1,34 @@
 'use client';
 
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Mark, Node, mergeAttributes } from '@tiptap/core';
 import Image from '@tiptap/extension-image';
-import { iconDef } from '@/lib/docIcons';
+import { iconDef, type DocIconDef } from '@/lib/docIcons';
 import { partLabel } from '@/lib/kinds';
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/**
+ * `['svg', {…}, ['path', …]]` would be created with `document.createElement`,
+ * i.e. as an HTMLUnknownElement – zero size, nothing painted. An icon has to be
+ * built in the SVG namespace, so it is created by hand and handed over as a
+ * DOM node.
+ */
+const iconSvg = (definition: DocIconDef, size: number): SVGElement | null => {
+  if (typeof document === 'undefined') return null;
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', definition.viewBox);
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+  svg.setAttribute('fill', 'currentColor');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  definition.paths.forEach((d) => {
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+  });
+  return svg;
+};
 
 export type ImageAlign = 'left' | 'center' | 'right' | 'full';
 
@@ -154,20 +179,14 @@ export const DocIcon = Node.create({
   renderHTML({ node }) {
     const definition = iconDef(String(node.attrs.name));
     const size = Number(node.attrs.size) || 16;
-    return [
-      'span',
-      {
-        class: 'doc-icon',
-        'data-icon': definition.name,
-        'data-size': String(size),
-        style: `--ico:${size}px`,
-      },
-      [
-        'svg',
-        { viewBox: definition.viewBox, 'aria-hidden': 'true', focusable: 'false' },
-        ...definition.paths.map((d) => ['path', { d }]),
-      ],
-    ];
+    const attributes = {
+      class: 'doc-icon',
+      'data-icon': definition.name,
+      'data-size': String(size),
+      style: `--ico:${size}px`,
+    };
+    const svg = iconSvg(definition, size);
+    return svg ? (['span', attributes, svg] as const) : (['span', attributes] as const);
   },
 
   addCommands() {
@@ -187,6 +206,75 @@ declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     docIcon: {
       insertDocIcon: (attrs: { name?: string; size?: number }) => ReturnType;
+    };
+  }
+}
+
+/**
+ * Text colour as a plain mark instead of a new dependency: it writes a
+ * `data-color` attribute plus the inline colour, so the sheet, the HTML export,
+ * print and the public share page all keep it without extra CSS. `--doc-fg`
+ * lets inline icons follow the colour of the words around them.
+ */
+export const DocColor = Mark.create({
+  name: 'docColor',
+  inclusive: false,
+
+  addAttributes() {
+    return {
+      color: {
+        default: null,
+        parseHTML: (element) => {
+          const raw =
+            element.getAttribute('data-color') ?? (element as HTMLElement).style?.color ?? '';
+          return raw && /^(#|rgb|hsl)/i.test(raw.trim()) ? raw.trim() : null;
+        },
+        renderHTML: (attributes) => {
+          const color = String(attributes.color ?? '');
+          if (!color || !/^(#|rgb|hsl)/i.test(color)) return {};
+          return { 'data-color': color, style: `--doc-fg:${color};color:${color}` };
+        },
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      { tag: 'span[data-color]' },
+      {
+        // colours pasted from other editors arrive as a plain inline style
+        tag: 'span[style*="color"]',
+        getAttrs: (element) => {
+          const color = (element as HTMLElement).style?.color ?? '';
+          return /^(#|rgb|hsl)/i.test(color) ? { color } : false;
+        },
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ['span', mergeAttributes(HTMLAttributes), 0];
+  },
+
+  addCommands() {
+    return {
+      setDocColor:
+        (color: string) =>
+        ({ commands }) =>
+          commands.setMark(this.name, { color }),
+      unsetDocColor:
+        () =>
+        ({ commands }) =>
+          commands.unsetMark(this.name),
+    } as never;
+  },
+});
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    docColor: {
+      setDocColor: (color: string) => ReturnType;
+      unsetDocColor: () => ReturnType;
     };
   }
 }
